@@ -1,54 +1,67 @@
 <div class="home-content c-container">
+  <input
+    type="search"
+    name="listing-search"
+    id="listing-search"
+    placeholder="Buscar Pokemon..."
+    (input)="onSearch($any($event.target).value)"
+  />
+
   <div class="pokemon-listing">
-    @for (pokemon of pokemons(); track $index) {
+    @for (pokemon of filteredPokemons(); track $index) {
       <div class="pokemon-miniature">
         <span class="pokemon-miniature__name">{{ pokemon.name }}</span>
         <div class="pokemon-miniature-image-container">
-          <img
-            [src]="getSpriteUrl(pokemon.url)"
-            [alt]="pokemon.name"
-            class="pokemon-miniature__image"
-          />
+          <img [src]="pokemon.img" [alt]="pokemon.name" class="pokemon-miniature__image" />
+        </div>
+        <div class="pokemon-miniature__types">
+          @for (t of pokemon.types; track $index) {
+            <span class="type-badge type-badge--{{ t.type.name }}">
+              {{ t.type.name }}
+            </span>
+          }
         </div>
       </div>
     }
   </div>
-  <div class="pagination">
-    <button class="pagination-btn" (click)="goTo(previousUrl())" [disabled]="!previousUrl()">
-      <div class="icon-container">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-        >
-          <path
-            d="M3.825 9L9.425 14.6L8 16L0 8L8 0L9.425 1.4L3.825 7H16V9H3.825V9"
-            fill="currentColor"
-          />
-        </svg>
-      </div>
 
-      <span>PREV</span>
-    </button>
+  @if (!searchTerm()) {
+    <div class="pagination">
+      <button class="pagination-btn" (click)="goTo(previousUrl())" [disabled]="!previousUrl()">
+        <div class="icon-container">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <path
+              d="M3.825 9L9.425 14.6L8 16L0 8L8 0L9.425 1.4L3.825 7H16V9H3.825V9"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+        <span>PREV</span>
+      </button>
 
-    <button class="pagination-btn" (click)="goTo(nextUrl())" [disabled]="!nextUrl()">
-      <span>NEXT</span>
-      <div class="icon-container">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-        >
-          <path
-            d="M12.175 9H0V7H12.175L6.575 1.4L8 0L16 8L8 16L6.575 14.6L12.175 9Z"
-            fill="currentColor"
-          />
-        </svg>
-      </div>
-    </button>
-  </div>
+      <button class="pagination-btn" (click)="goTo(nextUrl())" [disabled]="!nextUrl()">
+        <span>NEXT</span>
+        <div class="icon-container">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <path
+              d="M12.175 9H0V7H12.175L6.575 1.4L8 0L16 8L8 16L6.575 14.6L12.175 9Z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+      </button>
+    </div>
+  }
 </div>

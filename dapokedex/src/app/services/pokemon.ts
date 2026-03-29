@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { PokemonListResponse } from '../interfaces/pokemon';
+import { PokemonDetail, PokemonListResponse } from '../interfaces/pokemon';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -18,5 +18,11 @@ export class PokemonService {
   }
   public getPokemonByUrl(url: string): Observable<PokemonListResponse> {
     return this.http.get<PokemonListResponse>(url);
+  }
+  public getPokemonDetail(url: string): Observable<PokemonDetail> {
+    return this.http.get<PokemonDetail>(url);
+  }
+  public getAllPokemonNames(): Observable<PokemonListResponse> {
+    return this.http.get<PokemonListResponse>(`${this.apiUrl}/pokemon?limit=1302&offset=0`);
   }
 }
