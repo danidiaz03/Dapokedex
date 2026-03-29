@@ -11,7 +11,7 @@ export class PokemonService {
   private apiUrl = 'https://pokeapi.co/api/v2';
   constructor(private http: HttpClient) {}
 
-  public getPokemonList(offset = 0, limit = 20): Observable<PokemonListResponse> {
+  public getPokemonList(offset = 0, limit = 24): Observable<PokemonListResponse> {
     return this.http.get<PokemonListResponse>(
       `${this.apiUrl}/pokemon?offset=${offset}&limit=${limit}`,
     );
