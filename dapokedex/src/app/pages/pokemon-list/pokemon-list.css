@@ -8,6 +8,7 @@
   border-radius: 8px;
   padding: 9px 16px;
   font: 400 16px/auto Space Grotesk;
+  font-size: 16px;
   margin-bottom: 20px;
   border: 1px solid #e8e5ff !important;
   transition: 0.5s all ease;
@@ -149,5 +150,3 @@
 .pagination-btn span {
   transition: color 0.3s ease;
 }
-
-
