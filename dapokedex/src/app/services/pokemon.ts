@@ -1,7 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { PokemonDetail, PokemonListResponse } from '../interfaces/pokemon';
+import {
+  PokemonDetail,
+  PokemonDetailPage,
+  PokemonListResponse,
+  pokemonSpecies,
+  pokemonEvolutionChain,
+} from '../interfaces/pokemon';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -25,4 +31,16 @@ export class PokemonService {
   public getAllPokemonNames(): Observable<PokemonListResponse> {
     return this.http.get<PokemonListResponse>(`${this.apiUrl}/pokemon?limit=1302&offset=0`);
   }
+
+  public getPokemonDetailbyName(nombre: string) {
+    return this.http.get<PokemonDetailPage>(`${this.apiUrl}/pokemon/${nombre}`);
+  }
+  public getPokemonSpeciesbyName(nombre: string) {
+    return this.http.get<pokemonSpecies>(`${this.apiUrl}/pokemon-species/${nombre}`);
+  }
+  public getEvolutionChainByUrl(url: string) {
+    return this.http.get<pokemonEvolutionChain>(url);
+  }
+
+  
 }

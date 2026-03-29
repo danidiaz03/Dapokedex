@@ -1,0 +1,108 @@
+<div class="evolution-container">
+  <div class="about-title evolution-title">Ruta de Evolución</div>
+
+  <div
+    class="evolution"
+    [class.active]="pokemonName === evolucion1()?.name"
+    [routerLink]="['/pokemon/', evolucion1()?.name]"
+  >
+    <div class="left-column">
+      <div class="evo-img-container">
+        <img [src]="evolucion1()?.sprites?.other?.['official-artwork']?.front_default" alt="" />
+      </div>
+      <div class="center-column">
+        <span class="name">{{ evolucion1()?.name }}</span>
+        <span class="stage">
+          @if (pokemonName === evolucion1()?.name) {
+            Current stage
+          } @else {
+            Evolution
+          }
+        </span>
+      </div>
+    </div>
+
+    <span class="min-level"> Lv. {{ evolution.chain.evolution_details[0]?.min_level ?? 0 }} </span>
+  </div>
+
+  @if (evolution.chain.evolves_to[0]) {
+    <svg
+      class="next-evo-icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="12"
+      height="14"
+      viewBox="0 0 12 14"
+      fill="none"
+    >
+      <path
+        d="M6 13.4L0 7.4L1.4 6L6 10.575L10.6 6L12 7.4L6 13.4ZM6 7.4L0 1.4L1.4 0L6 4.575L10.6 0L12 1.4L6 7.4Z"
+        fill="#E8BDB6"
+      />
+    </svg>
+    <div
+      class="evolution"
+      [class.active]="pokemonName === evolucion2()?.name"
+      [routerLink]="['/pokemon/', evolucion2()?.name]"
+    >
+      <div class="left-column">
+        <div class="evo-img-container">
+          <img [src]="evolucion2()?.sprites?.other?.['official-artwork']?.front_default" alt="" />
+        </div>
+        <div class="center-column">
+          <span class="name">{{ evolucion2()?.name }}</span>
+          <span class="stage">
+            @if (pokemonName === evolucion2()?.name) {
+              Current stage
+            } @else {
+              Evolution
+            }
+          </span>
+        </div>
+      </div>
+
+      <span class="min-level">
+        Lv. {{ evolution.chain.evolves_to[0].evolution_details[0]?.min_level ?? 0 }}
+      </span>
+    </div>
+  }
+
+  @if (evolution.chain.evolves_to[0]!.evolves_to[0]) {
+    <svg
+      class="next-evo-icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="12"
+      height="14"
+      viewBox="0 0 12 14"
+      fill="none"
+    >
+      <path
+        d="M6 13.4L0 7.4L1.4 6L6 10.575L10.6 6L12 7.4L6 13.4ZM6 7.4L0 1.4L1.4 0L6 4.575L10.6 0L12 1.4L6 7.4Z"
+        fill="#E8BDB6"
+      />
+    </svg>
+    <div
+      class="evolution"
+      [class.active]="pokemonName === evolucion3()?.name"
+      [routerLink]="['/pokemon/', evolucion3()?.name]"
+    >
+      <div class="left-column">
+        <div class="evo-img-container">
+          <img [src]="evolucion3()?.sprites?.other?.['official-artwork']?.front_default" alt="" />
+        </div>
+        <div class="center-column">
+          <span class="name">{{ evolucion3()?.name }}</span>
+          <span class="stage">
+            @if (pokemonName === evolucion3()?.name) {
+              Current stage
+            } @else {
+              Evolution
+            }
+          </span>
+        </div>
+      </div>
+      <span class="min-level">
+        Lv. {{ evolution.chain.evolves_to[0].evolves_to[0].evolution_details[0]?.min_level ?? 0 }}
+      </span>
+    </div>
+  }
+</div>

@@ -9,7 +9,7 @@
 
   <div class="pokemon-listing">
     @for (pokemon of filteredPokemons(); track $index) {
-      <div class="pokemon-miniature">
+      <div class="pokemon-miniature" [routerLink]="['/pokemon', pokemon.name]">
         <span class="pokemon-miniature__name">{{ pokemon.name }}</span>
         <div class="pokemon-miniature-image-container">
           <img [src]="pokemon.img" [alt]="pokemon.name" class="pokemon-miniature__image" />

@@ -1,10 +1,11 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { PokemonService } from '../../services/pokemon';
 import { PokemonMiniatureDetail, PokemonResult } from '../../interfaces/pokemon';
+import { RouterLink } from "@angular/router";
 
 @Component({
   selector: 'app-pokemon-list',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './pokemon-list.html',
   styleUrl: './pokemon-list.css',
 })

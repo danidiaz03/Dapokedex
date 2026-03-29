@@ -1,0 +1,93 @@
+@if (pokemonDetail()) {
+  <div class="detailContainer c-bg-{{ pokemonDetail()!.types[0].type.name }}">
+    <div class="pokemon-info c-container">
+      <div class="left-column">
+        <span class="id-pokemon"> #{{ pokemonDetail()!.id }} </span>
+        <h2 class="name-pokemon">
+          {{ pokemonDetail()!.name }}
+        </h2>
+        <div class="pokemon-miniature__types">
+          @for (t of pokemonDetail()!.types; track $index) {
+            <span class="type-badge type-badge--{{ t.type.name }}">
+              {{ t.type.name }}
+            </span>
+          }
+        </div>
+      </div>
+      <div class="detailImageContainer">
+        <img [src]="pokemonDetail()!.sprites.other['official-artwork'].front_default" alt="" />
+      </div>
+    </div>
+  </div>
+  <div class="c-poke-content c-container">
+    <div class="poke-tabs">
+      <div class="tabs">
+        <!--
+        <button
+          class="tab"
+          [class.tab--active]="activeTab() === 'about'"
+          (click)="activeTab.set('about')"
+        >
+        
+          About
+        </button>
+        -->
+        <button
+          class="tab"
+          [class.tab--active]="activeTab() === 'stats'"
+          (click)="activeTab.set('stats')"
+        >
+          Base Stats
+        </button>
+        <button
+          class="tab"
+          [class.tab--active]="activeTab() === 'evolution'"
+          (click)="setTab('evolution')"
+        >
+          Evolution
+        </button>
+        <!--
+        <button
+          class="tab"
+          [class.tab--active]="activeTab() === 'moves'"
+          (click)="activeTab.set('moves')"
+        >
+          Moves
+        </button>
+        -->
+      </div>
+
+      <div class="tab-content">
+        @if (activeTab() === 'about') {
+          <div class="about-content"></div>
+        }
+        @if (activeTab() === 'stats') {
+          @if (pokemonDetail()!.stats) {
+            <div class="stats-container">
+              <div class="about-title statistic-title">Estadísticas base</div>
+              <div class="base-statistics">
+                @for (stat of pokemonDetail()!.stats; track $index) {
+                  <div class="stat-row">
+                    <span class="stat-row__name">{{ stat.stat.name }}</span>
+                    <span class="stat-row__value">{{ stat.base_stat }}</span>
+                    <div class="stat-row__bar bg-stat-{{ stat.stat.name }}">
+                      <div class="stat-row__bar-fill" [style.width.%]="stat.base_stat"></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+        @if (activeTab() === 'evolution') {
+          @if (pokeEvolution()) {
+            <app-pokemon-evolution [evolution]="pokeEvolution()!" [pokemonName]="pokemonName()" />
+          }
+        }
+        @if (activeTab() === 'moves') {
+          <div>contenido moves</div>
+        }
+      </div>
+    </div>
+  </div>
+}

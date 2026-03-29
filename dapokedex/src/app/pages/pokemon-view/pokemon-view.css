@@ -1,0 +1,166 @@
+.detailContainer {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--type-color) 20%, white), white);
+}
+.pokemon-info {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px;
+}
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 40px 0;
+}
+.detailImageContainer {
+  width: 50%;
+  flex-shrink: 0;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.detailImageContainer img {
+  width: 100%;
+}
+.name-pokemon {
+  font: 700 96px/96px Space Grotesk;
+  color: #1a1a2e;
+  text-transform: capitalize;
+  word-break: break-word;
+}
+.id-pokemon {
+  font: 700 20px/28px Roboto Mono;
+  color: #9e0000;
+}
+.c-poke-content {
+  margin-top: 0;
+}
+.poke-tabs {
+  padding: 40px 0;
+}
+.tabs {
+  border-radius: 12px 12px 0px 0px;
+  overflow: hidden;
+
+  background: #f5f2ff;
+}
+.tab:hover {
+  cursor: pointer;
+}
+.tab {
+  padding: 20px 32px;
+  border: unset;
+  background: none;
+  border-bottom: 4px solid #9e000000;
+  transition: 0.5s all ease;
+}
+.tab--active {
+  background: #fff;
+  border-bottom: 4px solid #9e0000;
+  color: #9e0000;
+}
+.tab-content {
+  padding: 32px;
+  background: #fff;
+  border-radius: 0px 0px 12px 12px;
+}
+
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.about-title {
+  font: 700 24px/32px Space Grotesk;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+}
+.about-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 32px;
+  position: relative;
+  border-radius: 9999px;
+  margin-right: 12px;
+}
+.about-title.statistic-title::before {
+  background: #745b00;
+}
+.statistic-title {
+}
+.base-statistics {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.stat-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.stat-row__name {
+  font: 700 14px/20px Roboto Mono;
+  color: #5e3f3a;
+  text-transform: uppercase;
+}
+.stat-row__value {
+  font: 700 16px/24px Roboto Mono;
+  color: #1a1a2e;
+}
+.stat-row__bar {
+  width: 100%;
+  background: #e2e0fc;
+  border-radius: 9999px;
+  height: 12px;
+  margin-top: 8px;
+}
+.bg-stat-hp .stat-row__bar-fill,
+.bg-stat-attack .stat-row__bar-fill,
+.bg-stat-defense .stat-row__bar-fill {
+  background: #cc0000;
+}
+.bg-stat-special-attack .stat-row__bar-fill,
+.bg-stat-special-defense .stat-row__bar-fill {
+  background: #0061cc;
+}
+.bg-stat-speed .stat-row__bar-fill {
+  background: #fecb00 !important;
+}
+.stat-row__bar-fill {
+  left: 0;
+  height: 12px;
+  top: 0;
+  border-radius: 9999px;
+}
+
+@media (max-width: 992px) {
+  .pokemon-info {
+    flex-direction: column-reverse;
+    gap: 0;
+    padding: 15px;
+  }
+  .detailImageContainer {
+    width: 100%;
+    flex-shrink: 0;
+    background: #000;
+  }
+  .detailImageContainer img {
+    max-width: 400px;
+  }
+  .left-column {
+    width: 100%;
+  }
+  .name-pokemon {
+    font: 700 32px/40px Space Grotesk;
+    color: #1a1a2e;
+    text-transform: capitalize;
+    word-break: break-word;
+  }
+}

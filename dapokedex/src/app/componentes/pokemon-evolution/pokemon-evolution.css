@@ -1,0 +1,99 @@
+.evolution-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+.about-title {
+  font: 700 24px/32px Space Grotesk;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  width: 100%;
+}
+.about-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 32px;
+  position: relative;
+  border-radius: 9999px;
+  margin-right: 12px;
+}
+.about-title.evolution-title::before {
+  background: #004a9e;
+}
+.evolution:hover {
+  cursor: pointer;
+  box-shadow: 0px 0px 5px 0px #c3c3c3;
+}
+.evolution {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  background: #efecff;
+  padding: 16px;
+  border-radius: 24px;
+  border: 2px solid #ffffff00;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  transition: 0.5s all ease;
+}
+.evolution.active {
+  background: #cc000010;
+  border: 2px solid #9e000020;
+}
+.evolution .left-column {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+}
+.evolution .evo-img-container {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 5px;
+}
+.evolution .evo-img-container img {
+  width: 100%;
+  height: auto;
+}
+.evolution .center-column {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  flex-direction: column;
+}
+.evolution .next-evo-icon {
+}
+.evolution .name {
+  font: 700 16px/24px Space Grotesk;
+  text-transform: capitalize;
+  color: #1a1a2e;
+}
+.evolution.active .name {
+  color: #9e0000;
+}
+.evolution .stage {
+  font: 400 12px/16px Be Vietnam Pro;
+  text-transform: uppercase;
+  color: #1a1a2e;
+}
+.evolution.active .stage {
+  color: #5e3f3a;
+}
+.evolution .min-level {
+  padding: 4px 8px;
+  font: 400 12px/16px Roboto Mono;
+  border-radius: 4px;
+  background: #e2e0fc;
+  color: #1a1a2e;
+}
+
+.evolution.active .min-level {
+  background: #9e0000;
+  color: #fff;
+}
