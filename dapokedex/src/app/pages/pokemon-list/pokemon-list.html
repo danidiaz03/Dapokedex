@@ -1,0 +1,9 @@
+@for (pokemon of pokemons(); track $index) {
+  <div>
+    <img [src]="getSpriteUrl(pokemon.url)" [alt]="pokemon.name" />
+    <span>{{ pokemon.name }}</span>
+  </div>
+}
+<button (click)="goTo(previousUrl())" [disabled]="!previousUrl()">Anterior</button>
+
+<button (click)="goTo(nextUrl())" [disabled]="!nextUrl()">Siguiente</button>
