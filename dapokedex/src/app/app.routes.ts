@@ -1,8 +1,12 @@
 import { Routes } from '@angular/router';
 import { PokemonList } from './pages/pokemon-list/pokemon-list';
 import { PokemonView } from './pages/pokemon-view/pokemon-view';
+import { LoginComponent } from './pages/login/login';
+import { authGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
-  { path: '', component: PokemonList },
-  { path: 'pokemon/:name', component: PokemonView },
+  { path: 'login', component: LoginComponent },
+  { path: '', component: PokemonList, canActivate: [authGuard] },
+  { path: 'pokemon/:name', component: PokemonView, canActivate: [authGuard] },
+  { path: '**', redirectTo: '' },
 ];
