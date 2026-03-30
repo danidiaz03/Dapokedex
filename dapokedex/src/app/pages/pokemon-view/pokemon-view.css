@@ -164,3 +164,30 @@
     word-break: break-word;
   }
 }
+.favorite-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(162, 155, 155, 0.2);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font: 600 14px/20px Space Grotesk;
+  color: #9e0000;
+  cursor: pointer;
+  margin-top: 16px;
+  transition:
+    background 0.3s ease,
+    transform 0.2s ease;
+
+  width: fit-content;
+}
+
+.favorite-btn:hover {
+  background: #9e0000;
+  color: white;
+}
+
+.favorite-btn--active svg {
+  fill: #9e0000;
+}

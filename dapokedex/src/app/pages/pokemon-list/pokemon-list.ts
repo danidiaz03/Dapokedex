@@ -1,7 +1,9 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { PokemonService } from '../../services/pokemon';
 import { PokemonMiniatureDetail, PokemonResult } from '../../interfaces/pokemon';
-import { RouterLink } from "@angular/router";
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { FirestoreService } from '../../services/firestore.service';
 
 @Component({
   selector: 'app-pokemon-list',
@@ -10,6 +12,9 @@ import { RouterLink } from "@angular/router";
   styleUrl: './pokemon-list.css',
 })
 export class PokemonList implements OnInit {
+  private authService = inject(AuthService);
+  private firestoreService = inject(FirestoreService);
+
   public pokemons = signal<PokemonMiniatureDetail[]>([]);
   public isLoading = signal(true);
   public nextUrl = signal<string | null>(null);
@@ -17,6 +22,7 @@ export class PokemonList implements OnInit {
   public searchTerm = signal('');
   public allPokemons = signal<PokemonResult[]>([]);
   public searchResults = signal<PokemonMiniatureDetail[]>([]);
+  public favorites = signal<number[]>([]);
 
   public filteredPokemons = computed(() => {
     if (!this.searchTerm()) return this.pokemons();
@@ -25,7 +31,13 @@ export class PokemonList implements OnInit {
 
   constructor(private pokemonService: PokemonService) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    const userId = this.authService.currentUser()?.uid;
+    if (userId) {
+      const favs = await this.firestoreService.getFavorites(userId);
+      this.favorites.set(favs);
+    }
+
     this.pokemonService.getAllPokemonNames().subscribe({
       next: (data) => {
         this.allPokemons.set(data.results);
@@ -58,6 +70,24 @@ export class PokemonList implements OnInit {
         });
       },
     });
+  }
+
+  isFavorite(pokemonId: number): boolean {
+    return this.favorites().includes(pokemonId);
+  }
+
+  async toggleFavorite(event: Event, pokemonId: number): Promise<void> {
+    event.stopPropagation();
+    const userId = this.authService.currentUser()?.uid;
+    if (!userId) return;
+
+    if (this.isFavorite(pokemonId)) {
+      await this.firestoreService.removeFavorite(userId, pokemonId);
+      this.favorites.set(this.favorites().filter((id) => id !== pokemonId));
+    } else {
+      await this.firestoreService.addFavorite(userId, pokemonId);
+      this.favorites.set([...this.favorites(), pokemonId]);
+    }
   }
 
   goTo(url: string | null): void {

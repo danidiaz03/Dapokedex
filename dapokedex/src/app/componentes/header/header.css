@@ -10,7 +10,8 @@
   font: 700 24px/32px Space Grotesk;
   color: #b91c1c;
 }
-.header .header-logo:hover {
+.header .header-logo:hover,
+.header .login-toggle:hover {
   cursor: pointer;
 }
 

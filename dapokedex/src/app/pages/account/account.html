@@ -1,0 +1,39 @@
+<div class="account-wrapper c-container">
+  <div class="account-header">
+    <div class="user-info">
+      @if (user()?.photoURL) {
+        <img [src]="user()?.photoURL" alt="avatar" class="user-avatar" />
+      }
+      <div>
+        <h1 class="user-name">{{ user()?.displayName || user()?.email }}</h1>
+        <p class="user-email">{{ user()?.email }}</p>
+      </div>
+    </div>
+    <button class="btn-logout" (click)="logout()">Cerrar sesión</button>
+  </div>
+
+  <div class="favorites-section">
+    <h2 class="section-title">Mis favoritos</h2>
+
+    @if (loading()) {
+      <p class="loading-text">Cargando favoritos...</p>
+    } @else if (favorites().length === 0) {
+      <p class="empty-text">Aún no tienes Pokémon favoritos.</p>
+    } @else {
+      <div class="favorites-grid">
+        @for (pokemon of favorites(); track pokemon.id) {
+          <div class="pokemon-card" (click)="goToPokemon(pokemon.name)">
+            <div class="pokemon-image-container">
+              <img
+                [src]="pokemon.sprites.other['official-artwork'].front_default"
+                [alt]="pokemon.name"
+                class="pokemon-image"
+              />
+            </div>
+            <p class="pokemon-name">{{ pokemon.name }}</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
