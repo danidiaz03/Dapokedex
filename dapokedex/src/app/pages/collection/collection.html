@@ -1,0 +1,40 @@
+<div class="collection-wrapper c-container">
+  <div class="collection-header">
+    <button class="btn-back" (click)="goBack()">← Volver</button>
+    <h1 class="collection-title">Mi colección</h1>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Cargando colección...</p>
+  } @else if (pokemons().length === 0) {
+    <p class="empty-text">Aún no tienes Pokémon en tu colección. ¡Gana batallas para capturarlos!</p>
+  } @else {
+    <div class="collection-grid">
+      @for (pokemon of pokemons(); track pokemon.id) {
+        <div class="pokemon-card">
+          <div class="pokemon-image-container">
+            <img
+              [src]="pokemon.sprites.other['official-artwork'].front_default"
+              [alt]="pokemon.name"
+              class="pokemon-image"
+            />
+          </div>
+          <p class="pokemon-name">{{ pokemon.name }}</p>
+          <div class="pokemon-types">
+            @for (t of pokemon.types; track $index) {
+              <span class="type-badge type-badge--{{ t.type.name }}">{{ t.type.name }}</span>
+            }
+          </div>
+          <div class="pokemon-stats">
+            <span class="stat">ATK {{ pokemon.stats[1].base_stat }}</span>
+            <span class="stat">DEF {{ pokemon.stats[2].base_stat }}</span>
+            <span class="stat">HP {{ pokemon.stats[0].base_stat }}</span>
+          </div>
+          <button class="btn-battle" (click)="selectForBattle(pokemon.id)">
+            ¡Luchar con este!
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

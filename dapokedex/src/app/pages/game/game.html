@@ -1,0 +1,63 @@
+<div class="game-wrapper c-container">
+  @if (loading()) {
+    <p class="loading-text">Cargando...</p>
+  } @else if (!hasStarter()) {
+    <div class="starter-selection">
+      <h1 class="game-title">Elige tu Pokémon inicial</h1>
+      <p class="game-subtitle">Esta decisión marcará tu aventura. ¡Elige sabiamente!</p>
+
+      <div class="starters-grid">
+        @for (starter of starters; track starter.id) {
+          <div
+            class="starter-card"
+            [class.starter-card--selected]="selectedStarter() === starter.id"
+            (click)="selectStarter(starter.id)"
+          >
+            <div class="starter-image-container">
+              <img [src]="getSpriteUrl(starter.id)" [alt]="starter.name" />
+            </div>
+            <p class="starter-name">{{ starter.name }}</p>
+          </div>
+        }
+      </div>
+
+      @if (selectedStarter()) {
+        <button class="btn-confirm" (click)="confirmStarter()">
+          ¡Elegir {{ starters[selectedStarter()! - 1]?.name || '' }}!
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="collection-section">
+      <h1 class="game-title">¿Con quién quieres batallar?</h1>
+      <p class="game-subtitle">Elige un Pokémon de tu colección</p>
+
+      @if (collection().length === 0) {
+        <p class="empty-text">
+          No tienes Pokémon en tu colección. ¡Gana batallas para capturarlos!
+        </p>
+      } @else {
+        <div class="collection-grid">
+          @for (pokemon of collection(); track pokemon.id) {
+            <div class="pokemon-card" (click)="selectForBattle(pokemon.id)">
+              <div class="pokemon-image-container">
+                <img
+                  [src]="pokemon.sprites.other['official-artwork'].front_default"
+                  [alt]="pokemon.name"
+                  class="pokemon-image"
+                />
+              </div>
+              <p class="pokemon-name">{{ pokemon.name }}</p>
+              <div class="pokemon-types">
+                @for (t of pokemon.types; track $index) {
+                  <span class="type-badge type-badge--{{ t.type.name }}">{{ t.type.name }}</span>
+                }
+              </div>
+              <button class="btn-battle">¡Luchar!</button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

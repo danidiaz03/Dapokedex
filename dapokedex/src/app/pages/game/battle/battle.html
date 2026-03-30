@@ -1,0 +1,124 @@
+<div class="battle-wrapper">
+  @if (loading()) {
+    <div class="loading-screen">
+      <p>Cargando batalla...</p>
+    </div>
+  } @else {
+    <div class="battle-arena">
+      <div class="enemy-side">
+        <div class="pokemon-info-box">
+          <div class="pokemon-info-header">
+            <p class="pokemon-name">{{ enemyPokemon()!.name }}</p>
+            <div class="pokemon-types">
+              @for (type of enemyPokemon()!.types; track $index) {
+                <span class="type-badge type-{{ type }}">{{ type }}</span>
+              }
+            </div>
+          </div>
+          <div class="hp-bar-bg">
+            <div
+              class="hp-bar-fill"
+              [class]="getHpClass(enemyPokemon()!)"
+              [style.width.%]="getHpPercent(enemyPokemon()!)"
+            ></div>
+          </div>
+          <p class="hp-text">{{ enemyPokemon()!.hp }} / {{ enemyPokemon()!.maxHp }} HP</p>
+          <div class="pokemon-stats">
+            <span class="stat">ATK {{ enemyPokemon()!.attack }}</span>
+            <span class="stat">DEF {{ enemyPokemon()!.defense }}</span>
+            <span class="stat">SP.ATK {{ enemyPokemon()!.specialAttack }}</span>
+            <span class="stat">SP.DEF {{ enemyPokemon()!.specialDefense }}</span>
+            <span class="stat">SPD {{ enemyPokemon()!.speed }}</span>
+          </div>
+        </div>
+        <img
+          class="pokemon-sprite enemy-sprite"
+          [src]="enemyPokemon()!.sprite"
+          [alt]="enemyPokemon()!.name"
+        />
+      </div>
+
+      <div class="player-side">
+        <div class="pokemon-info-box">
+          <div class="pokemon-info-header">
+            <p class="pokemon-name">{{ playerPokemon()!.name }}</p>
+            <div class="pokemon-types">
+              @for (type of playerPokemon()!.types; track $index) {
+                <span class="type-badge type-{{ type }}">{{ type }}</span>
+              }
+            </div>
+          </div>
+          <div class="hp-bar-bg">
+            <div
+              class="hp-bar-fill"
+              [class]="getHpClass(playerPokemon()!)"
+              [style.width.%]="getHpPercent(playerPokemon()!)"
+            ></div>
+          </div>
+          <p class="hp-text">{{ playerPokemon()!.hp }} / {{ playerPokemon()!.maxHp }} HP</p>
+          <div class="pokemon-stats">
+            <span class="stat">ATK {{ playerPokemon()!.attack }}</span>
+            <span class="stat">DEF {{ playerPokemon()!.defense }}</span>
+            <span class="stat">SP.ATK {{ playerPokemon()!.specialAttack }}</span>
+            <span class="stat">SP.DEF {{ playerPokemon()!.specialDefense }}</span>
+            <span class="stat">SPD {{ playerPokemon()!.speed }}</span>
+          </div>
+        </div>
+        <img
+          class="pokemon-sprite player-sprite"
+          [src]="playerPokemon()!.sprite"
+          [alt]="playerPokemon()!.name"
+        />
+      </div>
+    </div>
+
+    <div class="battle-logs">
+      @for (log of battleLogs(); track log.id) {
+        <div class="battle-log-message" [class.fade-out]="!log.visible">
+          <p>{{ log.text }}</p>
+        </div>
+      }
+    </div>
+
+    @if (battleOver()) {
+      <div class="battle-result">
+        @if (playerWon()) {
+          <p class="result-text win">
+            ¡Victoria! {{ enemyPokemon()!.name }} añadido a tu colección.
+          </p>
+        } @else {
+          <p class="result-text lose">¡Derrota! Inténtalo de nuevo.</p>
+        }
+        <div class="result-actions">
+          <button class="btn-secondary" (click)="goBack()">Volver</button>
+          <button class="btn-primary" (click)="newBattle()">Nueva batalla</button>
+        </div>
+      </div>
+    } @else {
+      <div class="battle-actions">
+        @for (move of playerPokemon()!.moves; track $index) {
+          <button class="move-btn" [disabled]="!isPlayerTurn()" (click)="useMove(move)">
+            <div class="move-header">
+              <p class="move-name">{{ move.name }}</p>
+              <span class="damage-class damage-class--{{ move.damageClass }}">
+                {{
+                  move.damageClass === 'physical'
+                    ? 'Físico'
+                    : move.damageClass === 'special'
+                      ? 'Especial'
+                      : 'Estado'
+                }}
+              </span>
+            </div>
+            <div class="move-details">
+              <span class="type-badge type-{{ move.type }}">{{ move.type }}</span>
+              <span class="move-stat">POW: {{ move.power || '—' }}</span>
+              <span class="move-stat">ACC: {{ move.accuracy || '—' }}</span>
+              <span class="move-stat">PP: {{ move.pp }}</span>
+            </div>
+          </button>
+        }
+      </div>
+    }
+  }
+</div>

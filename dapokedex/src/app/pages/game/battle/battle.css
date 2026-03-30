@@ -1,0 +1,393 @@
+.battle-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f1f5f9;
+}
+
+.loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font: 400 16px/24px Space Grotesk;
+  color: #475569;
+}
+
+.battle-arena {
+  background: linear-gradient(180deg, #e2e0fc 0%, #f1f5f9 60%);
+  padding: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  min-height: 320px;
+}
+
+.enemy-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.player-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.pokemon-info-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 12px 16px;
+  min-width: 220px;
+  box-shadow: 0px 4px 6px -1px #00000010;
+}
+
+.pokemon-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pokemon-name {
+  font: 700 14px/20px Space Grotesk;
+  color: #1a1a2e;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.pokemon-types {
+  display: flex;
+  gap: 4px;
+}
+
+.pokemon-stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.stat {
+  font: 600 10px/14px Space Grotesk;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.hp-bar-bg {
+  background: #e2e8f0;
+  border-radius: 99px;
+  height: 8px;
+  width: 100%;
+}
+
+.hp-bar-fill {
+  height: 8px;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+.hp-bar-fill.high {
+  background: #639922;
+}
+.hp-bar-fill.mid {
+  background: #ba7517;
+}
+.hp-bar-fill.low {
+  background: #a32d2d;
+}
+
+.hp-text {
+  font: 400 11px/16px Space Grotesk;
+  color: #475569;
+  margin: 4px 0 0;
+  text-align: right;
+}
+
+.pokemon-sprite {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+}
+
+.battle-logs {
+  position: relative;
+  min-height: 80px;
+  padding: 10px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.battle-log-message {
+  background: #ffffff;
+  color: #1a1a2e;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font: 400 14px/22px Space Grotesk;
+  text-transform: capitalize;
+  opacity: 1;
+  transition: opacity 1s ease;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0px 2px 4px #00000008;
+}
+
+.battle-log-message p {
+  margin: 0;
+}
+
+.battle-log-message.fade-out {
+  opacity: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.battle-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.move-btn {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-align: left;
+  cursor: pointer;
+  background: #f8fafc;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.move-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cc0000;
+}
+
+.move-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.move-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.move-name {
+  font: 700 14px/20px Space Grotesk;
+  color: #1a1a2e;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.move-details {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.move-stat {
+  font: 400 11px/16px Space Grotesk;
+  color: #475569;
+}
+
+.damage-class {
+  font: 600 10px/14px Space Grotesk;
+  padding: 2px 6px;
+  border-radius: 99px;
+}
+
+.damage-class--physical {
+  background: #faece7;
+  color: #712b13;
+}
+.damage-class--special {
+  background: #eeedfe;
+  color: #3c3489;
+}
+.damage-class--status {
+  background: #d3d1c7;
+  color: #444441;
+}
+
+.type-badge {
+  display: inline-block;
+  font: 600 10px/14px Space Grotesk;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: capitalize;
+}
+
+.type-fire {
+  background: #f5c4b3;
+  color: #712b13;
+}
+.type-water {
+  background: #b5d4f4;
+  color: #0c447c;
+}
+.type-grass {
+  background: #c0dd97;
+  color: #27500a;
+}
+.type-normal {
+  background: #d3d1c7;
+  color: #444441;
+}
+.type-poison {
+  background: #eeedfe;
+  color: #3c3489;
+}
+.type-electric {
+  background: #fac775;
+  color: #633806;
+}
+.type-psychic {
+  background: #fbeaf0;
+  color: #72243e;
+}
+.type-rock {
+  background: #d3d1c7;
+  color: #2c2c2a;
+}
+.type-ground {
+  background: #fac775;
+  color: #633806;
+}
+.type-ice {
+  background: #b5d4f4;
+  color: #042c53;
+}
+.type-dragon {
+  background: #eeedfe;
+  color: #26215c;
+}
+.type-ghost {
+  background: #eeedfe;
+  color: #26215c;
+}
+.type-fighting {
+  background: #faece7;
+  color: #4a1b0c;
+}
+.type-bug {
+  background: #c0dd97;
+  color: #173404;
+}
+.type-flying {
+  background: #b5d4f4;
+  color: #042c53;
+}
+.type-steel {
+  background: #d3d1c7;
+  color: #2c2c2a;
+}
+.type-dark {
+  background: #444441;
+  color: #d3d1c7;
+}
+.type-fairy {
+  background: #fbeaf0;
+  color: #72243e;
+}
+
+.battle-result {
+  background: #ffffff;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.result-text {
+  font: 700 20px/28px Space Grotesk;
+  margin: 0;
+  text-transform: capitalize;
+  text-align: center;
+}
+
+.result-text.win {
+  color: #3b6d11;
+}
+.result-text.lose {
+  color: #a32d2d;
+}
+
+.result-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-primary {
+  padding: 12px 32px;
+  background: linear-gradient(to bottom, #9e0000, #cc0000);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font: 700 14px/20px Space Grotesk;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  padding: 12px 32px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font: 700 14px/20px Space Grotesk;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+@media (max-width: 768px) {
+  .battle-arena {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .enemy-side,
+  .player-side {
+    align-items: center;
+  }
+
+  .battle-actions {
+    grid-template-columns: 1fr;
+  }
+}
