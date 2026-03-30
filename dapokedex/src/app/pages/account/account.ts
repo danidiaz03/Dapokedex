@@ -44,4 +44,12 @@ export class Account implements OnInit {
   goToPokemon(name: string) {
     this.router.navigate(['/pokemon', name]);
   }
+  async removeFavorite(event: Event, pokemonId: number) {
+    event.stopPropagation();
+    const userId = this.user()?.uid;
+    if (!userId) return;
+
+    await this.firestoreService.removeFavorite(userId, pokemonId);
+    this.favorites.set(this.favorites().filter((p) => p.id !== pokemonId));
+  }
 }

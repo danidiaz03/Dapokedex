@@ -70,6 +70,7 @@
 }
 
 .pokemon-card {
+  position: relative;
   background: #ffffff;
   border-radius: 24px;
   padding: 24px;
@@ -80,6 +81,28 @@
 
 .pokemon-card:hover {
   box-shadow: 0px 0px 5px 0px #b91c1c;
+}
+
+.remove-favorite {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #fee2e2;
+  border: none;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #cc0000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pokemon-card:hover .remove-favorite {
+  opacity: 1;
 }
 
 .pokemon-image-container {
