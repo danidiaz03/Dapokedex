@@ -175,4 +175,11 @@ body {
   .c-container {
     padding: 0px 15px;
   }
+  body {
+    padding-bottom: 70px;
+  }
+}
+app-header {
+  position: relative;
+  z-index: 50;
 }
