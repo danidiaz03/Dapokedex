@@ -28,18 +28,25 @@
       }
     </div>
   } @else {
-    <div class="collection-section">
-      <h1 class="game-title">¿Con quién quieres batallar?</h1>
-      <p class="game-subtitle">Elige un Pokémon de tu colección</p>
+    <div class="team-section">
+      <div class="team-header">
+        <div>
+          <h1 class="game-title">Mi equipo</h1>
+          <p class="game-subtitle">{{ team().length }}/6 Pokémon seleccionados</p>
+        </div>
+        <button class="btn-collection" (click)="goToCollection()">Gestionar equipo</button>
+      </div>
 
-      @if (collection().length === 0) {
-        <p class="empty-text">
-          No tienes Pokémon en tu colección. ¡Gana batallas para capturarlos!
-        </p>
+      @if (team().length === 0) {
+        <div class="empty-team">
+          <p class="empty-text">No tienes Pokémon en tu equipo.</p>
+          <p class="empty-subtext">Ve a tu colección y añade hasta 6 Pokémon para batallar.</p>
+          <button class="btn-confirm" (click)="goToCollection()">Ir a la colección</button>
+        </div>
       } @else {
-        <div class="collection-grid">
-          @for (pokemon of collection(); track pokemon.id) {
-            <div class="pokemon-card" (click)="selectForBattle(pokemon.id)">
+        <div class="team-grid">
+          @for (pokemon of team(); track pokemon.id) {
+            <div class="pokemon-card">
               <div class="pokemon-image-container">
                 <img
                   [src]="pokemon.sprites.other['official-artwork'].front_default"
@@ -53,9 +60,20 @@
                   <span class="type-badge type-badge--{{ t.type.name }}">{{ t.type.name }}</span>
                 }
               </div>
-              <button class="btn-battle">¡Luchar!</button>
+              <div class="pokemon-stats">
+                <span class="stat">HP {{ pokemon.stats[0].base_stat }}</span>
+                <span class="stat">ATK {{ pokemon.stats[1].base_stat }}</span>
+                <span class="stat">DEF {{ pokemon.stats[2].base_stat }}</span>
+                <span class="stat">SPD {{ pokemon.stats[5].base_stat }}</span>
+              </div>
             </div>
           }
+        </div>
+
+        <div class="battle-footer">
+          <button class="btn-confirm" (click)="startBattle()">
+            ⚔️ ¡Iniciar batalla con este equipo!
+          </button>
         </div>
       }
     </div>

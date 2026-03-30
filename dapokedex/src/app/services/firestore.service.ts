@@ -72,4 +72,29 @@ export class FirestoreService {
       await setDoc(ref, { favorites: [], collection: [pokemonId] });
     }
   }
+  async getTeam(userId: string): Promise<number[]> {
+    const docSnap = await getDoc(this.getUserDoc(userId));
+    return docSnap.exists() ? (docSnap.data()['team'] ?? []) : [];
+  }
+
+  async addToTeam(userId: string, pokemonId: number): Promise<void> {
+    const ref = this.getUserDoc(userId);
+    const docSnap = await getDoc(ref);
+    const team = docSnap.exists() ? (docSnap.data()['team'] ?? []) : [];
+
+    if (team.length >= 6) throw new Error('El equipo ya tiene 6 Pokémon');
+    if (team.includes(pokemonId)) throw new Error('Este Pokémon ya está en el equipo');
+
+    if (docSnap.exists()) {
+      await updateDoc(ref, { team: arrayUnion(pokemonId) });
+    } else {
+      await setDoc(ref, { favorites: [], collection: [], team: [pokemonId] });
+    }
+  }
+
+  async removeFromTeam(userId: string, pokemonId: number): Promise<void> {
+    await updateDoc(this.getUserDoc(userId), {
+      team: arrayRemove(pokemonId),
+    });
+  }
 }

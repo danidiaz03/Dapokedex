@@ -24,7 +24,7 @@ export class Game implements OnInit {
   hasStarter = signal(false);
   loading = signal(true);
   selectedStarter = signal<number | null>(null);
-  collection = signal<any[]>([]);
+  team = signal<any[]>([]);
 
   getSpriteUrl(id: number): string {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
@@ -37,16 +37,20 @@ export class Game implements OnInit {
     const starter = await this.firestoreService.getStarter(userId);
     if (starter) {
       this.hasStarter.set(true);
-      const collectionIds = await this.firestoreService.getCollection(userId);
-      const pokemons = await Promise.all(
-        collectionIds.map((id) =>
-          fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json()),
-        ),
-      );
-      this.collection.set(pokemons);
+      await this.loadTeam(userId);
     }
 
     this.loading.set(false);
+  }
+
+  async loadTeam(userId: string) {
+    const teamIds = await this.firestoreService.getTeam(userId);
+    if (teamIds.length === 0) return;
+
+    const pokemons = await Promise.all(
+      teamIds.map((id) => fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json())),
+    );
+    this.team.set(pokemons);
   }
 
   selectStarter(id: number) {
@@ -60,16 +64,17 @@ export class Game implements OnInit {
 
     await this.firestoreService.setStarter(userId, starterId);
     this.hasStarter.set(true);
-    const collectionIds = await this.firestoreService.getCollection(userId);
-    const pokemons = await Promise.all(
-      collectionIds.map((id) =>
-        fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json()),
-      ),
-    );
-    this.collection.set(pokemons);
+    await this.loadTeam(userId);
   }
 
-  selectForBattle(pokemonId: number) {
-    this.router.navigate(['/game/battle'], { queryParams: { pokemonId } });
+  startBattle() {
+    const teamIds = this.team()
+      .map((p) => p.id)
+      .join(',');
+    this.router.navigate(['/game/battle'], { queryParams: { team: teamIds } });
+  }
+
+  goToCollection() {
+    this.router.navigate(['/collection']);
   }
 }

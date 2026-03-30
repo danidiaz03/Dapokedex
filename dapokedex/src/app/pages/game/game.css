@@ -6,15 +6,13 @@
 .game-title {
   font: 700 32px/40px Space Grotesk;
   color: #1a1a2e;
-  margin: 0 0 12px;
-  text-align: center;
+  margin: 0 0 8px;
 }
 
 .game-subtitle {
-  font: 400 18px/28px Space Grotesk;
+  font: 400 16px/24px Space Grotesk;
   color: #475569;
-  margin: 0 0 40px;
-  text-align: center;
+  margin: 0;
 }
 
 .loading-text,
@@ -22,6 +20,42 @@
   font: 400 16px/24px Space Grotesk;
   color: #475569;
   text-align: center;
+}
+
+.empty-subtext {
+  font: 400 14px/20px Space Grotesk;
+  color: #94a3b8;
+  text-align: center;
+  margin: 8px 0 24px;
+}
+
+.empty-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.btn-collection {
+  padding: 12px 24px;
+  background: #f1f5f9;
+  color: #1a1a2e;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font: 700 14px/20px Space Grotesk;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn-collection:hover {
+  background: #e2e8f0;
 }
 
 .starters-grid {
@@ -40,14 +74,12 @@
   border: 2px solid transparent;
   transition:
     border 0.3s ease,
-    box-shadow 0.3s ease,
-    transform 0.2s ease;
+    box-shadow 0.3s ease;
   text-align: center;
 }
 
 .starter-card:hover {
   box-shadow: 0px 0px 10px 0px #b91c1c33;
-  transform: translateY(-4px);
 }
 
 .starter-card--selected {
@@ -90,11 +122,12 @@
   opacity: 0.9;
 }
 
-.collection-grid {
+.team-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
 }
+
 .pokemon-card {
   background: #ffffff;
   border-radius: 24px;
@@ -115,11 +148,12 @@
 .pokemon-image-container {
   background: #e2e0fc;
   border-radius: 50%;
-  padding: 40px;
+  padding: 32px;
   transition: padding 0.5s ease;
 }
+
 .pokemon-card:hover .pokemon-image-container {
-  padding: 20px;
+  padding: 16px;
 }
 
 .pokemon-image {
@@ -219,7 +253,23 @@
   color: #72243e;
 }
 
+.pokemon-stats {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  font: 600 10px/14px Space Grotesk;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
 .btn-battle {
+  margin-top: 4px;
   padding: 10px;
   background: linear-gradient(to bottom, #9e0000, #cc0000);
   color: #ffffff;
@@ -234,19 +284,24 @@
   opacity: 0.9;
 }
 
-@media (max-width: 992px) {
-  .collection-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 @media (max-width: 768px) {
   .starters-grid {
     flex-direction: column;
     align-items: center;
   }
 
-  .collection-grid {
+  .team-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .team-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+.battle-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
 }

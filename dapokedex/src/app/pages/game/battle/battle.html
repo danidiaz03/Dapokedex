@@ -3,14 +3,58 @@
     <div class="loading-screen">
       <p>Cargando batalla...</p>
     </div>
-  } @else {
+  } @else if (phase() === 'preview') {
+    <div class="preview-screen c-container">
+      <h1 class="preview-title">¡Batalla por equipos!</h1>
+
+      <div class="preview-teams">
+        <div class="preview-team">
+          <h2 class="preview-team-title">Tu equipo</h2>
+          <div class="preview-team-grid">
+            @for (pokemon of playerTeam(); track pokemon.id) {
+              <div class="preview-card">
+                <img [src]="pokemon.sprite" [alt]="pokemon.name" class="preview-sprite" />
+                <p class="preview-name">{{ pokemon.name }}</p>
+                <div class="preview-types">
+                  @for (type of pokemon.types; track $index) {
+                    <span class="type-badge type-{{ type }}">{{ type }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="vs-divider">VS</div>
+
+        <div class="preview-team">
+          <h2 class="preview-team-title">Equipo rival</h2>
+          <div class="preview-team-grid">
+            @for (pokemon of enemyTeam(); track pokemon.id) {
+              <div class="preview-card">
+                <img [src]="pokemon.sprite" [alt]="pokemon.name" class="preview-sprite" />
+                <p class="preview-name">{{ pokemon.name }}</p>
+                <div class="preview-types">
+                  @for (type of pokemon.types; track $index) {
+                    <span class="type-badge type-{{ type }}">{{ type }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-start" (click)="startBattle()">⚔️ ¡Comenzar batalla!</button>
+    </div>
+  } @else if (phase() === 'battle' || phase() === 'select-pokemon') {
     <div class="battle-arena">
       <div class="enemy-side">
         <div class="pokemon-info-box">
           <div class="pokemon-info-header">
-            <p class="pokemon-name">{{ enemyPokemon()!.name }}</p>
+            <p class="pokemon-name">{{ activeEnemy()!.name }}</p>
             <div class="pokemon-types">
-              @for (type of enemyPokemon()!.types; track $index) {
+              @for (type of activeEnemy()!.types; track $index) {
                 <span class="type-badge type-{{ type }}">{{ type }}</span>
               }
             </div>
@@ -18,32 +62,34 @@
           <div class="hp-bar-bg">
             <div
               class="hp-bar-fill"
-              [class]="getHpClass(enemyPokemon()!)"
-              [style.width.%]="getHpPercent(enemyPokemon()!)"
+              [class]="getHpClass(activeEnemy()!)"
+              [style.width.%]="getHpPercent(activeEnemy()!)"
             ></div>
           </div>
-          <p class="hp-text">{{ enemyPokemon()!.hp }} / {{ enemyPokemon()!.maxHp }} HP</p>
+          <p class="hp-text">{{ activeEnemy()!.hp }} / {{ activeEnemy()!.maxHp }} HP</p>
           <div class="pokemon-stats">
-            <span class="stat">ATK {{ enemyPokemon()!.attack }}</span>
-            <span class="stat">DEF {{ enemyPokemon()!.defense }}</span>
-            <span class="stat">SP.ATK {{ enemyPokemon()!.specialAttack }}</span>
-            <span class="stat">SP.DEF {{ enemyPokemon()!.specialDefense }}</span>
-            <span class="stat">SPD {{ enemyPokemon()!.speed }}</span>
+            <span class="stat">ATK {{ activeEnemy()!.attack }}</span>
+            <span class="stat">DEF {{ activeEnemy()!.defense }}</span>
+            <span class="stat">SP.ATK {{ activeEnemy()!.specialAttack }}</span>
+            <span class="stat">SP.DEF {{ activeEnemy()!.specialDefense }}</span>
+            <span class="stat">SPD {{ activeEnemy()!.speed }}</span>
           </div>
         </div>
         <img
-          class="pokemon-sprite enemy-sprite"
-          [src]="enemyPokemon()!.sprite"
-          [alt]="enemyPokemon()!.name"
+          class="pokemon-sprite"
+          [class.shake]="enemyShaking()"
+          [class.flash]="enemyFlashing()"
+          [src]="activeEnemy()!.sprite"
+          [alt]="activeEnemy()!.name"
         />
       </div>
 
       <div class="player-side">
         <div class="pokemon-info-box">
           <div class="pokemon-info-header">
-            <p class="pokemon-name">{{ playerPokemon()!.name }}</p>
+            <p class="pokemon-name">{{ activePokemon()!.name }}</p>
             <div class="pokemon-types">
-              @for (type of playerPokemon()!.types; track $index) {
+              @for (type of activePokemon()!.types; track $index) {
                 <span class="type-badge type-{{ type }}">{{ type }}</span>
               }
             </div>
@@ -51,24 +97,51 @@
           <div class="hp-bar-bg">
             <div
               class="hp-bar-fill"
-              [class]="getHpClass(playerPokemon()!)"
-              [style.width.%]="getHpPercent(playerPokemon()!)"
+              [class]="getHpClass(activePokemon()!)"
+              [style.width.%]="getHpPercent(activePokemon()!)"
             ></div>
           </div>
-          <p class="hp-text">{{ playerPokemon()!.hp }} / {{ playerPokemon()!.maxHp }} HP</p>
+          <p class="hp-text">{{ activePokemon()!.hp }} / {{ activePokemon()!.maxHp }} HP</p>
           <div class="pokemon-stats">
-            <span class="stat">ATK {{ playerPokemon()!.attack }}</span>
-            <span class="stat">DEF {{ playerPokemon()!.defense }}</span>
-            <span class="stat">SP.ATK {{ playerPokemon()!.specialAttack }}</span>
-            <span class="stat">SP.DEF {{ playerPokemon()!.specialDefense }}</span>
-            <span class="stat">SPD {{ playerPokemon()!.speed }}</span>
+            <span class="stat">ATK {{ activePokemon()!.attack }}</span>
+            <span class="stat">DEF {{ activePokemon()!.defense }}</span>
+            <span class="stat">SP.ATK {{ activePokemon()!.specialAttack }}</span>
+            <span class="stat">SP.DEF {{ activePokemon()!.specialDefense }}</span>
+            <span class="stat">SPD {{ activePokemon()!.speed }}</span>
           </div>
         </div>
         <img
-          class="pokemon-sprite player-sprite"
-          [src]="playerPokemon()!.sprite"
-          [alt]="playerPokemon()!.name"
+          class="pokemon-sprite"
+          [class.shake]="playerShaking()"
+          [class.flash]="playerFlashing()"
+          [src]="activePokemon()!.sprite"
+          [alt]="activePokemon()!.name"
         />
+      </div>
+    </div>
+
+    <div class="team-status">
+      <div class="team-avatars">
+        @for (pokemon of playerTeam(); track pokemon.id) {
+          <div
+            class="team-avatar"
+            [class.fainted]="pokemon.fainted"
+            [class.active]="pokemon.id === activePokemon()!.id"
+          >
+            <img [src]="pokemon.sprite" [alt]="pokemon.name" />
+          </div>
+        }
+      </div>
+      <div class="team-avatars">
+        @for (pokemon of enemyTeam(); track pokemon.id) {
+          <div
+            class="team-avatar enemy"
+            [class.fainted]="pokemon.fainted"
+            [class.active]="pokemon.id === activeEnemy()!.id"
+          >
+            <img [src]="pokemon.sprite" [alt]="pokemon.name" />
+          </div>
+        }
       </div>
     </div>
 
@@ -80,23 +153,33 @@
       }
     </div>
 
-    @if (battleOver()) {
-      <div class="battle-result">
-        @if (playerWon()) {
-          <p class="result-text win">
-            ¡Victoria! {{ enemyPokemon()!.name }} añadido a tu colección.
-          </p>
-        } @else {
-          <p class="result-text lose">¡Derrota! Inténtalo de nuevo.</p>
-        }
-        <div class="result-actions">
-          <button class="btn-secondary" (click)="goBack()">Volver</button>
-          <button class="btn-primary" (click)="newBattle()">Nueva batalla</button>
+    @if (phase() === 'select-pokemon') {
+      <div class="select-pokemon">
+        <p class="select-title">Elige tu siguiente Pokémon:</p>
+        <div class="select-grid">
+          @for (pokemon of playerTeam(); track pokemon.id) {
+            <div
+              class="select-card"
+              [class.fainted]="pokemon.fainted"
+              (click)="selectNextPokemon(pokemon)"
+            >
+              <img [src]="pokemon.sprite" [alt]="pokemon.name" class="select-sprite" />
+              <p class="select-name">{{ pokemon.name }}</p>
+              <div class="hp-bar-bg">
+                <div
+                  class="hp-bar-fill"
+                  [class]="getHpClass(pokemon)"
+                  [style.width.%]="getHpPercent(pokemon)"
+                ></div>
+              </div>
+              <p class="hp-text">{{ pokemon.hp }}/{{ pokemon.maxHp }} HP</p>
+            </div>
+          }
         </div>
       </div>
     } @else {
       <div class="battle-actions">
-        @for (move of playerPokemon()!.moves; track $index) {
+        @for (move of activePokemon()!.moves; track $index) {
           <button class="move-btn" [disabled]="!isPlayerTurn()" (click)="useMove(move)">
             <div class="move-header">
               <p class="move-name">{{ move.name }}</p>
@@ -120,5 +203,31 @@
         }
       </div>
     }
+  } @else if (phase() === 'result') {
+    <div class="result-screen c-container">
+      @if (playerWon()) {
+        <div class="result-content">
+          <h1 class="result-title win">¡Victoria!</h1>
+          <p class="result-subtitle">Has capturado todos los Pokémon rivales.</p>
+          <div class="captured-grid">
+            @for (pokemon of enemyTeam(); track pokemon.id) {
+              <div class="captured-card">
+                <img [src]="pokemon.sprite" [alt]="pokemon.name" class="captured-sprite" />
+                <p class="captured-name">{{ pokemon.name }}</p>
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="result-content">
+          <h1 class="result-title lose">¡Derrota!</h1>
+          <p class="result-subtitle">Tu equipo ha sido derrotado. ¡Inténtalo de nuevo!</p>
+        </div>
+      }
+      <div class="result-actions">
+        <button class="btn-secondary" (click)="goBack()">Volver al juego</button>
+        <button class="btn-primary" (click)="newBattle()">Nueva batalla</button>
+      </div>
+    </div>
   }
 </div>
