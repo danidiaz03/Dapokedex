@@ -263,6 +263,11 @@ export class Battle implements OnInit {
     return multiplier;
   }
 
+  // Nivel usado en la fórmula de daño. Como la vida y los stats usan el
+  // stat base del Pokémon, un nivel bajo (p. ej. 5) hace un daño ridículo
+  // frente a esa vida. 50 da combates de 2-4 turnos por Pokémon.
+  private readonly BATTLE_LEVEL = 50;
+
   calculateDamage(
     attacker: BattlePokemon,
     defender: BattlePokemon,
@@ -270,16 +275,19 @@ export class Battle implements OnInit {
     effectiveness: number,
   ): number {
     if (move.power === 0) return 0;
+    // Un movimiento inmune (eficacia 0) no debe hacer daño alguno.
+    if (effectiveness === 0) return 0;
 
     const attackStat = move.damageClass === 'special' ? attacker.specialAttack : attacker.attack;
     const defenseStat = move.damageClass === 'special' ? defender.specialDefense : defender.defense;
     const random = 0.85 + Math.random() * 0.15;
+    // STAB: bonus x1.5 si el tipo del movimiento coincide con un tipo del atacante.
+    const stab = attacker.types.includes(move.type) ? 1.5 : 1;
 
-    const damage = Math.floor(
-      ((((2 * 5) / 5 + 2) * attackStat * move.power) / (defenseStat * 50) + 2) *
-        effectiveness *
-        random,
-    );
+    const base =
+      (((2 * this.BATTLE_LEVEL) / 5 + 2) * attackStat * move.power) / (defenseStat * 50) + 2;
+
+    const damage = Math.floor(base * stab * effectiveness * random);
 
     return Math.max(1, damage);
   }
