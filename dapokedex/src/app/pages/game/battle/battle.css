@@ -103,22 +103,65 @@
   padding: 32px;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: stretch;
+  gap: 16px;
   min-height: 320px;
 }
 
-.enemy-side {
+.enemy-side,
+.player-side {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  position: relative;
 }
 
 .player-side {
-  display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.12) 100%);
+  border: 2px solid rgba(37, 99, 235, 0.35);
+}
+
+.enemy-side {
   align-items: flex-end;
-  gap: 12px;
+  justify-content: flex-end;
+  text-align: right;
+  background: linear-gradient(180deg, rgba(204, 0, 0, 0.04) 0%, rgba(204, 0, 0, 0.12) 100%);
+  border: 2px solid rgba(204, 0, 0, 0.35);
+}
+
+.side-label {
+  display: inline-block;
+  font: 700 12px/16px Space Grotesk;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: 99px;
+  color: #ffffff;
+}
+
+.side-label--player {
+  background: #2563eb;
+}
+
+.side-label--enemy {
+  background: #cc0000;
+}
+
+.vs-badge {
+  align-self: center;
+  font: 700 28px/1 Space Grotesk;
+  color: #64748b;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0px 4px 6px -1px #00000015;
+  flex-shrink: 0;
 }
 
 .pokemon-info-box {
@@ -265,6 +308,25 @@
   padding: 8px 24px;
   display: flex;
   justify-content: space-between;
+}
+
+.team-status-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team-status-group--enemy {
+  align-items: flex-end;
+}
+
+.team-status-label {
+  font: 700 10px/14px Space Grotesk;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
+  border-radius: 99px;
+  color: #ffffff;
 }
 
 .team-avatars {
@@ -657,13 +719,14 @@
 
   .battle-arena {
     flex-direction: column;
-    align-items: center;
-    gap: 24px;
+    align-items: stretch;
+    gap: 16px;
   }
 
   .enemy-side,
   .player-side {
     align-items: center;
+    text-align: center;
   }
 
   .battle-actions {
