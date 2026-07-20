@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { initializeApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import {
   getAuth,
   signInWithPopup,
@@ -13,6 +14,19 @@ import {
 import { environment } from '../../environments/environment';
 
 const app = initializeApp(environment.firebase);
+
+// En desarrollo (localhost) usamos un token de depuración en lugar de reCAPTCHA.
+// El token real se genera en la consola del navegador la primera vez y se
+// registra en Firebase Console → App Check → Apps → gestionar tokens de depuración.
+if (!environment.production) {
+  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider(environment.recaptchaSiteKey),
+  isTokenAutoRefreshEnabled: true,
+});
+
 const auth = getAuth(app);
 
 @Injectable({
