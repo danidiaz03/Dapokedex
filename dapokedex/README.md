@@ -5,11 +5,15 @@ Pokédex web construida con **Angular 21** que consume la [PokeAPI](https://poke
 ## ✨ Funcionalidades
 
 - 🔐 **Autenticación** con email/contraseña e inicio de sesión con Google (Firebase Auth).
-- 📋 **Listado de Pokémon** con paginación, imágenes (artwork oficial) y tipos.
-- 🔎 **Buscador** por nombre sobre el listado completo.
-- 📄 **Ficha de detalle** de cada Pokémon con estadísticas, habilidades y cadena de evolución.
+- 📋 **Listado de Pokémon** con paginación (la página se guarda en la URL), imágenes y tipos.
+- 🔎 **Buscador** por nombre o número de Pokédex con debounce sobre el listado completo.
+- 📄 **Ficha de detalle** con estadísticas, descripción en español, altura, peso, habilidades,
+  grito y cadena de evolución (incluidas las ramificadas, como Eevee).
 - ⭐ **Favoritos**, 🎒 **colección** y 👥 **equipo** persistidos por usuario en Firestore.
-- 🎮 Modo **juego / combate** y selección de Pokémon inicial.
+- 🎮 Modo **juego**: elige un inicial y combate por equipos de hasta 6 Pokémon.
+  - Daño con nivel, STAB, eficacia de tipos e inmunidades.
+  - Movimientos con PP y precisión; el más rápido ataca primero.
+  - Los rivales derrotados se añaden a tu colección.
 
 ## 🛠️ Stack
 
@@ -48,6 +52,7 @@ export const environment = {
     messagingSenderId: 'XXXXXXXXX',
     appId: 'X:XXXXXXXXX:web:XXXXXXXXX',
   },
+  recaptchaSiteKey: 'TU_CLAVE_DE_SITIO_RECAPTCHA_V3',
 };
 ```
 
@@ -73,7 +78,10 @@ Pasos en la [consola de Firebase](https://console.firebase.google.com):
    }
    ```
 
-5. (Recomendado) En Google Cloud Console → *APIs & Services → Credentials*,
+5. Activa **App Check** con un proveedor **reCAPTCHA v3** y copia la clave de
+   sitio en `recaptchaSiteKey`. En local se usa un token de depuración que
+   aparece en la consola del navegador y hay que registrar en App Check.
+6. (Recomendado) En Google Cloud Console → *APIs & Services → Credentials*,
    restringe la API key por **HTTP referrers** (tus dominios, incluido
    `http://localhost:4200/*`) y por **APIs** (Identity Toolkit, Cloud Firestore,
    Token Service).
@@ -101,10 +109,21 @@ Abre `http://localhost:4200/`. La app recarga automáticamente al guardar cambio
 src/app/
 ├── componentes/     Componentes reutilizables (header, footer, evolución)
 ├── pages/           Páginas: login, listado, detalle, colección, cuenta, juego
-├── services/        auth · firestore · pokemon (PokeAPI)
-├── guards/          authGuard — protege las rutas privadas
-└── interfaces/      Tipos de la PokeAPI y de la app
+├── services/        auth · firestore · pokemon (PokeAPI con caché)
+├── guards/          authGuard (rutas privadas) · guestGuard (login)
+├── interfaces/      Tipos de la PokeAPI y de la app
+└── firebase.ts      Inicialización única de Firebase y App Check
 ```
+
+## 🌐 Despliegue
+
+`npm run build` genera la app en `dist/dapokedex/browser`. El archivo
+`public/.htaccess` se copia al build y, en servidores Apache (p. ej. Hostinger),
+redirige todas las rutas a `index.html`, activa la compresión y añade cabeceras
+de caché y seguridad.
+
+Las páginas se cargan en diferido (lazy loading), así que el bundle inicial solo
+incluye el layout, el login y Firebase Auth.
 
 ## 🗂️ Fuente de datos
 
