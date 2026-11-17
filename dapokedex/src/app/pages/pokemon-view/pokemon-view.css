@@ -344,3 +344,37 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+.move-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.move-methods .variety-chip {
+  background: #efecff;
+  cursor: pointer;
+}
+.moves-table-wrapper {
+  overflow-x: auto;
+}
+.moves-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 14px/20px Space Grotesk;
+}
+.moves-table th {
+  text-align: left;
+  font: 700 12px/16px Space Grotesk;
+  text-transform: uppercase;
+  color: #5e3f3a;
+  padding: 8px;
+  border-bottom: 2px solid #e2e0fc;
+}
+.moves-table td {
+  padding: 8px;
+  border-bottom: 1px solid #f0eefc;
+  white-space: nowrap;
+}
+.moves-table__name {
+  font-weight: 700;
+  text-transform: capitalize;
+}

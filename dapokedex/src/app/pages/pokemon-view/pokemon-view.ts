@@ -4,18 +4,34 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { PokemonDetailPage, pokemonEvolutionChain, pokemonSpecies } from '../../interfaces/pokemon';
-import { PokemonService, cleanFlavorText, pickLocalized } from '../../services/pokemon';
+import {
+  PokemonService,
+  cleanFlavorText,
+  getIdFromUrl,
+  pickLocalized,
+} from '../../services/pokemon';
 import { PokemonEvolution } from '../../componentes/pokemon-evolution/pokemon-evolution';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
 
-type Tab = 'about' | 'stats' | 'evolution';
+type Tab = 'about' | 'stats' | 'evolution' | 'moves';
+type MoveMethod = 'level-up' | 'machine' | 'egg' | 'tutor';
 
 interface AbilityInfo {
   name: string;
   description: string;
   hidden: boolean;
+}
+
+interface MoveRow {
+  level: number;
+  name: string;
+  type: string;
+  damageClass: string;
+  power: number | null;
+  accuracy: number | null;
+  pp: number;
 }
 
 interface TypeMatchup {
@@ -31,6 +47,29 @@ const STAT_LABELS: Record<string, string> = {
   'special-attack': 'At. Esp.',
   'special-defense': 'Def. Esp.',
   speed: 'Velocidad',
+};
+
+export const MOVE_METHODS: { id: MoveMethod; label: string }[] = [
+  { id: 'level-up', label: 'Por nivel' },
+  { id: 'machine', label: 'MT' },
+  { id: 'egg', label: 'Huevo' },
+  { id: 'tutor', label: 'Tutor' },
+];
+
+const VERSION_GROUPS: Record<string, string> = {
+  champions: 'Pokémon Champions',
+  'legends-za': 'Leyendas: Z-A',
+  'scarlet-violet': 'Escarlata y Púrpura',
+  'legends-arceus': 'Leyendas: Arceus',
+  'brilliant-diamond-and-shining-pearl': 'Diamante Brillante y Perla Reluciente',
+  'sword-shield': 'Espada y Escudo',
+  'lets-go-pikachu-lets-go-eevee': "Let's Go, Pikachu! y Let's Go, Eevee!",
+  'ultra-sun-ultra-moon': 'Ultrasol y Ultraluna',
+  'sun-moon': 'Sol y Luna',
+  'omega-ruby-alpha-sapphire': 'Rubí Omega y Zafiro Alfa',
+  'x-y': 'X e Y',
+  'black-2-white-2': 'Negro 2 y Blanco 2',
+  'black-white': 'Negro y Blanco',
 };
 
 const HABITATS: Record<string, string> = {
@@ -93,6 +132,45 @@ export class PokemonView implements OnInit {
   public isFavorite = signal(false);
   public notFound = signal(false);
   public showShiny = signal(false);
+
+  // Movimientos
+  public readonly moveMethods = MOVE_METHODS;
+  public moveMethod = signal<MoveMethod>('level-up');
+  public moveRows = signal<MoveRow[]>([]);
+  public movesLoading = signal(false);
+  private movesRequest = 0;
+
+  /**
+   * Juego más reciente en el que el Pokémon aprende movimientos por nivel.
+   * Algunos grupos nuevos de PokeAPI solo traen MT o tutores y dejarían la
+   * tabla vacía, así que se prioriza el último con aprendizaje por nivel.
+   */
+  public latestVersionGroup = computed(() => {
+    let latest = { id: 0, name: '' };
+    let latestAny = { id: 0, name: '' };
+    for (const m of this.pokemonDetail()?.moves ?? []) {
+      for (const d of m.version_group_details) {
+        const id = getIdFromUrl(d.version_group.url);
+        if (id > latestAny.id) latestAny = { id, name: d.version_group.name };
+        if (d.move_learn_method.name === 'level-up' && id > latest.id) {
+          latest = { id, name: d.version_group.name };
+        }
+      }
+    }
+    return latest.id > 0 ? latest : latestAny;
+  });
+
+  public versionGroupLabel = computed(() => {
+    const name = this.latestVersionGroup().name;
+    return VERSION_GROUPS[name] ?? name.replace(/-/g, ' ');
+  });
+
+  /** Cuántos movimientos aprende por cada método en ese juego. */
+  public moveCounts = computed(() => {
+    const counts: Record<string, number> = {};
+    for (const entry of this.movesFor(null)) counts[entry.method] = (counts[entry.method] ?? 0) + 1;
+    return counts;
+  });
 
   public statTotal = computed(
     () => this.pokemonDetail()?.stats.reduce((sum, s) => sum + s.base_stat, 0) ?? 0,
@@ -173,6 +251,68 @@ export class PokemonView implements OnInit {
 
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
+    if (tab === 'moves' && this.moveRows().length === 0) this.loadMoves();
+  }
+
+  setMoveMethod(method: MoveMethod): void {
+    this.moveMethod.set(method);
+    this.loadMoves();
+  }
+
+  /** Movimientos del Pokémon en el juego más reciente, filtrados por método. */
+  private movesFor(method: MoveMethod | null) {
+    const versionGroup = this.latestVersionGroup().name;
+    const result: { url: string; level: number; method: string }[] = [];
+    for (const m of this.pokemonDetail()?.moves ?? []) {
+      const detail = m.version_group_details.find(
+        (d) =>
+          d.version_group.name === versionGroup &&
+          (method === null || d.move_learn_method.name === method),
+      );
+      if (detail) {
+        result.push({
+          url: m.move.url,
+          level: detail.level_learned_at,
+          method: detail.move_learn_method.name,
+        });
+      }
+    }
+    return result;
+  }
+
+  /** Carga los datos (tipo, potencia, precisión...) de los movimientos del método elegido. */
+  async loadMoves() {
+    const request = ++this.movesRequest;
+    const entries = this.movesFor(this.moveMethod());
+    this.movesLoading.set(true);
+
+    const rows = await Promise.all(
+      entries.map(async (entry) => {
+        try {
+          const move = await this.service.getMove(entry.url);
+          return {
+            level: entry.level,
+            name: pickLocalized(move.names)?.name ?? move.name.replace(/-/g, ' '),
+            type: move.type.name,
+            damageClass: move.damage_class.name,
+            power: move.power,
+            accuracy: move.accuracy,
+            pp: move.pp,
+          } as MoveRow;
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    // Si el usuario cambió de pestaña o de Pokémon mientras cargaba, descartamos.
+    if (request !== this.movesRequest) return;
+    this.moveRows.set(
+      rows
+        .filter((r): r is MoveRow => r !== null)
+        .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name)),
+    );
+    this.movesLoading.set(false);
   }
 
   ngOnInit(): void {
@@ -189,6 +329,9 @@ export class PokemonView implements OnInit {
           this.matchups.set([]);
           this.notFound.set(false);
           this.showShiny.set(false);
+          this.moveRows.set([]);
+          this.moveMethod.set('level-up');
+          this.movesRequest++;
           this.isFavorite.set(false);
           return this.service.getPokemonDetailbyName(name.toLowerCase());
         }),

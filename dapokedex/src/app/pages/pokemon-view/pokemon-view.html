@@ -141,6 +141,15 @@
         >
           Evolución
         </button>
+        <button
+          class="tab"
+          role="tab"
+          [class.tab--active]="activeTab() === 'moves'"
+          [attr.aria-selected]="activeTab() === 'moves'"
+          (click)="setTab('moves')"
+        >
+          Movimientos
+        </button>
       </div>
 
       <div class="tab-content" role="tabpanel">
@@ -254,6 +263,77 @@
                 </div>
               }
             </div>
+          </div>
+        }
+        @if (activeTab() === 'moves') {
+          <div class="stats-container">
+            <div class="about-title statistic-title">Movimientos</div>
+            <p class="about-description">En {{ versionGroupLabel() }}.</p>
+            <div class="move-methods" role="group" aria-label="Método de aprendizaje">
+              @for (method of moveMethods; track method.id) {
+                @if (moveCounts()[method.id]) {
+                  <button
+                    class="variety-chip"
+                    [class.variety-chip--active]="moveMethod() === method.id"
+                    [attr.aria-pressed]="moveMethod() === method.id"
+                    (click)="setMoveMethod(method.id)"
+                  >
+                    {{ method.label }} ({{ moveCounts()[method.id] }})
+                  </button>
+                }
+              }
+            </div>
+
+            @if (movesLoading()) {
+              <p class="about-description">Cargando movimientos...</p>
+            } @else if (moveRows().length === 0) {
+              <p class="about-description">No aprende movimientos por este método.</p>
+            } @else {
+              <div class="moves-table-wrapper">
+                <table class="moves-table">
+                  <thead>
+                    <tr>
+                      @if (moveMethod() === 'level-up') {
+                        <th>Nv.</th>
+                      }
+                      <th>Movimiento</th>
+                      <th>Tipo</th>
+                      <th>Clase</th>
+                      <th>Pot.</th>
+                      <th>Prec.</th>
+                      <th>PP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (move of moveRows(); track move.name) {
+                      <tr>
+                        @if (moveMethod() === 'level-up') {
+                          <td>{{ move.level || '—' }}</td>
+                        }
+                        <td class="moves-table__name">{{ move.name }}</td>
+                        <td>
+                          <span class="type-badge type-badge--{{ move.type }}">{{
+                            move.type | tipo
+                          }}</span>
+                        </td>
+                        <td>
+                          {{
+                            move.damageClass === 'physical'
+                              ? 'Físico'
+                              : move.damageClass === 'special'
+                                ? 'Especial'
+                                : 'Estado'
+                          }}
+                        </td>
+                        <td>{{ move.power ?? '—' }}</td>
+                        <td>{{ move.accuracy ?? '—' }}</td>
+                        <td>{{ move.pp }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </div>
         }
         @if (activeTab() === 'evolution') {
