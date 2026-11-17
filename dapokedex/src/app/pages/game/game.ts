@@ -73,10 +73,8 @@ export class Game implements OnInit {
   }
 
   startBattle() {
-    const teamIds = this.team()
-      .map((p) => p.id)
-      .join(',');
-    this.router.navigate(['/game/battle'], { queryParams: { team: teamIds } });
+    // La batalla lee el equipo directamente de Firestore.
+    this.router.navigate(['/game/battle']);
   }
 
   goToCollection() {

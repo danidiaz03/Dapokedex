@@ -94,6 +94,7 @@ export interface PokemonMove {
   pp: number;
   type: { name: string };
   damage_class: { name: string };
+  names: { name: string; language: { name: string } }[];
 }
 
 export interface PokemonType {

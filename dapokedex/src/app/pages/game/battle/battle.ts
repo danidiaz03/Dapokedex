@@ -1,7 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Component, inject, OnDestroy, OnInit, signal, WritableSignal } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { FirestoreService } from '../../../services/firestore.service';
+import { PokemonService, getArtworkUrl } from '../../../services/pokemon';
+import { PokemonDetailPage, PokemonMove } from '../../../interfaces/pokemon';
 
 interface BattleMove {
   name: string;
@@ -10,6 +12,7 @@ interface BattleMove {
   damageClass: string;
   accuracy: number | null;
   pp: number;
+  maxPp: number;
 }
 
 interface BattlePokemon {
@@ -35,6 +38,22 @@ interface BattleLogEntry {
 }
 
 type BattlePhase = 'preview' | 'battle' | 'select-pokemon' | 'result';
+type Side = 'player' | 'enemy';
+
+// Movimiento de emergencia cuando no quedan PP (equivalente a "Forcejeo").
+const STRUGGLE: BattleMove = {
+  name: 'Forcejeo',
+  power: 50,
+  type: 'normal',
+  damageClass: 'physical',
+  accuracy: null,
+  pp: 1,
+  maxPp: 1,
+};
+
+// Cuántos movimientos del Pokémon consultamos para elegir 4 que hagan daño.
+const MOVE_SAMPLE_SIZE = 16;
+const TURN_DELAY = 3000;
 
 @Component({
   selector: 'app-battle',
@@ -42,11 +61,11 @@ type BattlePhase = 'preview' | 'battle' | 'select-pokemon' | 'result';
   templateUrl: './battle.html',
   styleUrl: './battle.css',
 })
-export class Battle implements OnInit {
+export class Battle implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private firestoreService = inject(FirestoreService);
+  private pokemonService = inject(PokemonService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
 
   playerTeam = signal<BattlePokemon[]>([]);
   enemyTeam = signal<BattlePokemon[]>([]);
@@ -57,6 +76,8 @@ export class Battle implements OnInit {
   isPlayerTurn = signal(true);
   playerWon = signal(false);
   loading = signal(true);
+  loadError = signal('');
+  newCaptures = signal<number[]>([]);
 
   playerShaking = signal(false);
   enemyShaking = signal(false);
@@ -64,6 +85,25 @@ export class Battle implements OnInit {
   enemyFlashing = signal(false);
 
   private logCounter = 0;
+  private audioCtx: AudioContext | null = null;
+  // Guardamos todos los timers para cancelarlos al salir de la batalla; antes
+  // el turno del rival seguía ejecutándose aunque ya hubieras cambiado de página.
+  private timeouts = new Set<ReturnType<typeof setTimeout>>();
+  private intervals = new Set<ReturnType<typeof setInterval>>();
+
+  private schedule(fn: () => void, ms: number) {
+    const id = setTimeout(() => {
+      this.timeouts.delete(id);
+      fn();
+    }, ms);
+    this.timeouts.add(id);
+  }
+
+  ngOnDestroy() {
+    this.timeouts.forEach(clearTimeout);
+    this.intervals.forEach(clearInterval);
+    this.audioCtx?.close().catch(() => {});
+  }
 
   playCry(pokemonId: number) {
     const audio = new Audio(
@@ -74,54 +114,34 @@ export class Battle implements OnInit {
   }
 
   playHitSound(effectiveness: number) {
-    const ctx = new AudioContext();
+    // Un único AudioContext reutilizado: los navegadores limitan cuántos se
+    // pueden crear y antes se creaba uno nuevo en cada golpe.
+    this.audioCtx ??= new AudioContext();
+    const ctx = this.audioCtx;
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
     gainNode.connect(ctx.destination);
 
-    if (effectiveness >= 2) {
-      oscillator.frequency.setValueAtTime(300, ctx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.3);
-      gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.3);
-    } else if (effectiveness === 0) {
-      oscillator.frequency.setValueAtTime(100, ctx.currentTime);
-      gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.15);
-    } else {
-      oscillator.frequency.setValueAtTime(200, ctx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.2);
-      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.2);
-    }
+    const [from, to, gain, duration] =
+      effectiveness >= 2
+        ? [300, 80, 0.4, 0.3]
+        : effectiveness === 0
+          ? [100, 100, 0.2, 0.15]
+          : [200, 60, 0.3, 0.2];
+
+    oscillator.frequency.setValueAtTime(from, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(to, ctx.currentTime + duration);
+    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + duration);
   }
 
-  shakePlayer() {
-    this.playerShaking.set(true);
-    setTimeout(() => this.playerShaking.set(false), 500);
-  }
-
-  shakeEnemy() {
-    this.enemyShaking.set(true);
-    setTimeout(() => this.enemyShaking.set(false), 500);
-  }
-
-  flashPlayer() {
-    this.playerFlashing.set(true);
-    setTimeout(() => this.playerFlashing.set(false), 300);
-  }
-
-  flashEnemy() {
-    this.enemyFlashing.set(true);
-    setTimeout(() => this.enemyFlashing.set(false), 300);
+  private animate(flag: WritableSignal<boolean>, ms: number) {
+    flag.set(true);
+    this.schedule(() => flag.set(false), ms);
   }
 
   typewriterLog(text: string) {
@@ -136,79 +156,111 @@ export class Battle implements OnInit {
       );
       if (i >= text.length) {
         clearInterval(interval);
-        setTimeout(() => {
+        this.intervals.delete(interval);
+        this.schedule(() => {
           this.battleLogs.update((logs) =>
             logs.map((l) => (l.id === id ? { ...l, visible: false } : l)),
           );
         }, 2500);
-        setTimeout(() => {
+        this.schedule(() => {
           this.battleLogs.update((logs) => logs.filter((l) => l.id !== id));
         }, 3500);
       }
     }, 30);
+    this.intervals.add(interval);
   }
 
   async ngOnInit() {
-    const teamParam = this.route.snapshot.queryParams['team'];
-    if (!teamParam) {
+    await this.loadBattle();
+  }
+
+  private async loadBattle() {
+    this.loading.set(true);
+    this.loadError.set('');
+
+    const userId = (await this.authService.waitForUser())?.uid;
+    if (!userId) return;
+
+    // El equipo se lee de Firestore: antes se tomaba de ?team= en la URL y se
+    // podía combatir (y capturar) con cualquier Pokémon editando el enlace.
+    const teamIds = await this.firestoreService.getTeam(userId);
+    if (teamIds.length === 0) {
       this.router.navigate(['/game']);
       return;
     }
 
-    const teamIds = teamParam.split(',').map(Number);
-    const enemyIds = this.generateEnemyIds(teamIds.length);
+    try {
+      const enemyIds = this.generateEnemyIds(teamIds.length, teamIds);
+      const [playerData, enemyData] = await Promise.all([
+        this.pokemonService.getPokemons(teamIds),
+        this.pokemonService.getPokemons(enemyIds),
+      ]);
 
-    const [playerData, enemyData] = await Promise.all([
-      Promise.all(
-        teamIds.map((id: number) =>
-          fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json()),
-        ),
-      ),
-      Promise.all(
-        enemyIds.map((id: number) =>
-          fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json()),
-        ),
-      ),
-    ]);
+      const [playerTeam, enemyTeam] = await Promise.all([
+        Promise.all(playerData.map((d) => this.mapPokemon(d))),
+        Promise.all(enemyData.map((d) => this.mapPokemon(d))),
+      ]);
 
-    const [playerTeam, enemyTeam] = await Promise.all([
-      Promise.all(playerData.map((d: any) => this.mapPokemon(d))),
-      Promise.all(enemyData.map((d: any) => this.mapPokemon(d))),
-    ]);
-
-    this.playerTeam.set(playerTeam);
-    this.enemyTeam.set(enemyTeam);
+      this.playerTeam.set(playerTeam);
+      this.enemyTeam.set(enemyTeam);
+    } catch {
+      this.loadError.set(
+        'No se pudo preparar la batalla. Revisa tu conexión e inténtalo de nuevo.',
+      );
+    }
     this.loading.set(false);
   }
 
-  generateEnemyIds(count: number): number[] {
+  generateEnemyIds(count: number, exclude: number[] = []): number[] {
     const ids: number[] = [];
     while (ids.length < count) {
       const id = Math.floor(Math.random() * 151) + 1;
-      if (!ids.includes(id)) ids.push(id);
+      if (!ids.includes(id) && !exclude.includes(id)) ids.push(id);
     }
     return ids;
   }
 
-  async getMoveData(moveName: string): Promise<BattleMove> {
-    const data = await fetch(`https://pokeapi.co/api/v2/move/${moveName}`).then((r) => r.json());
+  private toBattleMove(data: PokemonMove): BattleMove {
+    const spanishName = data.names?.find((n) => n.language.name === 'es')?.name;
     return {
-      name: data.name,
+      name: spanishName ?? data.name.replace(/-/g, ' '),
       power: data.power ?? 0,
       type: data.type.name,
       damageClass: data.damage_class.name,
       accuracy: data.accuracy,
       pp: data.pp,
+      maxPp: data.pp,
     };
   }
 
-  async mapPokemon(data: any): Promise<BattlePokemon> {
-    const getStat = (name: string) =>
-      data.stats.find((s: any) => s.stat.name === name)?.base_stat ?? 50;
+  /**
+   * Elige 4 movimientos útiles. Antes se cogían los 4 primeros de la lista,
+   * que muchas veces eran de estado y no hacían daño. Ahora se priorizan los
+   * movimientos con potencia y los del mismo tipo que el Pokémon (STAB).
+   */
+  private async pickMoves(data: PokemonDetailPage, types: string[]): Promise<BattleMove[]> {
+    const sample = [...data.moves].sort(() => Math.random() - 0.5).slice(0, MOVE_SAMPLE_SIZE);
 
-    const moves = await Promise.all(
-      data.moves.slice(0, 4).map((m: any) => this.getMoveData(m.move.name)),
-    );
+    const moves = (
+      await Promise.all(
+        sample.map((m) =>
+          this.pokemonService
+            .getMove(m.move.url)
+            .then((d) => this.toBattleMove(d))
+            .catch(() => null),
+        ),
+      )
+    ).filter((m): m is BattleMove => m !== null);
+
+    const score = (m: BattleMove) =>
+      (m.power > 0 ? 1000 : 0) + (types.includes(m.type) ? 100 : 0) + Math.min(m.power, 120);
+
+    return moves.sort((a, b) => score(b) - score(a)).slice(0, 4);
+  }
+
+  async mapPokemon(data: PokemonDetailPage): Promise<BattlePokemon> {
+    const getStat = (name: string) => data.stats.find((s) => s.stat.name === name)?.base_stat ?? 50;
+    const types = data.types.map((t) => t.type.name);
 
     return {
       id: data.id,
@@ -220,44 +272,53 @@ export class Battle implements OnInit {
       specialAttack: getStat('special-attack'),
       specialDefense: getStat('special-defense'),
       speed: getStat('speed'),
-      types: data.types.map((t: any) => t.type.name),
-      moves,
-      sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${data.id}.png`,
+      types,
+      moves: await this.pickMoves(data, types),
+      sprite: getArtworkUrl(data.id),
       fainted: false,
     };
   }
 
   startBattle() {
-    const playerFirst = Math.random() > 0.5;
-    this.isPlayerTurn.set(playerFirst);
-    this.activePokemon.set(this.playerTeam()[0]);
-    this.activeEnemy.set(this.enemyTeam()[0]);
+    const player = this.playerTeam()[0];
+    const enemy = this.enemyTeam()[0];
+    this.activePokemon.set(player);
+    this.activeEnemy.set(enemy);
     this.phase.set('battle');
 
-    this.playCry(this.playerTeam()[0].id);
-    setTimeout(() => this.playCry(this.enemyTeam()[0].id), 800);
+    this.playCry(player.id);
+    this.schedule(() => this.playCry(enemy.id), 800);
 
-    this.typewriterLog(
-      playerFirst
-        ? `¡${this.playerTeam()[0].name} sale primero!`
-        : `¡${this.enemyTeam()[0].name} sale primero!`,
-    );
+    const playerFirst = this.playerGoesFirst();
+    this.typewriterLog(`¡${playerFirst ? player.name : enemy.name} es más rápido y ataca primero!`);
+    this.startRound(playerFirst);
+  }
 
-    if (!playerFirst) {
-      setTimeout(() => this.enemyTurn(), 3000);
+  /** El Pokémon con más velocidad ataca primero; en caso de empate, al azar. */
+  private playerGoesFirst(): boolean {
+    const playerSpeed = this.activePokemon()!.speed;
+    const enemySpeed = this.activeEnemy()!.speed;
+    if (playerSpeed === enemySpeed) return Math.random() > 0.5;
+    return playerSpeed > enemySpeed;
+  }
+
+  private startRound(playerFirst = this.playerGoesFirst()) {
+    if (playerFirst) {
+      this.isPlayerTurn.set(true);
+    } else {
+      this.isPlayerTurn.set(false);
+      this.schedule(() => this.enemyTurn(), TURN_DELAY);
     }
   }
 
   async getTypeEffectiveness(moveType: string, defenderTypes: string[]): Promise<number> {
-    const data = await fetch(`https://pokeapi.co/api/v2/type/${moveType}`).then((r) => r.json());
+    const data = await this.pokemonService.getType(moveType);
     let multiplier = 1;
 
     for (const defType of defenderTypes) {
-      if (data.damage_relations.double_damage_to.some((t: any) => t.name === defType))
-        multiplier *= 2;
-      if (data.damage_relations.half_damage_to.some((t: any) => t.name === defType))
-        multiplier *= 0.5;
-      if (data.damage_relations.no_damage_to.some((t: any) => t.name === defType)) multiplier *= 0;
+      if (data.damage_relations.double_damage_to.some((t) => t.name === defType)) multiplier *= 2;
+      if (data.damage_relations.half_damage_to.some((t) => t.name === defType)) multiplier *= 0.5;
+      if (data.damage_relations.no_damage_to.some((t) => t.name === defType)) multiplier *= 0;
     }
 
     return multiplier;
@@ -292,54 +353,127 @@ export class Battle implements OnInit {
     return Math.max(1, damage);
   }
 
+  /** Movimientos con PP disponibles; si no queda ninguno se usa Forcejeo. */
+  hasUsableMoves(pokemon: BattlePokemon): boolean {
+    return pokemon.moves.some((m) => m.pp > 0);
+  }
+
+  useStruggle() {
+    this.useMove(STRUGGLE);
+  }
+
   async useMove(move: BattleMove) {
     if (!this.isPlayerTurn() || this.phase() !== 'battle') return;
-
-    const player = this.activePokemon()!;
-    const enemy = this.activeEnemy()!;
-
+    if (move !== STRUGGLE && move.pp <= 0) return;
     this.isPlayerTurn.set(false);
 
-    if (move.power === 0) {
-      this.typewriterLog(`¡${player.name} usó ${move.name}! Pero no hizo daño.`);
-      setTimeout(() => this.enemyTurn(), 3000);
-      return;
-    }
+    const { defenderFainted } = await this.performAttack('player', move);
+    if (this.phase() !== 'battle') return;
 
-    this.flashPlayer();
-    setTimeout(() => this.shakeEnemy(), 200);
-
-    const effectiveness = await this.getTypeEffectiveness(move.type, enemy.types);
-    this.playHitSound(effectiveness);
-    const damage = this.calculateDamage(player, enemy, move, effectiveness);
-    const newHp = Math.max(0, enemy.hp - damage);
-
-    let log = `¡${player.name} usó ${move.name}! ${enemy.name} perdió ${damage} HP.`;
-    if (effectiveness >= 2) log += ' ¡Es muy eficaz!';
-    else if (effectiveness < 1 && effectiveness > 0) log += ' No es muy eficaz...';
-    else if (effectiveness === 0) log = `¡No afecta a ${enemy.name}!`;
-
-    const updatedEnemy = { ...enemy, hp: newHp };
-    this.activeEnemy.set(updatedEnemy);
-    this.updateTeamPokemon(this.enemyTeam, updatedEnemy);
-    this.typewriterLog(log);
-
-    if (newHp <= 0) {
-      updatedEnemy.fainted = true;
-      setTimeout(() => {
-        this.typewriterLog(`¡${enemy.name} se debilitó!`);
-        setTimeout(() => this.checkNextEnemy(), 2500);
+    if (defenderFainted) {
+      this.schedule(() => {
+        this.typewriterLog(`¡${this.activeEnemy()!.name} se debilitó!`);
+        this.schedule(() => this.checkNextEnemy(), 2500);
       }, 2000);
       return;
     }
 
-    setTimeout(() => this.enemyTurn(), 3000);
+    this.schedule(() => this.enemyTurn(), TURN_DELAY);
   }
 
-  updateTeamPokemon(teamSignal: any, updated: BattlePokemon) {
-    teamSignal.update((team: BattlePokemon[]) =>
-      team.map((p) => (p.id === updated.id ? updated : p)),
+  async enemyTurn() {
+    if (this.phase() !== 'battle') return;
+    const enemy = this.activeEnemy()!;
+
+    // La IA elige al azar entre sus movimientos con daño y PP restantes.
+    const usable = enemy.moves.filter((m) => m.pp > 0 && m.power > 0);
+    const fallback = enemy.moves.filter((m) => m.pp > 0);
+    const pool = usable.length > 0 ? usable : fallback;
+    const move = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : STRUGGLE;
+
+    const { defenderFainted } = await this.performAttack('enemy', move);
+    if (this.phase() !== 'battle') return;
+
+    if (defenderFainted) {
+      this.schedule(() => {
+        this.typewriterLog(`¡${this.activePokemon()!.name} se debilitó!`);
+        this.schedule(() => this.checkNextPlayer(), 2500);
+      }, 2000);
+      return;
+    }
+
+    this.schedule(() => this.isPlayerTurn.set(true), TURN_DELAY);
+  }
+
+  /**
+   * Resuelve un ataque completo: gasta PP, comprueba la precisión, calcula
+   * el daño y actualiza los signals del atacante y el defensor sin mutarlos.
+   */
+  private async performAttack(side: Side, move: BattleMove): Promise<{ defenderFainted: boolean }> {
+    const attackerSignal = side === 'player' ? this.activePokemon : this.activeEnemy;
+    const defenderSignal = side === 'player' ? this.activeEnemy : this.activePokemon;
+    const attackerTeam = side === 'player' ? this.playerTeam : this.enemyTeam;
+    const defenderTeam = side === 'player' ? this.enemyTeam : this.playerTeam;
+
+    let attacker = attackerSignal()!;
+    const defender = defenderSignal()!;
+
+    if (move !== STRUGGLE) {
+      attacker = {
+        ...attacker,
+        moves: attacker.moves.map((m) => (m === move ? { ...m, pp: m.pp - 1 } : m)),
+      };
+      attackerSignal.set(attacker);
+      this.updateTeamPokemon(attackerTeam, attacker);
+    }
+
+    if (move.power === 0) {
+      this.typewriterLog(`¡${attacker.name} usó ${move.name}! Pero no hizo daño.`);
+      return { defenderFainted: false };
+    }
+
+    const hits = move.accuracy === null || Math.random() * 100 < move.accuracy;
+    if (!hits) {
+      this.typewriterLog(`¡${attacker.name} usó ${move.name}! Pero falló.`);
+      return { defenderFainted: false };
+    }
+
+    this.animate(side === 'player' ? this.playerFlashing : this.enemyFlashing, 300);
+    this.schedule(
+      () => this.animate(side === 'player' ? this.enemyShaking : this.playerShaking, 500),
+      200,
     );
+
+    const effectiveness = await this.getTypeEffectiveness(move.type, defender.types);
+    this.playHitSound(effectiveness);
+    const damage = this.calculateDamage(attacker, defender, move, effectiveness);
+    const newHp = Math.max(0, defender.hp - damage);
+
+    let log = `¡${attacker.name} usó ${move.name}! ${defender.name} perdió ${damage} PS.`;
+    if (effectiveness >= 2) log += ' ¡Es muy eficaz!';
+    else if (effectiveness < 1 && effectiveness > 0) log += ' No es muy eficaz...';
+    else if (effectiveness === 0)
+      log = `¡${attacker.name} usó ${move.name}! No afecta a ${defender.name}...`;
+
+    // Forcejeo hace al atacante un cuarto del daño causado.
+    if (move === STRUGGLE && damage > 0) {
+      const recoil = Math.max(1, Math.floor(damage / 4));
+      attacker = { ...attacker, hp: Math.max(1, attacker.hp - recoil) };
+      attackerSignal.set(attacker);
+      this.updateTeamPokemon(attackerTeam, attacker);
+      log += ` ${attacker.name} también se hizo daño.`;
+    }
+
+    const updatedDefender = { ...defender, hp: newHp, fainted: newHp <= 0 };
+    defenderSignal.set(updatedDefender);
+    this.updateTeamPokemon(defenderTeam, updatedDefender);
+    this.typewriterLog(log);
+
+    return { defenderFainted: updatedDefender.fainted };
+  }
+
+  updateTeamPokemon(teamSignal: WritableSignal<BattlePokemon[]>, updated: BattlePokemon) {
+    teamSignal.update((team) => team.map((p) => (p.id === updated.id ? updated : p)));
   }
 
   checkNextEnemy() {
@@ -351,61 +485,18 @@ export class Battle implements OnInit {
     this.activeEnemy.set(nextEnemy);
     this.playCry(nextEnemy.id);
     this.typewriterLog(`¡El rival saca a ${nextEnemy.name}!`);
-    this.isPlayerTurn.set(true);
-  }
-
-  async enemyTurn() {
-    if (this.phase() !== 'battle') return;
-
-    const player = this.activePokemon()!;
-    const enemy = this.activeEnemy()!;
-
-    const availableMoves = enemy.moves.filter((m) => m.power > 0);
-    const move =
-      availableMoves.length > 0
-        ? availableMoves[Math.floor(Math.random() * availableMoves.length)]
-        : enemy.moves[0];
-
-    if (move.power === 0) {
-      this.typewriterLog(`¡${enemy.name} usó ${move.name}! Pero no hizo daño.`);
-      setTimeout(() => this.isPlayerTurn.set(true), 3000);
-      return;
-    }
-
-    this.flashEnemy();
-    setTimeout(() => this.shakePlayer(), 200);
-
-    const effectiveness = await this.getTypeEffectiveness(move.type, player.types);
-    this.playHitSound(effectiveness);
-    const damage = this.calculateDamage(enemy, player, move, effectiveness);
-    const newHp = Math.max(0, player.hp - damage);
-
-    let log = `¡${enemy.name} usó ${move.name}! ${player.name} perdió ${damage} HP.`;
-    if (effectiveness >= 2) log += ' ¡Es muy eficaz!';
-    else if (effectiveness < 1 && effectiveness > 0) log += ' No es muy eficaz...';
-    else if (effectiveness === 0) log = `¡No afecta a ${player.name}!`;
-
-    const updatedPlayer = { ...player, hp: newHp };
-    this.activePokemon.set(updatedPlayer);
-    this.updateTeamPokemon(this.playerTeam, updatedPlayer);
-    this.typewriterLog(log);
-
-    if (newHp <= 0) {
-      updatedPlayer.fainted = true;
-      setTimeout(() => {
-        this.typewriterLog(`¡${player.name} se debilitó!`);
-        setTimeout(() => this.checkNextPlayer(), 2500);
-      }, 2000);
-      return;
-    }
-
-    setTimeout(() => this.isPlayerTurn.set(true), 3000);
+    this.startRound();
   }
 
   checkNextPlayer() {
     const alivePlayers = this.playerTeam().filter((p) => !p.fainted);
     if (alivePlayers.length === 0) {
       this.endBattle(false);
+      return;
+    }
+    // Si solo queda uno, entra directamente sin pasar por la pantalla de selección.
+    if (alivePlayers.length === 1) {
+      this.selectNextPokemon(alivePlayers[0]);
       return;
     }
     this.phase.set('select-pokemon');
@@ -418,8 +509,7 @@ export class Battle implements OnInit {
     this.playCry(pokemon.id);
     this.typewriterLog(`¡${pokemon.name} entra en batalla!`);
     this.phase.set('battle');
-    this.isPlayerTurn.set(false);
-    setTimeout(() => this.enemyTurn(), 3000);
+    this.startRound();
   }
 
   async endBattle(won: boolean) {
@@ -430,13 +520,19 @@ export class Battle implements OnInit {
       this.typewriterLog('¡Ganaste la batalla!');
       const userId = this.authService.currentUser()?.uid;
       if (userId) {
-        for (const pokemon of this.enemyTeam()) {
-          await this.firestoreService.addToCollection(userId, pokemon.id);
-        }
+        const enemyIds = this.enemyTeam().map((p) => p.id);
+        const collection = await this.firestoreService.getCollection(userId);
+        this.newCaptures.set(enemyIds.filter((id) => !collection.includes(id)));
+        // Una sola escritura con todos los capturados en lugar de una por Pokémon.
+        await this.firestoreService.addToCollection(userId, ...enemyIds);
       }
     } else {
       this.typewriterLog('¡Perdiste la batalla!');
     }
+  }
+
+  isNewCapture(pokemonId: number): boolean {
+    return this.newCaptures().includes(pokemonId);
   }
 
   getHpPercent(pokemon: BattlePokemon): number {
@@ -454,7 +550,18 @@ export class Battle implements OnInit {
     this.router.navigate(['/game']);
   }
 
-  newBattle() {
-    this.router.navigate(['/game']);
+  /** Reinicia la batalla con el mismo equipo y un rival nuevo. */
+  async newBattle() {
+    this.timeouts.forEach(clearTimeout);
+    this.intervals.forEach(clearInterval);
+    this.timeouts.clear();
+    this.intervals.clear();
+    this.battleLogs.set([]);
+    this.activePokemon.set(null);
+    this.activeEnemy.set(null);
+    this.newCaptures.set([]);
+    this.playerWon.set(false);
+    this.phase.set('preview');
+    await this.loadBattle();
   }
 }

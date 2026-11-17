@@ -3,6 +3,14 @@
     <div class="loading-screen">
       <p>Cargando batalla...</p>
     </div>
+  } @else if (loadError()) {
+    <div class="loading-screen">
+      <p>{{ loadError() }}</p>
+      <div class="result-actions">
+        <button class="btn-secondary" (click)="goBack()">Volver al juego</button>
+        <button class="btn-primary" (click)="newBattle()">Reintentar</button>
+      </div>
+    </div>
   } @else if (phase() === 'preview') {
     <div class="preview-screen c-container">
       <h1 class="preview-title">¡Batalla por equipos!</h1>
@@ -189,8 +197,24 @@
       </div>
     } @else {
       <div class="battle-actions">
+        @if (!hasUsableMoves(activePokemon()!)) {
+          <button class="move-btn" [disabled]="!isPlayerTurn()" (click)="useStruggle()">
+            <div class="move-header">
+              <p class="move-name">Forcejeo</p>
+              <span class="damage-class damage-class--physical">Físico</span>
+            </div>
+            <div class="move-details">
+              <span class="move-stat">Sin PP: el Pokémon se hará daño a sí mismo</span>
+            </div>
+          </button>
+        }
         @for (move of activePokemon()!.moves; track $index) {
-          <button class="move-btn" [disabled]="!isPlayerTurn()" (click)="useMove(move)">
+          <button
+            class="move-btn"
+            [class.move-btn--empty]="move.pp === 0"
+            [disabled]="!isPlayerTurn() || move.pp === 0"
+            (click)="useMove(move)"
+          >
             <div class="move-header">
               <p class="move-name">{{ move.name }}</p>
               <span class="damage-class damage-class--{{ move.damageClass }}">
@@ -207,7 +231,7 @@
               <span class="type-badge type-{{ move.type }}">{{ move.type }}</span>
               <span class="move-stat">POW: {{ move.power || '—' }}</span>
               <span class="move-stat">ACC: {{ move.accuracy || '—' }}</span>
-              <span class="move-stat">PP: {{ move.pp }}</span>
+              <span class="move-stat">PP: {{ move.pp }}/{{ move.maxPp }}</span>
             </div>
           </button>
         }
@@ -218,10 +242,19 @@
       @if (playerWon()) {
         <div class="result-content">
           <h1 class="result-title win">¡Victoria!</h1>
-          <p class="result-subtitle">Has capturado todos los Pokémon rivales.</p>
+          <p class="result-subtitle">
+            Los Pokémon rivales se han unido a tu colección.
+            @if (newCaptures().length > 0) {
+              ¡{{ newCaptures().length }}
+              {{ newCaptures().length === 1 ? 'es nuevo' : 'son nuevos' }}!
+            }
+          </p>
           <div class="captured-grid">
             @for (pokemon of enemyTeam(); track pokemon.id) {
               <div class="captured-card">
+                @if (isNewCapture(pokemon.id)) {
+                  <span class="new-badge">¡Nuevo!</span>
+                }
                 <img [src]="pokemon.sprite" [alt]="pokemon.name" class="captured-sprite" />
                 <p class="captured-name">{{ pokemon.name }}</p>
               </div>
@@ -236,7 +269,7 @@
       }
       <div class="result-actions">
         <button class="btn-secondary" (click)="goBack()">Volver al juego</button>
-        <button class="btn-primary" (click)="newBattle()">Nueva batalla</button>
+        <button class="btn-primary" (click)="newBattle()">Nueva batalla con el mismo equipo</button>
       </div>
     </div>
   }
