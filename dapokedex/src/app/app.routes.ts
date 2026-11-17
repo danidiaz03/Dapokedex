@@ -23,6 +23,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/pokemon-view/pokemon-view').then((m) => m.PokemonView),
   },
   {
+    path: 'tipo/:name',
+    title: 'Tipo · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/type/type-page').then((m) => m.TypePage),
+  },
+  {
     path: 'account',
     title: 'Mi cuenta · Dapokedex',
     canActivate: [authGuard],

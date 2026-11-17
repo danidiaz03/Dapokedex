@@ -27,6 +27,13 @@ body {
   font: 500 12px/16px Space Grotesk;
   text-transform: uppercase;
 }
+a.type-badge {
+  text-decoration: none;
+  transition: filter 0.2s ease;
+}
+a.type-badge:hover {
+  filter: brightness(1.1);
+}
 .type-badge--normal {
   background: #e8e8d8;
   border: 2px solid #a8a878;

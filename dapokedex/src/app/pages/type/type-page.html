@@ -1,0 +1,74 @@
+<div class="type-hero c-bg-{{ name() }}">
+  <div class="c-container">
+    <span class="type-hero__eyebrow">Tipo</span>
+    <h1 class="type-hero__title">{{ name() | tipo }}</h1>
+    @if (type()) {
+      <p class="type-hero__count">{{ pokemons().length }} Pokémon de este tipo</p>
+    }
+  </div>
+</div>
+
+<div class="c-container type-content">
+  <nav class="type-picker" aria-label="Elegir tipo">
+    @for (t of allTypes; track t) {
+      <a
+        class="type-badge type-badge--{{ t }}"
+        [class.type-picker__item--active]="t === name()"
+        [routerLink]="['/tipo', t]"
+        [attr.aria-current]="t === name() ? 'page' : null"
+      >
+        {{ t | tipo }}
+      </a>
+    }
+  </nav>
+
+  @if (notFound()) {
+    <p class="type-status">Ese tipo no existe.</p>
+  } @else if (loading()) {
+    <p class="type-status">Cargando tipo...</p>
+  } @else {
+    <div class="type-relations">
+      <section>
+        <h2 class="type-section-title">Al atacar</h2>
+        @for (r of attack(); track r.label) {
+          <div class="matchup matchup--{{ r.tone }}">
+            <span class="matchup__label">{{ r.label }}</span>
+            <div class="matchup__types">
+              @for (t of r.types; track t) {
+                <a class="type-badge type-badge--{{ t }}" [routerLink]="['/tipo', t]">{{
+                  t | tipo
+                }}</a>
+              }
+            </div>
+          </div>
+        }
+      </section>
+      <section>
+        <h2 class="type-section-title">Al defender</h2>
+        @for (r of defense(); track r.label) {
+          <div class="matchup matchup--{{ r.tone }}">
+            <span class="matchup__label">{{ r.label }}</span>
+            <div class="matchup__types">
+              @for (t of r.types; track t) {
+                <a class="type-badge type-badge--{{ t }}" [routerLink]="['/tipo', t]">{{
+                  t | tipo
+                }}</a>
+              }
+            </div>
+          </div>
+        }
+      </section>
+    </div>
+
+    <h2 class="type-section-title">Pokémon de tipo {{ name() | tipo }}</h2>
+    <div class="type-pokemon-grid">
+      @for (p of pokemons(); track p.id) {
+        <a class="type-pokemon" [routerLink]="['/pokemon', p.name]">
+          <img [src]="p.img" [alt]="p.name" loading="lazy" width="96" height="96" />
+          <span class="type-pokemon__id">#{{ p.id }}</span>
+          <span class="type-pokemon__name">{{ p.label }}</span>
+        </a>
+      }
+    </div>
+  }
+</div>

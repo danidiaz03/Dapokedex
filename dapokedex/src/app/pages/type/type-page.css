@@ -1,0 +1,129 @@
+.type-hero {
+  padding: 48px 0 40px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--type-color, #1a1a2e), #1a1a2e 140%);
+}
+.type-hero__eyebrow {
+  font: 500 14px/20px Roboto Mono;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.type-hero__title {
+  font: 700 56px/64px Space Grotesk;
+}
+.type-hero__count {
+  font: 400 16px/24px Be Vietnam Pro;
+  opacity: 0.9;
+}
+.type-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin: 32px auto 48px;
+}
+.type-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.type-picker .type-badge {
+  text-decoration: none;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+.type-picker .type-badge:hover,
+.type-picker__item--active {
+  opacity: 1 !important;
+}
+.type-picker__item--active {
+  outline: 2px solid #1a1a2e;
+  outline-offset: 2px;
+}
+.type-status {
+  font: 400 16px/24px Be Vietnam Pro;
+}
+.type-relations {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.type-relations section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.type-section-title {
+  font: 700 24px/32px Space Grotesk;
+  color: #1a1a2e;
+}
+.matchup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+.matchup--weak {
+  background: #fee2e2;
+}
+.matchup--resist {
+  background: #dcfce7;
+}
+.matchup--immune {
+  background: #e2e8f0;
+}
+.matchup__label {
+  font: 700 13px/18px Space Grotesk;
+  min-width: 170px;
+}
+.matchup__types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.matchup__types .type-badge {
+  text-decoration: none;
+}
+.type-pokemon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+.type-pokemon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  text-decoration: none;
+  color: #1a1a2e;
+  transition: box-shadow 0.3s ease;
+}
+.type-pokemon:hover {
+  box-shadow: 0 0 5px 0 #b91c1c;
+}
+.type-pokemon img {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
+.type-pokemon__id {
+  font: 400 12px/16px Roboto Mono;
+  color: #5e3f3a;
+}
+.type-pokemon__name {
+  font: 700 14px/20px Space Grotesk;
+  text-transform: capitalize;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .type-relations {
+    grid-template-columns: 1fr;
+  }
+  .type-hero__title {
+    font-size: 40px;
+    line-height: 48px;
+  }
+}
