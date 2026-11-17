@@ -1,20 +1,50 @@
 import { Routes } from '@angular/router';
-import { PokemonList } from './pages/pokemon-list/pokemon-list';
-import { PokemonView } from './pages/pokemon-view/pokemon-view';
-import { LoginComponent } from './pages/login/login';
-import { Account } from './pages/account/account';
-import { Game } from './pages/game/game';
-import { Battle } from './pages/game/battle/battle';
 import { authGuard, guestGuard } from './guards/auth-guard';
-import { Collection } from './pages/collection/collection';
 
+// Cada página se carga bajo demanda (lazy loading) para reducir el bundle
+// inicial: antes todo, incluida la batalla, se descargaba al abrir la web.
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
-  { path: '', component: PokemonList, canActivate: [authGuard] },
-  { path: 'pokemon/:name', component: PokemonView, canActivate: [authGuard] },
-  { path: 'account', component: Account, canActivate: [authGuard] },
-  { path: 'game', component: Game, canActivate: [authGuard] },
-  { path: 'game/battle', component: Battle, canActivate: [authGuard] },
-  { path: 'collection', component: Collection, canActivate: [authGuard] },
+  {
+    path: 'login',
+    title: 'Iniciar sesión · Dapokedex',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./pages/login/login').then((m) => m.LoginComponent),
+  },
+  {
+    path: '',
+    title: 'Pokédex · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/pokemon-list/pokemon-list').then((m) => m.PokemonList),
+  },
+  {
+    path: 'pokemon/:name',
+    title: 'Pokémon · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/pokemon-view/pokemon-view').then((m) => m.PokemonView),
+  },
+  {
+    path: 'account',
+    title: 'Mi cuenta · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/account/account').then((m) => m.Account),
+  },
+  {
+    path: 'game',
+    title: 'Juego · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/game/game').then((m) => m.Game),
+  },
+  {
+    path: 'game/battle',
+    title: 'Batalla · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/game/battle/battle').then((m) => m.Battle),
+  },
+  {
+    path: 'collection',
+    title: 'Mi colección · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/collection/collection').then((m) => m.Collection),
+  },
   { path: '**', redirectTo: '' },
 ];

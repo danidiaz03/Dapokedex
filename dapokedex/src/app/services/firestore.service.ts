@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
-import { doc, getDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { db } from '../firebase';
+import { getFirestore, doc, getDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { firebaseApp } from '../firebase';
+
+// Firestore se inicializa aquí y no en firebase.ts para que solo se descargue
+// con las páginas que lo usan (todas cargadas en diferido).
+const db = getFirestore(firebaseApp);
 
 export interface UserData {
   favorites: number[];

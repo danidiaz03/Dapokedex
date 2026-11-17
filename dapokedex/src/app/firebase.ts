@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 import { environment } from '../environments/environment';
 
 // Punto único de inicialización de Firebase. Antes cada servicio llamaba a
@@ -22,4 +21,3 @@ initializeAppCheck(firebaseApp, {
 });
 
 export const auth = getAuth(firebaseApp);
-export const db = getFirestore(firebaseApp);
