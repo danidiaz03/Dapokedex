@@ -5,15 +5,23 @@ Pokédex web construida con **Angular 21** que consume la [PokeAPI](https://poke
 ## ✨ Funcionalidades
 
 - 🔐 **Autenticación** con email/contraseña e inicio de sesión con Google (Firebase Auth).
-- 📋 **Listado de Pokémon** con paginación (la página se guarda en la URL), imágenes y tipos.
-- 🔎 **Buscador** por nombre o número de Pokédex con debounce sobre el listado completo.
-- 📄 **Ficha de detalle** con estadísticas, descripción en español, altura, peso, habilidades,
-  grito y cadena de evolución (incluidas las ramificadas, como Eevee).
+- 📋 **Listado de Pokémon** con paginación, imágenes y tipos en español.
+- 🔎 **Buscador** por nombre o número de Pokédex con debounce.
+- 🧭 **Filtros por tipo y generación** (de Kanto a Paldea), guardados en la URL.
+- 📄 **Ficha de detalle** completa:
+  - Estadísticas base y **efectividad de tipos** (debilidades x4/x2, resistencias e inmunidades).
+  - Descripción de la Pokédex, categoría, altura, peso, género, ratio de captura, hábitat y grupos huevo.
+  - **Habilidades** con descripción en español e indicador de habilidad oculta.
+  - **Movimientos** por nivel, MT, huevo y tutor del juego más reciente.
+  - **Formas alternativas** (megaevoluciones, regionales, Gigamax), versión **shiny** y grito.
+  - Cadena de evolución, incluidas las ramificadas (Eevee) y sus requisitos.
 - ⭐ **Favoritos**, 🎒 **colección** y 👥 **equipo** persistidos por usuario en Firestore.
 - 🎮 Modo **juego**: elige un inicial y combate por equipos de hasta 6 Pokémon.
   - Daño con nivel, STAB, eficacia de tipos e inmunidades.
   - Movimientos con PP y precisión; el más rápido ataca primero.
   - Los rivales derrotados se añaden a tu colección.
+- ❓ Minijuego **Adivina el Pokémon** por su silueta, con racha y filtro por generación.
+- ♿ Navegación con teclado y foco visible.
 
 ## 🛠️ Stack
 
@@ -108,7 +116,8 @@ Abre `http://localhost:4200/`. La app recarga automáticamente al guardar cambio
 ```
 src/app/
 ├── componentes/     Componentes reutilizables (header, footer, evolución)
-├── pages/           Páginas: login, listado, detalle, colección, cuenta, juego
+├── pages/           Páginas: login, listado, detalle, colección, cuenta, juego, batalla, adivina
+├── pipes/           tipo — nombres de los tipos en español
 ├── services/        auth · firestore · pokemon (PokeAPI con caché)
 ├── guards/          authGuard (rutas privadas) · guestGuard (login)
 ├── interfaces/      Tipos de la PokeAPI y de la app
