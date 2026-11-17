@@ -1,0 +1,136 @@
+.guess-wrapper {
+  padding-top: 40px;
+  padding-bottom: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.guess-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+.guess-title {
+  font: 700 32px/40px Space Grotesk;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+}
+.guess-subtitle {
+  font: 400 16px/24px Space Grotesk;
+  color: #475569;
+  margin: 0;
+}
+.guess-header select {
+  background: #e8e5ff;
+  border: 1px solid #e8e5ff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: 400 14px/20px Space Grotesk;
+}
+.guess-score {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  font: 400 15px/22px Space Grotesk;
+  color: #1a1a2e;
+}
+.guess-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.guess-image {
+  width: min(320px, 100%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #e2e0fc 0%, #c7d2fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  transition: opacity 0.3s ease;
+}
+.guess-image--loading {
+  opacity: 0.3;
+}
+.guess-image img {
+  width: 100%;
+  height: auto;
+  transition: filter 0.6s ease;
+  user-select: none;
+}
+.silhouette {
+  filter: brightness(0);
+}
+.guess-result {
+  font: 700 20px/28px Space Grotesk;
+  color: #9e0000;
+  margin: 0;
+}
+.guess-result--ok {
+  color: #16a34a;
+}
+.guess-result a {
+  color: inherit;
+  text-transform: capitalize;
+}
+.guess-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+}
+.guess-option {
+  padding: 14px;
+  border-radius: 14px;
+  border: 2px solid #e2e0fc;
+  background: #f5f3ff;
+  font: 700 16px/22px Space Grotesk;
+  color: #1a1a2e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.guess-option:hover:not(:disabled) {
+  border-color: #786ec6;
+}
+.guess-option:disabled {
+  cursor: default;
+}
+.guess-option--correct {
+  background: #dcfce7;
+  border-color: #16a34a;
+}
+.guess-option--wrong {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+.guess-actions {
+  display: flex;
+  gap: 16px;
+}
+.guess-link,
+.guess-btn {
+  background: none;
+  border: none;
+  color: #786ec6;
+  font: 700 14px/20px Space Grotesk;
+  cursor: pointer;
+}
+.guess-back {
+  color: #786ec6;
+  font: 700 14px/20px Space Grotesk;
+  text-decoration: none;
+}
+@media (max-width: 575px) {
+  .guess-options {
+    grid-template-columns: 1fr;
+  }
+}

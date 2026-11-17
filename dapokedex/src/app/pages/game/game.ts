@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService, getArtworkUrl } from '../../services/pokemon';
@@ -13,7 +13,7 @@ const STARTERS = [
 
 @Component({
   selector: 'app-game',
-  imports: [TypeNamePipe],
+  imports: [TypeNamePipe, RouterLink],
   templateUrl: './game.html',
   styleUrl: './game.css',
 })

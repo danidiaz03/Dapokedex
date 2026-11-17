@@ -1,4 +1,13 @@
 <div class="game-wrapper c-container">
+  <a class="minigame-banner" routerLink="/game/guess">
+    <span class="minigame-banner__icon" aria-hidden="true">❓</span>
+    <span>
+      <strong>Adivina el Pokémon</strong>
+      <span class="minigame-banner__text">¿Cuántos reconoces solo por su silueta?</span>
+    </span>
+    <span class="minigame-banner__cta">Jugar →</span>
+  </a>
+
   @if (loading()) {
     <p class="loading-text">Cargando...</p>
   } @else if (!hasStarter()) {

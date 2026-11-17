@@ -41,6 +41,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/game/battle/battle').then((m) => m.Battle),
   },
   {
+    path: 'game/guess',
+    title: 'Adivina el Pokémon · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/game/guess/guess').then((m) => m.Guess),
+  },
+  {
     path: 'collection',
     title: 'Mi colección · Dapokedex',
     canActivate: [authGuard],

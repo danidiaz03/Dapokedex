@@ -1,0 +1,80 @@
+<div class="guess-wrapper c-container">
+  <div class="guess-header">
+    <div>
+      <h1 class="guess-title">Adivina el Pokémon</h1>
+      <p class="guess-subtitle">¿Reconoces a este Pokémon por su silueta?</p>
+    </div>
+    <select aria-label="Generación" (change)="setGeneration($any($event.target).value)">
+      @for (gen of generations; track gen.id) {
+        <option [value]="gen.id" [selected]="gen.id === generation()">{{ gen.label }}</option>
+      }
+      <option value="" [selected]="generation() === null">Todas</option>
+    </select>
+  </div>
+
+  <div class="guess-score">
+    <span
+      >Racha: <strong>{{ streak() }}</strong></span
+    >
+    <span
+      >Mejor racha: <strong>{{ bestStreak() }}</strong></span
+    >
+    <span
+      >Aciertos: <strong>{{ hits() }}/{{ rounds() }}</strong></span
+    >
+  </div>
+
+  @if (error()) {
+    <div class="guess-card">
+      <p>No se pudo cargar el Pokémon.</p>
+      <button class="guess-btn" (click)="newRound()">Reintentar</button>
+    </div>
+  } @else {
+    <div class="guess-card">
+      <div class="guess-image" [class.guess-image--loading]="loading()">
+        @if (answer()) {
+          <img
+            [src]="artwork"
+            alt="Silueta del Pokémon a adivinar"
+            [class.silhouette]="!revealed"
+            draggable="false"
+          />
+        }
+      </div>
+
+      @if (revealed) {
+        <p
+          class="guess-result"
+          [class.guess-result--ok]="selected() === answer()!.id"
+          role="status"
+        >
+          {{ selected() === answer()!.id ? '¡Correcto!' : '¡Oh, no!' }} Es
+          <a [routerLink]="['/pokemon', answer()!.id]">{{ answer()!.name }}</a>
+        </p>
+      }
+
+      <div class="guess-options">
+        @for (option of options(); track option.id) {
+          <button
+            class="guess-option guess-option--{{ optionState(option) }}"
+            [disabled]="revealed || loading()"
+            (click)="choose(option)"
+          >
+            {{ option.name }}
+          </button>
+        }
+      </div>
+
+      <div class="guess-actions">
+        <button class="guess-link" (click)="playCry()" [disabled]="loading()">
+          🔊 Pista: escuchar grito
+        </button>
+        @if (!revealed) {
+          <button class="guess-link" (click)="newRound()" [disabled]="loading()">Saltar</button>
+        }
+      </div>
+    </div>
+  }
+
+  <a class="guess-back" routerLink="/game">← Volver al juego</a>
+</div>

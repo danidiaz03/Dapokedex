@@ -305,3 +305,28 @@
   justify-content: center;
   margin-top: 40px;
 }
+
+.minigame-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  margin-bottom: 32px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #1a1a2e, #3b3b6d);
+  color: #fff;
+  text-decoration: none;
+  font: 400 15px/22px Space Grotesk;
+}
+.minigame-banner__icon {
+  font-size: 28px;
+}
+.minigame-banner__text {
+  display: block;
+  opacity: 0.8;
+}
+.minigame-banner__cta {
+  margin-left: auto;
+  font-weight: 700;
+  white-space: nowrap;
+}
