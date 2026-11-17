@@ -1,46 +1,95 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { firstValueFrom, Observable, shareReplay } from 'rxjs';
 
 import {
   PokemonDetail,
   PokemonDetailPage,
   PokemonListResponse,
+  PokemonMove,
+  PokemonType,
   pokemonSpecies,
   pokemonEvolutionChain,
 } from '../interfaces/pokemon';
-import { Observable } from 'rxjs';
+
+const ARTWORK_URL =
+  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork';
+
+/** URL del artwork oficial a partir del id del Pokémon. */
+export function getArtworkUrl(id: number | string): string {
+  return `${ARTWORK_URL}/${id}.png`;
+}
+
+/** Extrae el id numérico de una URL de PokeAPI (…/pokemon/25/ → 25). */
+export function getIdFromUrl(url: string): number {
+  return Number(url.split('/').filter(Boolean).pop());
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class PokemonService {
+  private http = inject(HttpClient);
   private apiUrl = 'https://pokeapi.co/api/v2';
-  constructor(private http: HttpClient) {}
+
+  // PokeAPI es estática: cacheamos cada petición para no repetirla al navegar
+  // entre páginas (listado → detalle → colección → batalla...).
+  private cache = new Map<string, Observable<unknown>>();
+
+  private getCached<T>(url: string): Observable<T> {
+    if (!this.cache.has(url)) {
+      const request$ = this.http.get<T>(url).pipe(shareReplay(1));
+      this.cache.set(url, request$);
+      // Si la petición falla la quitamos de la caché para poder reintentar.
+      request$.subscribe({ error: () => this.cache.delete(url) });
+    }
+    return this.cache.get(url) as Observable<T>;
+  }
 
   public getPokemonList(offset = 0, limit = 24): Observable<PokemonListResponse> {
-    return this.http.get<PokemonListResponse>(
+    return this.getCached<PokemonListResponse>(
       `${this.apiUrl}/pokemon?offset=${offset}&limit=${limit}`,
     );
   }
   public getPokemonByUrl(url: string): Observable<PokemonListResponse> {
-    return this.http.get<PokemonListResponse>(url);
+    return this.getCached<PokemonListResponse>(url);
   }
   public getPokemonDetail(url: string): Observable<PokemonDetail> {
-    return this.http.get<PokemonDetail>(url);
+    return this.getCached<PokemonDetail>(url);
   }
   public getAllPokemonNames(): Observable<PokemonListResponse> {
-    return this.http.get<PokemonListResponse>(`${this.apiUrl}/pokemon?limit=1302&offset=0`);
+    // limit alto para traer siempre todos aunque PokeAPI añada nuevos Pokémon.
+    return this.getCached<PokemonListResponse>(`${this.apiUrl}/pokemon?limit=100000&offset=0`);
   }
 
-  public getPokemonDetailbyName(nombre: string) {
-    return this.http.get<PokemonDetailPage>(`${this.apiUrl}/pokemon/${nombre}`);
+  public getPokemonDetailbyName(nombre: string | number) {
+    return this.getCached<PokemonDetailPage>(`${this.apiUrl}/pokemon/${nombre}`);
   }
-  public getPokemonSpeciesbyName(nombre: string) {
-    return this.http.get<pokemonSpecies>(`${this.apiUrl}/pokemon-species/${nombre}`);
+  public getPokemonSpeciesbyName(nombre: string | number) {
+    return this.getCached<pokemonSpecies>(`${this.apiUrl}/pokemon-species/${nombre}`);
+  }
+  public getSpeciesByUrl(url: string) {
+    return this.getCached<pokemonSpecies>(url);
   }
   public getEvolutionChainByUrl(url: string) {
-    return this.http.get<pokemonEvolutionChain>(url);
+    return this.getCached<pokemonEvolutionChain>(url);
   }
 
-  
+  // Versiones basadas en Promise para las páginas que trabajan con async/await.
+  public getPokemon(idOrName: number | string): Promise<PokemonDetailPage> {
+    return firstValueFrom(this.getPokemonDetailbyName(idOrName));
+  }
+
+  public getPokemons(ids: number[]): Promise<PokemonDetailPage[]> {
+    return Promise.all(ids.map((id) => this.getPokemon(id)));
+  }
+
+  public getMove(nameOrUrl: string): Promise<PokemonMove> {
+    const url = nameOrUrl.startsWith('http') ? nameOrUrl : `${this.apiUrl}/move/${nameOrUrl}`;
+    return firstValueFrom(this.getCached<PokemonMove>(url));
+  }
+
+  public getType(name: string): Promise<PokemonType> {
+    return firstValueFrom(this.getCached<PokemonType>(`${this.apiUrl}/type/${name}`));
+  }
 }

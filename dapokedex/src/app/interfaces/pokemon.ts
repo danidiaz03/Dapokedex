@@ -67,33 +67,50 @@ export interface PokemonDetailPage {
       url: string;
     };
   }[];
-  weight: string;
+  species: { name: string; url: string };
+  moves: { move: { name: string; url: string } }[];
+  weight: number;
   height: number;
 }
 
 export interface pokemonSpecies {
+  id: number;
+  name: string;
   evolution_chain: {
     url: string;
   };
+  flavor_text_entries: {
+    flavor_text: string;
+    language: { name: string };
+    version: { name: string };
+  }[];
+  genera: { genus: string; language: { name: string } }[];
+}
+
+export interface PokemonMove {
+  name: string;
+  power: number | null;
+  accuracy: number | null;
+  pp: number;
+  type: { name: string };
+  damage_class: { name: string };
+}
+
+export interface PokemonType {
+  name: string;
+  damage_relations: {
+    double_damage_to: { name: string }[];
+    half_damage_to: { name: string }[];
+    no_damage_to: { name: string }[];
+  };
+}
+
+/** Nodo recursivo de una cadena evolutiva (admite ramificaciones como Eevee). */
+export interface EvolutionNode {
+  species: { name: string; url: string };
+  evolution_details: { min_level: number | null; trigger?: { name: string } }[];
+  evolves_to: EvolutionNode[];
 }
 export interface pokemonEvolutionChain {
-  chain: {
-    evolution_details: {
-      min_level: number;
-    }[];
-    species: { name: string; url: string };
-    evolves_to: {
-      species: { name: string; url: string };
-      evolves_to: {
-        species: { name: string; url: string };
-        evolves_to: any[];
-        evolution_details: {
-          min_level: number;
-        }[];
-      }[];
-      evolution_details: {
-        min_level: number;
-      }[];
-    }[];
-  };
+  chain: EvolutionNode;
 }

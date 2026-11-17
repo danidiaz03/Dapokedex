@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { PokemonService, getArtworkUrl } from '../../services/pokemon';
 
 const STARTERS = [
   { id: 1, name: 'Bulbasaur' },
@@ -18,6 +19,7 @@ const STARTERS = [
 export class Game implements OnInit {
   private authService = inject(AuthService);
   private firestoreService = inject(FirestoreService);
+  private pokemonService = inject(PokemonService);
   private router = inject(Router);
 
   starters = STARTERS;
@@ -27,7 +29,7 @@ export class Game implements OnInit {
   team = signal<any[]>([]);
 
   getSpriteUrl(id: number): string {
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+    return getArtworkUrl(id);
   }
 
   async ngOnInit() {
@@ -47,9 +49,7 @@ export class Game implements OnInit {
     const teamIds = await this.firestoreService.getTeam(userId);
     if (teamIds.length === 0) return;
 
-    const pokemons = await Promise.all(
-      teamIds.map((id) => fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json())),
-    );
+    const pokemons = await this.pokemonService.getPokemons(teamIds);
     this.team.set(pokemons);
   }
 

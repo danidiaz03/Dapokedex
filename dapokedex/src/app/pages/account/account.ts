@@ -14,6 +14,7 @@ import { PokemonService } from '../../services/pokemon';
 export class Account implements OnInit {
   private authService = inject(AuthService);
   private firestoreService = inject(FirestoreService);
+  private pokemonService = inject(PokemonService);
   private router = inject(Router);
 
   user = this.authService.currentUser;
@@ -26,11 +27,7 @@ export class Account implements OnInit {
 
     const favoriteIds = await this.firestoreService.getFavorites(userId);
 
-    const pokemons = await Promise.all(
-      favoriteIds.map((id) =>
-        fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json()),
-      ),
-    );
+    const pokemons = await this.pokemonService.getPokemons(favoriteIds);
 
     this.favorites.set(pokemons);
     this.loading.set(false);

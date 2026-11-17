@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { PokemonService } from '../../services/pokemon';
 
 @Component({
   selector: 'app-collection',
@@ -12,6 +13,7 @@ import { FirestoreService } from '../../services/firestore.service';
 export class Collection implements OnInit {
   private authService = inject(AuthService);
   private firestoreService = inject(FirestoreService);
+  private pokemonService = inject(PokemonService);
   private router = inject(Router);
 
   pokemons = signal<any[]>([]);
@@ -36,11 +38,7 @@ export class Collection implements OnInit {
       this.firestoreService.getTeam(userId),
     ]);
 
-    const pokemons = await Promise.all(
-      collectionIds.map((id) =>
-        fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json()),
-      ),
-    );
+    const pokemons = await this.pokemonService.getPokemons(collectionIds);
 
     this.pokemons.set(pokemons);
     this.filteredPokemons.set(pokemons);
