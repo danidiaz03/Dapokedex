@@ -121,7 +121,9 @@
       <div class="tab-content" role="tabpanel">
         @if (activeTab() === 'about') {
           <div class="stats-container">
-            <div class="about-title statistic-title">Sobre {{ pokemonDetail()!.name }}</div>
+            <div class="about-title statistic-title">
+              Sobre <span class="capitalize">{{ pokemonDetail()!.name }}</span>
+            </div>
             @if (genus()) {
               <p class="about-genus">{{ genus() }}</p>
             }
@@ -143,7 +145,7 @@
                 <dt>Habilidades</dt>
                 <dd class="about-abilities">
                   @for (a of pokemonDetail()!.abilities; track $index) {
-                    <span>{{ a.ability.name }}</span>
+                    <span>{{ formatName(a.ability.name) }}</span>
                   }
                 </dd>
               </div>

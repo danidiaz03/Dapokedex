@@ -63,6 +63,7 @@ export class PokemonEvolution {
     const detail = node.evolution_details[0];
     if (!detail) return '—';
     if (detail.min_level) return `Nv. ${detail.min_level}`;
+    if (detail.min_happiness) return 'Amistad';
     return TRIGGER_LABELS[detail.trigger?.name ?? 'other'] ?? 'Especial';
   }
 }

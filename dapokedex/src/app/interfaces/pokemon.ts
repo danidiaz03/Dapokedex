@@ -109,7 +109,11 @@ export interface PokemonType {
 /** Nodo recursivo de una cadena evolutiva (admite ramificaciones como Eevee). */
 export interface EvolutionNode {
   species: { name: string; url: string };
-  evolution_details: { min_level: number | null; trigger?: { name: string } }[];
+  evolution_details: {
+    min_level: number | null;
+    min_happiness?: number | null;
+    trigger?: { name: string };
+  }[];
   evolves_to: EvolutionNode[];
 }
 export interface pokemonEvolutionChain {

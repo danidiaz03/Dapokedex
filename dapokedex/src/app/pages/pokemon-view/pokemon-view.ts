@@ -79,6 +79,10 @@ export class PokemonView implements OnInit {
     return STAT_LABELS[name] ?? name;
   }
 
+  formatName(name: string): string {
+    return name.replace(/-/g, ' ');
+  }
+
   statPercent(value: number): number {
     return Math.min(100, (value / STAT_BAR_MAX) * 100);
   }

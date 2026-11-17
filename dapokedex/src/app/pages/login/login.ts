@@ -14,7 +14,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
   'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
   'auth/network-request-failed': 'Error de conexión. Comprueba tu red.',
-  'auth/popup-blocked': 'El navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes.',
+  'auth/popup-blocked':
+    'El navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes.',
 };
 
 @Component({

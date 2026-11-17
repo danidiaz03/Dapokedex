@@ -10,6 +10,9 @@
   font: 400 16px/auto Space Grotesk;
   font-size: 16px;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
   border: 1px solid #e8e5ff !important;
   transition: 0.5s all ease;
 }

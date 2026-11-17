@@ -246,3 +246,8 @@
   border-top: 1px solid #e2e0fc;
   padding-top: 8px;
 }
+
+.capitalize {
+  text-transform: capitalize;
+  margin-left: 0.3em;
+}
