@@ -27,7 +27,7 @@
       <select (change)="onTypeFilter($any($event.target).value)">
         <option value="">Todos los tipos</option>
         @for (type of types; track type) {
-          <option [value]="type">{{ type }}</option>
+          <option [value]="type">{{ type | tipo }}</option>
         }
       </select>
     </div>
@@ -51,7 +51,9 @@
             <p class="pokemon-name">{{ pokemon.name }}</p>
             <div class="pokemon-types">
               @for (t of pokemon.types; track $index) {
-                <span class="type-badge type-badge--{{ t.type.name }}">{{ t.type.name }}</span>
+                <span class="type-badge type-badge--{{ t.type.name }}">{{
+                  t.type.name | tipo
+                }}</span>
               }
             </div>
             <div class="pokemon-stats">

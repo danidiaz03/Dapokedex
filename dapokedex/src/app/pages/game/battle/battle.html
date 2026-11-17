@@ -25,7 +25,7 @@
                 <p class="preview-name">{{ pokemon.name }}</p>
                 <div class="preview-types">
                   @for (type of pokemon.types; track $index) {
-                    <span class="type-badge type-{{ type }}">{{ type }}</span>
+                    <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
                   }
                 </div>
               </div>
@@ -44,7 +44,7 @@
                 <p class="preview-name">{{ pokemon.name }}</p>
                 <div class="preview-types">
                   @for (type of pokemon.types; track $index) {
-                    <span class="type-badge type-{{ type }}">{{ type }}</span>
+                    <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
                   }
                 </div>
               </div>
@@ -64,7 +64,7 @@
             <p class="pokemon-name">{{ activePokemon()!.name }}</p>
             <div class="pokemon-types">
               @for (type of activePokemon()!.types; track $index) {
-                <span class="type-badge type-{{ type }}">{{ type }}</span>
+                <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
               }
             </div>
           </div>
@@ -102,7 +102,7 @@
             <p class="pokemon-name">{{ activeEnemy()!.name }}</p>
             <div class="pokemon-types">
               @for (type of activeEnemy()!.types; track $index) {
-                <span class="type-badge type-{{ type }}">{{ type }}</span>
+                <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
               }
             </div>
           </div>
@@ -228,7 +228,7 @@
               </span>
             </div>
             <div class="move-details">
-              <span class="type-badge type-{{ move.type }}">{{ move.type }}</span>
+              <span class="type-badge type-badge--{{ move.type }}">{{ move.type | tipo }}</span>
               <span class="move-stat">POW: {{ move.power || '—' }}</span>
               <span class="move-stat">ACC: {{ move.accuracy || '—' }}</span>
               <span class="move-stat">PP: {{ move.pp }}/{{ move.maxPp }}</span>

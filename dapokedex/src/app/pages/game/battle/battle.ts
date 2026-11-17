@@ -4,6 +4,7 @@ import { AuthService } from '../../../services/auth.service';
 import { FirestoreService } from '../../../services/firestore.service';
 import { PokemonService, getArtworkUrl } from '../../../services/pokemon';
 import { PokemonDetailPage, PokemonMove } from '../../../interfaces/pokemon';
+import { TypeNamePipe } from '../../../pipes/type-name.pipe';
 
 interface BattleMove {
   name: string;
@@ -57,7 +58,7 @@ const TURN_DELAY = 3000;
 
 @Component({
   selector: 'app-battle',
-  imports: [],
+  imports: [TypeNamePipe],
   templateUrl: './battle.html',
   styleUrl: './battle.css',
 })

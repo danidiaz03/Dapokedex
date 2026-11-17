@@ -16,6 +16,7 @@ import { PokemonService, getArtworkUrl, getIdFromUrl } from '../../services/poke
 import { PokemonMiniatureDetail, PokemonResult } from '../../interfaces/pokemon';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { TypeNamePipe } from '../../pipes/type-name.pipe';
 
 const PAGE_SIZE = 24;
 // Máximo de resultados de búsqueda a cargar: buscar "a" coincidía con cientos
@@ -24,7 +25,7 @@ const MAX_SEARCH_RESULTS = 24;
 
 @Component({
   selector: 'app-pokemon-list',
-  imports: [RouterLink],
+  imports: [RouterLink, TypeNamePipe],
   templateUrl: './pokemon-list.html',
   styleUrl: './pokemon-list.css',
 })

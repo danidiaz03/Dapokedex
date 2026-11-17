@@ -8,6 +8,7 @@ import { PokemonService } from '../../services/pokemon';
 import { PokemonEvolution } from '../../componentes/pokemon-evolution/pokemon-evolution';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
+import { TypeNamePipe } from '../../pipes/type-name.pipe';
 
 type Tab = 'about' | 'stats' | 'evolution';
 
@@ -28,7 +29,7 @@ const LAST_NATIONAL_DEX = 1025;
 
 @Component({
   selector: 'app-pokemon-view',
-  imports: [PokemonEvolution, RouterLink],
+  imports: [PokemonEvolution, RouterLink, TypeNamePipe],
   templateUrl: './pokemon-view.html',
   styleUrl: './pokemon-view.css',
 })

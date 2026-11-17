@@ -3,10 +3,11 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService } from '../../services/pokemon';
+import { TypeNamePipe } from '../../pipes/type-name.pipe';
 
 @Component({
   selector: 'app-collection',
-  imports: [],
+  imports: [TypeNamePipe],
   templateUrl: './collection.html',
   styleUrl: './collection.css',
 })

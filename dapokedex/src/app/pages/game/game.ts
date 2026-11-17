@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService, getArtworkUrl } from '../../services/pokemon';
+import { TypeNamePipe } from '../../pipes/type-name.pipe';
 
 const STARTERS = [
   { id: 1, name: 'Bulbasaur' },
@@ -12,7 +13,7 @@ const STARTERS = [
 
 @Component({
   selector: 'app-game',
-  imports: [],
+  imports: [TypeNamePipe],
   templateUrl: './game.html',
   styleUrl: './game.css',
 })
