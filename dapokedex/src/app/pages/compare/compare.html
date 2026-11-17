@@ -1,0 +1,120 @@
+<div class="c-container compare">
+  <h1 class="compare-title">Comparar Pokémon</h1>
+  <p class="compare-subtitle">Elige dos Pokémon para enfrentar sus estadísticas y tipos.</p>
+
+  <datalist id="compare-names">
+    @for (n of names(); track n) {
+      <option [value]="n"></option>
+    }
+  </datalist>
+
+  <div class="compare-pickers">
+    <form class="compare-picker" (submit)="$event.preventDefault(); choose('a', draftA())">
+      <input
+        type="search"
+        list="compare-names"
+        placeholder="Primer Pokémon"
+        aria-label="Primer Pokémon"
+        [value]="a()"
+        (input)="draftA.set($any($event.target).value)"
+        (change)="choose('a', $any($event.target).value)"
+      />
+    </form>
+    <button class="compare-swap" type="button" (click)="swap()" aria-label="Intercambiar">⇄</button>
+    <form class="compare-picker" (submit)="$event.preventDefault(); choose('b', draftB())">
+      <input
+        type="search"
+        list="compare-names"
+        placeholder="Segundo Pokémon"
+        aria-label="Segundo Pokémon"
+        [value]="b()"
+        (input)="draftB.set($any($event.target).value)"
+        (change)="choose('b', $any($event.target).value)"
+      />
+    </form>
+  </div>
+
+  <div class="compare-cards">
+    @for (side of [left(), right()]; track $index) {
+      <div class="compare-card">
+        @if (side?.pokemon; as p) {
+          <img
+            [src]="p.sprites.other['official-artwork'].front_default"
+            [alt]="p.name"
+            width="200"
+            height="200"
+          />
+          <a class="compare-card__name" [routerLink]="['/pokemon', p.name]">{{ p.name }}</a>
+          <div class="pokemon-miniature__types">
+            @for (t of p.types; track t.type.name) {
+              <a
+                class="type-badge type-badge--{{ t.type.name }}"
+                [routerLink]="['/tipo', t.type.name]"
+              >
+                {{ t.type.name | tipo }}
+              </a>
+            }
+          </div>
+          <span class="compare-card__meta"> {{ p.height / 10 }} m · {{ p.weight / 10 }} kg </span>
+        } @else if (side?.error) {
+          <p class="compare-card__empty">No se ha encontrado ese Pokémon.</p>
+        } @else {
+          <p class="compare-card__empty">Elige un Pokémon</p>
+        }
+      </div>
+    }
+  </div>
+
+  @if (stats().length) {
+    <div class="compare-stats">
+      @for (s of stats(); track s.label) {
+        <div class="compare-row">
+          <span class="compare-row__value" [class.compare-row__value--win]="s.winner === 'a'">
+            {{ s.a }}
+          </span>
+          <div class="compare-row__bar compare-row__bar--left">
+            <div [style.width.%]="s.aPct" [class.win]="s.winner === 'a'"></div>
+          </div>
+          <span class="compare-row__label">{{ s.label }}</span>
+          <div class="compare-row__bar">
+            <div [style.width.%]="s.bPct" [class.win]="s.winner === 'b'"></div>
+          </div>
+          <span class="compare-row__value" [class.compare-row__value--win]="s.winner === 'b'">
+            {{ s.b }}
+          </span>
+        </div>
+      }
+      <div class="compare-row compare-row--total">
+        <span class="compare-row__value" [class.compare-row__value--win]="totals().a > totals().b">
+          {{ totals().a }}
+        </span>
+        <span></span>
+        <span class="compare-row__label">Total</span>
+        <span></span>
+        <span class="compare-row__value" [class.compare-row__value--win]="totals().b > totals().a">
+          {{ totals().b }}
+        </span>
+      </div>
+    </div>
+
+    @if (typeAdvantage(); as adv) {
+      <div class="compare-advantage">
+        <h2>Ventaja de tipo</h2>
+        <p>
+          Mejor ataque con STAB de <strong>{{ left()?.pokemon?.name }}</strong
+          >:
+          <span class="mult" [class.mult--good]="adv.aToB > 1" [class.mult--bad]="adv.aToB < 1">
+            {{ formatMultiplier(adv.aToB) }}
+          </span>
+        </p>
+        <p>
+          Mejor ataque con STAB de <strong>{{ right()?.pokemon?.name }}</strong
+          >:
+          <span class="mult" [class.mult--good]="adv.bToA > 1" [class.mult--bad]="adv.bToA < 1">
+            {{ formatMultiplier(adv.bToA) }}
+          </span>
+        </p>
+      </div>
+    }
+  }
+</div>

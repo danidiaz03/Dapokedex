@@ -29,6 +29,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/type/type-page').then((m) => m.TypePage),
   },
   {
+    path: 'comparar',
+    title: 'Comparar Pokémon · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/compare/compare').then((m) => m.Compare),
+  },
+  {
     path: 'account',
     title: 'Mi cuenta · Dapokedex',
     canActivate: [authGuard],

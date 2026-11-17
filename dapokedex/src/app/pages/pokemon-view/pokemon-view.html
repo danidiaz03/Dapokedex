@@ -86,6 +86,13 @@
             </svg>
             Grito
           </button>
+          <a
+            class="favorite-btn"
+            routerLink="/comparar"
+            [queryParams]="{ a: pokemonDetail()!.name }"
+          >
+            ⚖️ Comparar
+          </a>
           @if (pokemonDetail()!.sprites.other['official-artwork'].front_shiny) {
             <button
               class="favorite-btn"
