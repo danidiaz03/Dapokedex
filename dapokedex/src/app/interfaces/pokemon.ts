@@ -103,7 +103,17 @@ export interface PokemonType {
     double_damage_to: { name: string }[];
     half_damage_to: { name: string }[];
     no_damage_to: { name: string }[];
+    double_damage_from: { name: string }[];
+    half_damage_from: { name: string }[];
+    no_damage_from: { name: string }[];
   };
+  pokemon: { pokemon: { name: string; url: string } }[];
+}
+
+export interface PokemonGeneration {
+  id: number;
+  name: string;
+  pokemon_species: { name: string; url: string }[];
 }
 
 /** Nodo recursivo de una cadena evolutiva (admite ramificaciones como Eevee). */

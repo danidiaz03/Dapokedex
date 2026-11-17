@@ -8,6 +8,7 @@ import {
   PokemonListResponse,
   PokemonMove,
   PokemonType,
+  PokemonGeneration,
   pokemonSpecies,
   pokemonEvolutionChain,
 } from '../interfaces/pokemon';
@@ -90,6 +91,35 @@ export class PokemonService {
   }
 
   public getType(name: string): Promise<PokemonType> {
-    return firstValueFrom(this.getCached<PokemonType>(`${this.apiUrl}/type/${name}`));
+    return firstValueFrom(this.getTypeDetail(name));
+  }
+
+  public getTypeDetail(name: string): Observable<PokemonType> {
+    return this.getCached<PokemonType>(`${this.apiUrl}/type/${name}`);
+  }
+
+  public getGeneration(id: number): Observable<PokemonGeneration> {
+    return this.getCached<PokemonGeneration>(`${this.apiUrl}/generation/${id}`);
+  }
+
+  /** Construye la URL del endpoint /pokemon a partir del id. */
+  public getPokemonUrl(id: number): string {
+    return `${this.apiUrl}/pokemon/${id}/`;
   }
 }
+
+/** Generaciones con su región, para los filtros del listado. */
+export const GENERATIONS = [
+  { id: 1, label: 'I · Kanto' },
+  { id: 2, label: 'II · Johto' },
+  { id: 3, label: 'III · Hoenn' },
+  { id: 4, label: 'IV · Sinnoh' },
+  { id: 5, label: 'V · Teselia' },
+  { id: 6, label: 'VI · Kalos' },
+  { id: 7, label: 'VII · Alola' },
+  { id: 8, label: 'VIII · Galar' },
+  { id: 9, label: 'IX · Paldea' },
+];
+
+/** Las formas alternativas (megas, regionales...) tienen ids a partir de 10001. */
+export const FORMS_ID_START = 10001;

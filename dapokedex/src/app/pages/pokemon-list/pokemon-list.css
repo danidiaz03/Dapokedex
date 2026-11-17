@@ -228,3 +228,35 @@
   color: #1a1a2e;
   align-self: center;
 }
+
+.listing-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.listing-filters select {
+  background: #e8e5ff;
+  border: 1px solid #e8e5ff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: 400 14px/20px Space Grotesk;
+  color: #1a1a2e;
+  cursor: pointer;
+}
+.listing-filters select:focus-visible {
+  outline: none;
+  border-color: #786ec6;
+}
+.clear-filters {
+  background: none;
+  border: none;
+  color: #9e0000;
+  font: 700 14px/20px Space Grotesk;
+  cursor: pointer;
+}
+.listing-count {
+  font: 400 14px/20px Space Grotesk;
+  color: #5e3f3a;
+}

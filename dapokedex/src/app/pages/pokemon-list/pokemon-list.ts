@@ -4,19 +4,25 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   Observable,
   Subject,
+  Subscription,
   catchError,
   debounceTime,
-  distinctUntilChanged,
   forkJoin,
   map,
   of,
   switchMap,
 } from 'rxjs';
-import { PokemonService, getArtworkUrl, getIdFromUrl } from '../../services/pokemon';
+import {
+  FORMS_ID_START,
+  GENERATIONS,
+  PokemonService,
+  getArtworkUrl,
+  getIdFromUrl,
+} from '../../services/pokemon';
 import { PokemonMiniatureDetail, PokemonResult } from '../../interfaces/pokemon';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
-import { TypeNamePipe } from '../../pipes/type-name.pipe';
+import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
 
 const PAGE_SIZE = 24;
 // Máximo de resultados de búsqueda a cargar: buscar "a" coincidía con cientos
@@ -49,6 +55,16 @@ export class PokemonList implements OnInit {
   public searchResults = signal<PokemonMiniatureDetail[]>([]);
   public favorites = signal<number[]>([]);
 
+  // Filtros (también se guardan en la URL: ?type=fire&gen=1)
+  public readonly types = ALL_TYPES;
+  public readonly generations = GENERATIONS;
+  public typeFilter = signal('');
+  public genFilter = signal<number | null>(null);
+  public hasFilters = computed(() => !!this.typeFilter() || this.genFilter() !== null);
+  /** Lista completa que cumple los filtros, o null si no hay filtros activos. */
+  private filteredBase = signal<PokemonResult[] | null>(null);
+  private loadSub?: Subscription;
+
   public totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / PAGE_SIZE)));
 
   public filteredPokemons = computed(() => {
@@ -66,14 +82,18 @@ export class PokemonList implements OnInit {
     // La página vive en la URL (?page=3) para conservarla al volver del detalle.
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const page = Math.max(1, Number(params.get('page')) || 1);
+      const gen = Number(params.get('gen'));
+      const type = params.get('type') ?? '';
+      this.typeFilter.set(ALL_TYPES.includes(type) ? type : '');
+      this.genFilter.set(GENERATIONS.some((g) => g.id === gen) ? gen : null);
       this.loadPage(page);
+      if (this.searchTerm()) this.search$.next(this.searchTerm());
     });
 
     this.search$
       .pipe(
         map((term) => term.trim().toLowerCase()),
         debounceTime(300),
-        distinctUntilChanged(),
         switchMap((term) => this.searchPokemons(term)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -94,24 +114,92 @@ export class PokemonList implements OnInit {
     this.isLoading.set(true);
     this.hasError.set(false);
 
-    this.pokemonService
-      .getPokemonList((page - 1) * PAGE_SIZE, PAGE_SIZE)
-      .pipe(
-        switchMap((data) => {
-          this.totalCount.set(data.count);
-          return this.toMiniatures(data.results);
-        }),
-      )
-      .subscribe({
-        next: (miniatures) => {
-          this.pokemons.set(miniatures);
-          this.isLoading.set(false);
-        },
-        error: () => {
-          this.hasError.set(true);
-          this.isLoading.set(false);
-        },
-      });
+    const offset = (page - 1) * PAGE_SIZE;
+    // Sin filtros paginamos en PokeAPI; con filtros obtenemos la lista completa
+    // (endpoints /type y /generation) y paginamos en el cliente.
+    const pageResults$: Observable<PokemonResult[]> = this.hasFilters()
+      ? this.getFilteredList().pipe(
+          map((list) => {
+            this.filteredBase.set(list);
+            this.totalCount.set(list.length);
+            return list.slice(offset, offset + PAGE_SIZE);
+          }),
+        )
+      : this.pokemonService.getPokemonList(offset, PAGE_SIZE).pipe(
+          map((data) => {
+            this.filteredBase.set(null);
+            this.totalCount.set(data.count);
+            return data.results;
+          }),
+        );
+
+    this.loadSub?.unsubscribe();
+    this.loadSub = pageResults$.pipe(switchMap((results) => this.toMiniatures(results))).subscribe({
+      next: (miniatures) => {
+        this.pokemons.set(miniatures);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.hasError.set(true);
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+  /** Intersección de los Pokémon del tipo y la generación elegidos, ordenados por número. */
+  private getFilteredList(): Observable<PokemonResult[]> {
+    const sources: Observable<PokemonResult[]>[] = [];
+    const type = this.typeFilter();
+    const gen = this.genFilter();
+
+    if (type) {
+      sources.push(
+        this.pokemonService.getTypeDetail(type).pipe(map((d) => d.pokemon.map((p) => p.pokemon))),
+      );
+    }
+    if (gen !== null) {
+      sources.push(
+        this.pokemonService.getGeneration(gen).pipe(
+          map((d) =>
+            d.pokemon_species.map((s) => ({
+              name: s.name,
+              url: this.pokemonService.getPokemonUrl(getIdFromUrl(s.url)),
+            })),
+          ),
+        ),
+      );
+    }
+
+    return forkJoin(sources).pipe(
+      map((lists) => {
+        const [first, ...rest] = lists.map((list) =>
+          list.filter((p) => getIdFromUrl(p.url) < FORMS_ID_START),
+        );
+        const restIds = rest.map((list) => new Set(list.map((p) => getIdFromUrl(p.url))));
+        return first
+          .filter((p) => restIds.every((ids) => ids.has(getIdFromUrl(p.url))))
+          .sort((a, b) => getIdFromUrl(a.url) - getIdFromUrl(b.url));
+      }),
+    );
+  }
+
+  setTypeFilter(type: string): void {
+    this.updateFilters({ type: type || null });
+  }
+
+  setGenFilter(gen: string): void {
+    this.updateFilters({ gen: gen ? Number(gen) : null });
+  }
+
+  clearFilters(): void {
+    this.updateFilters({ type: null, gen: null });
+  }
+
+  private updateFilters(params: { type?: string | null; gen?: number | null }): void {
+    this.router.navigate([], {
+      queryParams: { ...params, page: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   /** forkJoin mantiene el orden original, a diferencia de ir haciendo push al llegar. */
@@ -136,8 +224,9 @@ export class PokemonList implements OnInit {
       this.searchMatches.set(0);
       return of([]);
     }
-    // Se puede buscar por nombre o por número de Pokédex.
-    const matches = this.allPokemons().filter(
+    // Se puede buscar por nombre o por número de Pokédex, dentro de los filtros activos.
+    const source = this.filteredBase() ?? this.allPokemons();
+    const matches = source.filter(
       (p) => p.name.includes(term) || String(getIdFromUrl(p.url)) === term,
     );
     this.searchMatches.set(matches.length);
@@ -170,7 +259,10 @@ export class PokemonList implements OnInit {
 
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
-    this.router.navigate([], { queryParams: { page: page === 1 ? null : page } });
+    this.router.navigate([], {
+      queryParams: { page: page === 1 ? null : page },
+      queryParamsHandling: 'merge',
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 

@@ -8,6 +8,31 @@
     (input)="onSearch($any($event.target).value)"
   />
 
+  <div class="listing-filters">
+    <select
+      aria-label="Filtrar por tipo"
+      [value]="typeFilter()"
+      (change)="setTypeFilter($any($event.target).value)"
+    >
+      <option value="">Todos los tipos</option>
+      @for (type of types; track type) {
+        <option [value]="type" [selected]="type === typeFilter()">{{ type | tipo }}</option>
+      }
+    </select>
+    <select aria-label="Filtrar por generación" (change)="setGenFilter($any($event.target).value)">
+      <option value="">Todas las generaciones</option>
+      @for (gen of generations; track gen.id) {
+        <option [value]="gen.id" [selected]="gen.id === genFilter()">{{ gen.label }}</option>
+      }
+    </select>
+    @if (hasFilters()) {
+      <button class="clear-filters" (click)="clearFilters()">Quitar filtros</button>
+      @if (!isLoading() && !searchTerm()) {
+        <span class="listing-count">{{ totalCount() }} Pokémon</span>
+      }
+    }
+  </div>
+
   @if (searchTerm()) {
     <p class="listing-status">
       @if (isSearching()) {
@@ -28,6 +53,8 @@
     </div>
   } @else if (isLoading()) {
     <p class="listing-status">Cargando Pokémon...</p>
+  } @else if (hasFilters() && totalCount() === 0) {
+    <p class="listing-status">Ningún Pokémon cumple estos filtros.</p>
   }
 
   <div class="pokemon-listing" [class.pokemon-listing--loading]="isLoading() && !searchTerm()">
