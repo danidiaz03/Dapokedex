@@ -260,3 +260,16 @@
   font: 400 14px/20px Space Grotesk;
   color: #5e3f3a;
 }
+.random-btn {
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font: 600 14px/20px Space Grotesk;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.random-btn:hover {
+  background: #9e0000;
+}

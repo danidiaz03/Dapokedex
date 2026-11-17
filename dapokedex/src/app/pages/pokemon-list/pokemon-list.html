@@ -25,6 +25,7 @@
         <option [value]="gen.id" [selected]="gen.id === genFilter()">{{ gen.label }}</option>
       }
     </select>
+    <button class="random-btn" type="button" (click)="openRandom()">🎲 Pokémon aleatorio</button>
     @if (hasFilters()) {
       <button class="clear-filters" (click)="clearFilters()">Quitar filtros</button>
       @if (!isLoading() && !searchTerm()) {

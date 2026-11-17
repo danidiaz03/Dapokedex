@@ -29,6 +29,9 @@ const PAGE_SIZE = 24;
 // de Pokémon y se lanzaba una petición de detalle por cada uno.
 const MAX_SEARCH_RESULTS = 24;
 
+// Último Pokémon con número de Pokédex nacional (las formas tienen ids > 10000).
+const LAST_NATIONAL_DEX = 1025;
+
 @Component({
   selector: 'app-pokemon-list',
   imports: [RouterLink, TypeNamePipe],
@@ -258,6 +261,12 @@ export class PokemonList implements OnInit {
   }
 
   /** Permite abrir la ficha con Enter cuando la tarjeta tiene el foco. */
+  /** Abre la ficha de un Pokémon al azar de la Pokédex nacional. */
+  openRandom(): void {
+    const id = Math.floor(Math.random() * LAST_NATIONAL_DEX) + 1;
+    this.router.navigate(['/pokemon', id]);
+  }
+
   openPokemon(name: string): void {
     this.router.navigate(['/pokemon', name]);
   }
