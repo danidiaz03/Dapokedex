@@ -1,4 +1,12 @@
-@if (pokemonDetail()) {
+@if (notFound()) {
+  <div class="not-found c-container">
+    <h2>No hemos encontrado a "{{ pokemonName() }}"</h2>
+    <p>Puede que el nombre esté mal escrito o que ese Pokémon no exista.</p>
+    <a class="back-link" routerLink="/">Volver al listado</a>
+  </div>
+} @else if (!pokemonDetail()) {
+  <p class="loading-detail c-container">Cargando Pokémon...</p>
+} @else {
   <div class="detailContainer c-bg-{{ pokemonDetail()!.types[0].type.name }}">
     <div class="pokemon-info c-container">
       <div class="left-column">
@@ -13,101 +21,167 @@
             </span>
           }
         </div>
-        <button
-          class="favorite-btn"
-          [class.favorite-btn--active]="isFavorite()"
-          (click)="toggleFavorite()"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+        <div class="detail-actions">
+          <button
+            class="favorite-btn"
+            [class.favorite-btn--active]="isFavorite()"
+            [attr.aria-pressed]="isFavorite()"
+            (click)="toggleFavorite()"
           >
-            <path
-              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-            />
-          </svg>
-          {{ isFavorite() ? 'Quitar de favoritos' : 'Añadir a favoritos' }}
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+            {{ isFavorite() ? 'Quitar de favoritos' : 'Añadir a favoritos' }}
+          </button>
+          <button class="favorite-btn" (click)="playCry()" aria-label="Escuchar grito">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+            Grito
+          </button>
+        </div>
       </div>
       <div class="detailImageContainer">
-        <img [src]="pokemonDetail()!.sprites.other['official-artwork'].front_default" alt="" />
+        <img
+          [src]="pokemonDetail()!.sprites.other['official-artwork'].front_default"
+          [alt]="pokemonDetail()!.name"
+        />
       </div>
     </div>
   </div>
   <div class="c-poke-content c-container">
+    <nav class="dex-nav" aria-label="Navegación entre Pokémon">
+      @if (previousId()) {
+        <a class="dex-nav__link" [routerLink]="['/pokemon', previousId()]">← #{{ previousId() }}</a>
+      } @else {
+        <span></span>
+      }
+      @if (nextId()) {
+        <a class="dex-nav__link" [routerLink]="['/pokemon', nextId()]">#{{ nextId() }} →</a>
+      }
+    </nav>
+
     <div class="poke-tabs">
-      <div class="tabs">
-        <!--
+      <div class="tabs" role="tablist">
         <button
           class="tab"
-          [class.tab--active]="activeTab() === 'about'"
-          (click)="activeTab.set('about')"
-        >
-        
-          About
-        </button>
-        -->
-        <button
-          class="tab"
+          role="tab"
           [class.tab--active]="activeTab() === 'stats'"
-          (click)="activeTab.set('stats')"
+          [attr.aria-selected]="activeTab() === 'stats'"
+          (click)="setTab('stats')"
         >
-          Base Stats
+          Estadísticas
         </button>
         <button
           class="tab"
+          role="tab"
+          [class.tab--active]="activeTab() === 'about'"
+          [attr.aria-selected]="activeTab() === 'about'"
+          (click)="setTab('about')"
+        >
+          Sobre
+        </button>
+        <button
+          class="tab"
+          role="tab"
           [class.tab--active]="activeTab() === 'evolution'"
+          [attr.aria-selected]="activeTab() === 'evolution'"
           (click)="setTab('evolution')"
         >
-          Evolution
+          Evolución
         </button>
-        <!--
-        <button
-          class="tab"
-          [class.tab--active]="activeTab() === 'moves'"
-          (click)="activeTab.set('moves')"
-        >
-          Moves
-        </button>
-        -->
       </div>
 
-      <div class="tab-content">
+      <div class="tab-content" role="tabpanel">
         @if (activeTab() === 'about') {
-          <div class="about-content"></div>
+          <div class="stats-container">
+            <div class="about-title statistic-title">Sobre {{ pokemonDetail()!.name }}</div>
+            @if (genus()) {
+              <p class="about-genus">{{ genus() }}</p>
+            }
+            @if (description()) {
+              <p class="about-description">{{ description() }}</p>
+            } @else if (!species()) {
+              <p class="about-description">Cargando descripción...</p>
+            }
+            <dl class="about-data">
+              <div>
+                <dt>Altura</dt>
+                <dd>{{ pokemonDetail()!.height / 10 }} m</dd>
+              </div>
+              <div>
+                <dt>Peso</dt>
+                <dd>{{ pokemonDetail()!.weight / 10 }} kg</dd>
+              </div>
+              <div>
+                <dt>Habilidades</dt>
+                <dd class="about-abilities">
+                  @for (a of pokemonDetail()!.abilities; track $index) {
+                    <span>{{ a.ability.name }}</span>
+                  }
+                </dd>
+              </div>
+            </dl>
+          </div>
         }
         @if (activeTab() === 'stats') {
-          @if (pokemonDetail()!.stats) {
-            <div class="stats-container">
-              <div class="about-title statistic-title">Estadísticas base</div>
-              <div class="base-statistics">
-                @for (stat of pokemonDetail()!.stats; track $index) {
-                  <div class="stat-row">
-                    <span class="stat-row__name">{{ stat.stat.name }}</span>
-                    <span class="stat-row__value">{{ stat.base_stat }}</span>
-                    <div class="stat-row__bar bg-stat-{{ stat.stat.name }}">
-                      <div class="stat-row__bar-fill" [style.width.%]="stat.base_stat"></div>
-                    </div>
+          <div class="stats-container">
+            <div class="about-title statistic-title">Estadísticas base</div>
+            <div class="base-statistics">
+              @for (stat of pokemonDetail()!.stats; track $index) {
+                <div class="stat-row">
+                  <span class="stat-row__name">{{ statLabel(stat.stat.name) }}</span>
+                  <span class="stat-row__value">{{ stat.base_stat }}</span>
+                  <div class="stat-row__bar bg-stat-{{ stat.stat.name }}">
+                    <div
+                      class="stat-row__bar-fill"
+                      [style.width.%]="statPercent(stat.base_stat)"
+                    ></div>
                   </div>
-                }
+                </div>
+              }
+              <div class="stat-row stat-row--total">
+                <span class="stat-row__name">Total</span>
+                <span class="stat-row__value">{{ statTotal() }}</span>
               </div>
             </div>
-          }
+          </div>
         }
         @if (activeTab() === 'evolution') {
           @if (pokeEvolution()) {
-            <app-pokemon-evolution [evolution]="pokeEvolution()!" [pokemonId]="pokemonDetail()!.id" />
+            <app-pokemon-evolution
+              [evolution]="pokeEvolution()!"
+              [pokemonId]="pokemonDetail()!.id"
+            />
+          } @else {
+            <p class="about-description">Cargando evolución...</p>
           }
-        }
-        @if (activeTab() === 'moves') {
-          <div>contenido moves</div>
         }
       </div>
     </div>
