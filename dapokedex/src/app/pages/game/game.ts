@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
@@ -52,6 +52,11 @@ export class Game implements OnInit {
     const pokemons = await this.pokemonService.getPokemons(teamIds);
     this.team.set(pokemons);
   }
+
+  // Los ids de los iniciales son 1, 4 y 7, así que no se pueden usar como índice.
+  selectedStarterName = computed(
+    () => this.starters.find((s) => s.id === this.selectedStarter())?.name ?? '',
+  );
 
   selectStarter(id: number) {
     this.selectedStarter.set(id);

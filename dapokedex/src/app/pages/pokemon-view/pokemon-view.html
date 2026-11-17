@@ -103,7 +103,7 @@
         }
         @if (activeTab() === 'evolution') {
           @if (pokeEvolution()) {
-            <app-pokemon-evolution [evolution]="pokeEvolution()!" [pokemonName]="pokemonName()" />
+            <app-pokemon-evolution [evolution]="pokeEvolution()!" [pokemonId]="pokemonDetail()!.id" />
           }
         }
         @if (activeTab() === 'moves') {

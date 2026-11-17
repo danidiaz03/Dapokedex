@@ -97,3 +97,22 @@
   background: #9e0000;
   color: #fff;
 }
+
+.evolution {
+  text-decoration: none;
+}
+.evolution-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.evolution-stage--branched {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.no-evolution {
+  font: 400 14px/20px Be Vietnam Pro;
+  color: #5e3f3a;
+  width: 100%;
+}

@@ -23,7 +23,7 @@
 
       @if (selectedStarter()) {
         <button class="btn-confirm" (click)="confirmStarter()">
-          ¡Elegir {{ starters[selectedStarter()! - 1]?.name || '' }}!
+          ¡Elegir {{ selectedStarterName() }}!
         </button>
       }
     </div>

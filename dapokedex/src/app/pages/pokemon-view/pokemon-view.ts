@@ -72,7 +72,11 @@ export class PokemonView implements OnInit {
   }
 
   loadEvolution() {
-    this.service.getPokemonSpeciesbyName(this.pokemonName()).subscribe({
+    // Usamos la URL de la especie del propio Pokémon: el nombre de la ruta puede
+    // ser una forma (p. ej. deoxys-normal) que no existe como especie.
+    const speciesUrl = this.pokemonDetail()?.species.url;
+    if (!speciesUrl) return;
+    this.service.getSpeciesByUrl(speciesUrl).subscribe({
       next: (data) => {
         const evolutionChain = data.evolution_chain.url;
         this.service.getEvolutionChainByUrl(evolutionChain).subscribe({
