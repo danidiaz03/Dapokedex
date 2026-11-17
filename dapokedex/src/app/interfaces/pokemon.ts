@@ -39,9 +39,12 @@ export interface PokemonDetail {
 export interface PokemonDetailPage {
   id: number;
   name: string;
+  base_experience: number | null;
   abilities: {
+    is_hidden: boolean;
     ability: {
       name: string;
+      url: string;
     };
   }[];
   types: {
@@ -68,7 +71,14 @@ export interface PokemonDetailPage {
     };
   }[];
   species: { name: string; url: string };
-  moves: { move: { name: string; url: string } }[];
+  moves: {
+    move: { name: string; url: string };
+    version_group_details: {
+      level_learned_at: number;
+      move_learn_method: { name: string };
+      version_group: { name: string; url: string };
+    }[];
+  }[];
   weight: number;
   height: number;
 }
@@ -85,6 +95,29 @@ export interface pokemonSpecies {
     version: { name: string };
   }[];
   genera: { genus: string; language: { name: string } }[];
+  names: LocalizedName[];
+  capture_rate: number;
+  base_happiness: number | null;
+  /** Probabilidad de ser hembra en octavos; -1 si no tiene género. */
+  gender_rate: number;
+  is_legendary: boolean;
+  is_mythical: boolean;
+  is_baby: boolean;
+  habitat: { name: string } | null;
+  generation: { name: string; url: string };
+  egg_groups: { name: string }[];
+  varieties: { is_default: boolean; pokemon: { name: string; url: string } }[];
+}
+
+export interface LocalizedName {
+  name: string;
+  language: { name: string };
+}
+
+export interface PokemonAbility {
+  name: string;
+  names: LocalizedName[];
+  flavor_text_entries: { flavor_text: string; language: { name: string } }[];
 }
 
 export interface PokemonMove {

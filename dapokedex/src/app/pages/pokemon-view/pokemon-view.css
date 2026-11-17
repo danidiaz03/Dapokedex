@@ -251,3 +251,96 @@
   text-transform: capitalize;
   margin-left: 0.3em;
 }
+
+.rarity-badge {
+  margin-left: 8px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  background: #fbbf24;
+  color: #1a1a2e;
+  font: 700 12px/16px Space Grotesk;
+  vertical-align: middle;
+}
+.varieties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.variety-chip {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: #ffffff99;
+  color: #1a1a2e;
+  font: 400 13px/18px Space Grotesk;
+  text-decoration: none;
+  text-transform: capitalize;
+  border: 1px solid transparent;
+}
+.variety-chip--active {
+  border-color: #1a1a2e;
+  font-weight: 700;
+}
+.abilities-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ability {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #f5f3ff;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.ability__name {
+  font: 700 16px/24px Space Grotesk;
+  text-transform: capitalize;
+}
+.ability__hidden {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 9999px;
+  background: #1a1a2e;
+  color: #fff;
+  font: 400 11px/16px Space Grotesk;
+  text-transform: none;
+}
+.ability__description {
+  font: 400 14px/20px Be Vietnam Pro;
+  color: #5e3f3a;
+}
+.matchups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.matchup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+.matchup--weak {
+  background: #fee2e2;
+}
+.matchup--resist {
+  background: #dcfce7;
+}
+.matchup--immune {
+  background: #e2e8f0;
+}
+.matchup__label {
+  font: 700 13px/18px Space Grotesk;
+  min-width: 150px;
+}
+.matchup__types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

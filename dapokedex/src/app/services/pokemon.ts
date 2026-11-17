@@ -9,6 +9,7 @@ import {
   PokemonMove,
   PokemonType,
   PokemonGeneration,
+  PokemonAbility,
   pokemonSpecies,
   pokemonEvolutionChain,
 } from '../interfaces/pokemon';
@@ -90,6 +91,10 @@ export class PokemonService {
     return firstValueFrom(this.getCached<PokemonMove>(url));
   }
 
+  public getAbility(url: string): Observable<PokemonAbility> {
+    return this.getCached<PokemonAbility>(url);
+  }
+
   public getType(name: string): Promise<PokemonType> {
     return firstValueFrom(this.getTypeDetail(name));
   }
@@ -106,6 +111,25 @@ export class PokemonService {
   public getPokemonUrl(id: number): string {
     return `${this.apiUrl}/pokemon/${id}/`;
   }
+}
+
+/** Devuelve el texto en español de una lista localizada de PokeAPI, o en inglés como respaldo. */
+export function pickLocalized<T extends { language: { name: string } }>(
+  entries: T[] | undefined,
+): T | undefined {
+  if (!entries) return undefined;
+  return (
+    [...entries].reverse().find((e) => e.language.name === 'es') ??
+    [...entries].reverse().find((e) => e.language.name === 'en')
+  );
+}
+
+/** Limpia los saltos de línea y caracteres de control de los textos de la Pokédex. */
+export function cleanFlavorText(text: string): string {
+  return text
+    .replace(/[\f\n\r\u00ad]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /** Generaciones con su región, para los filtros del listado. */

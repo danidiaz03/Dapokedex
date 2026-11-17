@@ -2,15 +2,27 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import { switchMap } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { PokemonDetailPage, pokemonEvolutionChain, pokemonSpecies } from '../../interfaces/pokemon';
-import { PokemonService } from '../../services/pokemon';
+import { PokemonService, cleanFlavorText, pickLocalized } from '../../services/pokemon';
 import { PokemonEvolution } from '../../componentes/pokemon-evolution/pokemon-evolution';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
-import { TypeNamePipe } from '../../pipes/type-name.pipe';
+import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
 
 type Tab = 'about' | 'stats' | 'evolution';
+
+interface AbilityInfo {
+  name: string;
+  description: string;
+  hidden: boolean;
+}
+
+interface TypeMatchup {
+  label: string;
+  types: string[];
+  tone: 'weak' | 'resist' | 'immune';
+}
 
 const STAT_LABELS: Record<string, string> = {
   hp: 'PS',
@@ -19,6 +31,36 @@ const STAT_LABELS: Record<string, string> = {
   'special-attack': 'At. Esp.',
   'special-defense': 'Def. Esp.',
   speed: 'Velocidad',
+};
+
+const HABITATS: Record<string, string> = {
+  cave: 'Cueva',
+  forest: 'Bosque',
+  grassland: 'Pradera',
+  mountain: 'Montaña',
+  rare: 'Raro',
+  'rough-terrain': 'Terreno escabroso',
+  sea: 'Mar',
+  urban: 'Ciudad',
+  'waters-edge': 'Orilla del agua',
+};
+
+const EGG_GROUPS: Record<string, string> = {
+  monster: 'Monstruo',
+  water1: 'Agua 1',
+  water2: 'Agua 2',
+  water3: 'Agua 3',
+  bug: 'Bicho',
+  flying: 'Volador',
+  ground: 'Campo',
+  fairy: 'Hada',
+  plant: 'Planta',
+  humanshape: 'Humanoide',
+  mineral: 'Mineral',
+  indeterminate: 'Amorfo',
+  ditto: 'Ditto',
+  dragon: 'Dragón',
+  'no-eggs': 'Desconocido',
 };
 
 // Referencia para las barras: casi ningún stat base supera 180, y así los
@@ -46,42 +88,83 @@ export class PokemonView implements OnInit {
   public pokemonDetail = signal<PokemonDetailPage | null>(null);
   public species = signal<pokemonSpecies | null>(null);
   public pokeEvolution = signal<pokemonEvolutionChain | null>(null);
+  public abilities = signal<AbilityInfo[]>([]);
+  public matchups = signal<TypeMatchup[]>([]);
   public isFavorite = signal(false);
   public notFound = signal(false);
+  public showShiny = signal(false);
 
   public statTotal = computed(
     () => this.pokemonDetail()?.stats.reduce((sum, s) => sum + s.base_stat, 0) ?? 0,
   );
 
-  /** Descripción de la Pokédex en español (o en inglés si no hay traducción). */
-  public description = computed(() => {
-    const entries = this.species()?.flavor_text_entries ?? [];
-    const entry =
-      entries.find((e) => e.language.name === 'es') ??
-      entries.find((e) => e.language.name === 'en');
-    return entry?.flavor_text.replace(/[\f\n\r­]+/g, ' ') ?? '';
+  public artwork = computed(() => {
+    const art = this.pokemonDetail()?.sprites.other['official-artwork'];
+    if (!art) return '';
+    return this.showShiny() && art.front_shiny ? art.front_shiny : art.front_default;
   });
 
-  public genus = computed(
-    () => this.species()?.genera.find((g) => g.language.name === 'es')?.genus ?? '',
+  /** Descripción de la Pokédex en español (o en inglés si no hay traducción). */
+  public description = computed(() => {
+    const entry = pickLocalized(this.species()?.flavor_text_entries);
+    return entry ? cleanFlavorText(entry.flavor_text) : '';
+  });
+
+  public genus = computed(() => pickLocalized(this.species()?.genera)?.genus ?? '');
+
+  /** Etiqueta especial para legendarios, singulares y bebés. */
+  public rarity = computed(() => {
+    const s = this.species();
+    if (s?.is_mythical) return 'Singular';
+    if (s?.is_legendary) return 'Legendario';
+    if (s?.is_baby) return 'Bebé';
+    return '';
+  });
+
+  public gender = computed(() => {
+    const rate = this.species()?.gender_rate;
+    if (rate === undefined) return '';
+    if (rate === -1) return 'Sin género';
+    const female = (rate / 8) * 100;
+    return `♂ ${100 - female}% · ♀ ${female}%`;
+  });
+
+  public habitat = computed(() => {
+    const habitat = this.species()?.habitat?.name;
+    return habitat ? (HABITATS[habitat] ?? habitat) : '';
+  });
+
+  public eggGroups = computed(
+    () => this.species()?.egg_groups.map((g) => EGG_GROUPS[g.name] ?? g.name) ?? [],
   );
 
+  /** Formas alternativas: megaevoluciones, formas regionales, Gigamax... */
+  public varieties = computed(() => {
+    const species = this.species();
+    if (!species || species.varieties.length < 2) return [];
+    return species.varieties.map((v) => ({
+      name: v.pokemon.name,
+      label: v.is_default
+        ? 'Normal'
+        : v.pokemon.name.replace(`${species.name}-`, '').replace(/-/g, ' '),
+    }));
+  });
+
   public previousId = computed(() => {
-    const id = this.pokemonDetail()?.id ?? 0;
+    const id = this.dexNumber();
     return id > 1 && id <= LAST_NATIONAL_DEX ? id - 1 : null;
   });
 
   public nextId = computed(() => {
-    const id = this.pokemonDetail()?.id ?? 0;
+    const id = this.dexNumber();
     return id > 0 && id < LAST_NATIONAL_DEX ? id + 1 : null;
   });
 
+  /** Número de Pokédex nacional (para las formas, el de su especie). */
+  public dexNumber = computed(() => this.species()?.id ?? this.pokemonDetail()?.id ?? 0);
+
   statLabel(name: string): string {
     return STAT_LABELS[name] ?? name;
-  }
-
-  formatName(name: string): string {
-    return name.replace(/-/g, ' ');
   }
 
   statPercent(value: number): number {
@@ -90,9 +173,6 @@ export class PokemonView implements OnInit {
 
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
-    if ((tab === 'evolution' || tab === 'about') && this.species() === null) {
-      this.loadSpecies();
-    }
   }
 
   ngOnInit(): void {
@@ -105,8 +185,10 @@ export class PokemonView implements OnInit {
           this.pokemonDetail.set(null);
           this.species.set(null);
           this.pokeEvolution.set(null);
+          this.abilities.set([]);
+          this.matchups.set([]);
           this.notFound.set(false);
-          this.activeTab.set('stats');
+          this.showShiny.set(false);
           this.isFavorite.set(false);
           return this.service.getPokemonDetailbyName(name.toLowerCase());
         }),
@@ -115,7 +197,10 @@ export class PokemonView implements OnInit {
       .subscribe({
         next: async (data) => {
           this.pokemonDetail.set(data);
-          this.title.setTitle(`${this.capitalize(data.name)} · Dapokedex`);
+          this.title.setTitle(`${this.capitalize(data.name.replace(/-/g, ' '))} · Dapokedex`);
+          this.loadSpecies(data);
+          this.loadAbilities(data);
+          this.loadMatchups(data.types.map((t) => t.type.name));
 
           const userId = (await this.authService.waitForUser())?.uid;
           if (userId) {
@@ -152,22 +237,81 @@ export class PokemonView implements OnInit {
     audio.play().catch(() => {});
   }
 
-  loadSpecies() {
+  private loadSpecies(data: PokemonDetailPage) {
     // Usamos la URL de la especie del propio Pokémon: el nombre de la ruta puede
     // ser una forma (p. ej. deoxys-normal) que no existe como especie.
-    const speciesUrl = this.pokemonDetail()?.species.url;
-    if (!speciesUrl) return;
     this.service
-      .getSpeciesByUrl(speciesUrl)
+      .getSpeciesByUrl(data.species.url)
       .pipe(
         switchMap((species) => {
           this.species.set(species);
-          return this.service.getEvolutionChainByUrl(species.evolution_chain.url);
+          return species.evolution_chain
+            ? this.service.getEvolutionChainByUrl(species.evolution_chain.url)
+            : of(null);
         }),
       )
-      .subscribe({
-        next: (response) => this.pokeEvolution.set(response),
+      .subscribe({ next: (chain) => this.pokeEvolution.set(chain) });
+  }
+
+  /** Nombre y descripción de cada habilidad en español. */
+  private loadAbilities(data: PokemonDetailPage) {
+    if (data.abilities.length === 0) return;
+    forkJoin(data.abilities.map((a) => this.service.getAbility(a.ability.url))).subscribe({
+      next: (abilities) =>
+        this.abilities.set(
+          abilities.map((ability, i) => {
+            const flavor = pickLocalized(ability.flavor_text_entries)?.flavor_text;
+            return {
+              name: pickLocalized(ability.names)?.name ?? ability.name.replace(/-/g, ' '),
+              description: flavor ? cleanFlavorText(flavor) : '',
+              hidden: data.abilities[i].is_hidden,
+            };
+          }),
+        ),
+      // Si falla mostramos al menos los nombres que vienen en el propio Pokémon.
+      error: () =>
+        this.abilities.set(
+          data.abilities.map((a) => ({
+            name: a.ability.name.replace(/-/g, ' '),
+            description: '',
+            hidden: a.is_hidden,
+          })),
+        ),
+    });
+  }
+
+  /**
+   * Calcula cuánto daño recibe el Pokémon de cada tipo combinando las
+   * relaciones de daño de sus tipos (p. ej. Charizard recibe x4 de Roca).
+   */
+  private async loadMatchups(defenderTypes: string[]) {
+    try {
+      const typeData = await Promise.all(defenderTypes.map((t) => this.service.getType(t)));
+      const multipliers = ALL_TYPES.map((attacking) => {
+        let multiplier = 1;
+        for (const { damage_relations: r } of typeData) {
+          if (r.double_damage_from.some((t) => t.name === attacking)) multiplier *= 2;
+          if (r.half_damage_from.some((t) => t.name === attacking)) multiplier *= 0.5;
+          if (r.no_damage_from.some((t) => t.name === attacking)) multiplier *= 0;
+        }
+        return { type: attacking, multiplier };
       });
+
+      const group = (value: number) =>
+        multipliers.filter((m) => m.multiplier === value).map((m) => m.type);
+
+      const matchups: TypeMatchup[] = [
+        { label: 'Muy débil (x4)', types: group(4), tone: 'weak' as const },
+        { label: 'Débil (x2)', types: group(2), tone: 'weak' as const },
+        { label: 'Resistente (x½)', types: group(0.5), tone: 'resist' as const },
+        { label: 'Muy resistente (x¼)', types: group(0.25), tone: 'resist' as const },
+        { label: 'Inmune (x0)', types: group(0), tone: 'immune' as const },
+      ].filter((m) => m.types.length > 0);
+
+      this.matchups.set(matchups);
+    } catch {
+      this.matchups.set([]);
+    }
   }
 
   private capitalize(text: string): string {

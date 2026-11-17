@@ -10,7 +10,12 @@
   <div class="detailContainer c-bg-{{ pokemonDetail()!.types[0].type.name }}">
     <div class="pokemon-info c-container">
       <div class="left-column">
-        <span class="id-pokemon"> #{{ pokemonDetail()!.id }} </span>
+        <span class="id-pokemon">
+          #{{ dexNumber() }}
+          @if (rarity()) {
+            <span class="rarity-badge">{{ rarity() }}</span>
+          }
+        </span>
         <h2 class="name-pokemon">
           {{ pokemonDetail()!.name }}
         </h2>
@@ -21,6 +26,19 @@
             </span>
           }
         </div>
+        @if (varieties().length > 0) {
+          <div class="varieties" aria-label="Formas">
+            @for (v of varieties(); track v.name) {
+              <a
+                class="variety-chip"
+                [class.variety-chip--active]="v.name === pokemonDetail()!.name"
+                [routerLink]="['/pokemon', v.name]"
+              >
+                {{ v.label }}
+              </a>
+            }
+          </div>
+        }
         <div class="detail-actions">
           <button
             class="favorite-btn"
@@ -65,13 +83,20 @@
             </svg>
             Grito
           </button>
+          @if (pokemonDetail()!.sprites.other['official-artwork'].front_shiny) {
+            <button
+              class="favorite-btn"
+              [class.favorite-btn--active]="showShiny()"
+              [attr.aria-pressed]="showShiny()"
+              (click)="showShiny.update((v) => !v)"
+            >
+              ✨ {{ showShiny() ? 'Ver normal' : 'Ver shiny' }}
+            </button>
+          }
         </div>
       </div>
       <div class="detailImageContainer">
-        <img
-          [src]="pokemonDetail()!.sprites.other['official-artwork'].front_default"
-          [alt]="pokemonDetail()!.name"
-        />
+        <img [src]="artwork()" [alt]="pokemonDetail()!.name + (showShiny() ? ' shiny' : '')" />
       </div>
     </div>
   </div>
@@ -141,15 +166,56 @@
                 <dt>Peso</dt>
                 <dd>{{ pokemonDetail()!.weight / 10 }} kg</dd>
               </div>
-              <div>
-                <dt>Habilidades</dt>
-                <dd class="about-abilities">
-                  @for (a of pokemonDetail()!.abilities; track $index) {
-                    <span>{{ formatName(a.ability.name) }}</span>
-                  }
-                </dd>
-              </div>
+              @if (gender()) {
+                <div>
+                  <dt>Género</dt>
+                  <dd>{{ gender() }}</dd>
+                </div>
+              }
+              @if (species()) {
+                <div>
+                  <dt>Ratio de captura</dt>
+                  <dd>{{ species()!.capture_rate }} / 255</dd>
+                </div>
+              }
+              @if (habitat()) {
+                <div>
+                  <dt>Hábitat</dt>
+                  <dd>{{ habitat() }}</dd>
+                </div>
+              }
+              @if (eggGroups().length > 0) {
+                <div>
+                  <dt>Grupos huevo</dt>
+                  <dd>{{ eggGroups().join(', ') }}</dd>
+                </div>
+              }
+              @if (pokemonDetail()!.base_experience) {
+                <div>
+                  <dt>Experiencia base</dt>
+                  <dd>{{ pokemonDetail()!.base_experience }}</dd>
+                </div>
+              }
             </dl>
+
+            <div class="about-title statistic-title">Habilidades</div>
+            <ul class="abilities-list">
+              @for (a of abilities(); track $index) {
+                <li class="ability">
+                  <span class="ability__name">
+                    {{ a.name }}
+                    @if (a.hidden) {
+                      <span class="ability__hidden">Oculta</span>
+                    }
+                  </span>
+                  @if (a.description) {
+                    <span class="ability__description">{{ a.description }}</span>
+                  }
+                </li>
+              } @empty {
+                <li class="about-description">Cargando habilidades...</li>
+              }
+            </ul>
           </div>
         }
         @if (activeTab() === 'stats') {
@@ -173,14 +239,26 @@
                 <span class="stat-row__value">{{ statTotal() }}</span>
               </div>
             </div>
+
+            <div class="about-title statistic-title">Efectividad de tipos</div>
+            <p class="about-description">Daño que recibe de cada tipo de ataque.</p>
+            <div class="matchups">
+              @for (m of matchups(); track m.label) {
+                <div class="matchup matchup--{{ m.tone }}">
+                  <span class="matchup__label">{{ m.label }}</span>
+                  <div class="matchup__types">
+                    @for (type of m.types; track type) {
+                      <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
           </div>
         }
         @if (activeTab() === 'evolution') {
           @if (pokeEvolution()) {
-            <app-pokemon-evolution
-              [evolution]="pokeEvolution()!"
-              [pokemonId]="pokemonDetail()!.id"
-            />
+            <app-pokemon-evolution [evolution]="pokeEvolution()!" [pokemonId]="dexNumber()" />
           } @else {
             <p class="about-description">Cargando evolución...</p>
           }
