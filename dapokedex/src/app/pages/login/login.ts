@@ -14,6 +14,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
   'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
   'auth/network-request-failed': 'Error de conexión. Comprueba tu red.',
+  'auth/operation-not-allowed': 'Este método de inicio de sesión no está activado en Firebase.',
+  'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase Authentication.',
   'auth/popup-blocked':
     'El navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes.',
 };
@@ -37,8 +39,15 @@ export class LoginComponent {
   showPassword = signal(false);
 
   private getErrorMessage(error: unknown, fallback: string): string {
-    if (error instanceof FirebaseError) return ERROR_MESSAGES[error.code] ?? fallback;
-    return fallback;
+    if (!(error instanceof FirebaseError)) return fallback;
+    // Si App Check rechaza la petición no es culpa de la contraseña: lo decimos
+    // claramente en vez de mostrar "Email o contraseña incorrectos".
+    if (error.code.includes('app-check') || error.code.includes('appCheck')) {
+      return 'No se pudo verificar la app (App Check). Si estás en local, registra el token de depuración en Firebase Console.';
+    }
+    if (!(error.code in ERROR_MESSAGES))
+      console.error('Error de autenticación:', error.code, error);
+    return ERROR_MESSAGES[error.code] ?? fallback;
   }
 
   async loginWithGoogle() {
