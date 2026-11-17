@@ -59,7 +59,14 @@
 
   <div class="pokemon-listing" [class.pokemon-listing--loading]="isLoading() && !searchTerm()">
     @for (pokemon of filteredPokemons(); track pokemon.id) {
-      <div class="pokemon-miniature" [routerLink]="['/pokemon', pokemon.name]">
+      <div
+        class="pokemon-miniature"
+        role="link"
+        tabindex="0"
+        [attr.aria-label]="'Ver ficha de ' + pokemon.name"
+        [routerLink]="['/pokemon', pokemon.name]"
+        (keydown.enter)="openPokemon(pokemon.name)"
+      >
         <div class="pokemon-miniature__header">
           <span class="pokemon-miniature__name">
             <span class="pokemon-miniature__id">#{{ pokemon.id }}</span>
@@ -69,6 +76,7 @@
             class="favorite-btn"
             [class.favorite-btn--active]="isFavorite(pokemon.id)"
             (click)="toggleFavorite($event, pokemon.id)"
+            (keydown.enter)="$event.stopPropagation()"
             [attr.aria-label]="
               isFavorite(pokemon.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'
             "

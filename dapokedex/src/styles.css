@@ -183,3 +183,15 @@ app-header {
   position: relative;
   z-index: 50;
 }
+
+/* Foco visible para quien navega con teclado */
+[role='link']:focus-visible,
+a:focus-visible,
+button:focus-visible,
+select:focus-visible {
+  outline: 3px solid #786ec6;
+  outline-offset: 2px;
+}
+[role='link'] {
+  cursor: pointer;
+}

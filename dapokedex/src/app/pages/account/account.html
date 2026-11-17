@@ -22,8 +22,20 @@
     } @else {
       <div class="favorites-grid">
         @for (pokemon of favorites(); track pokemon.id) {
-          <div class="pokemon-card" (click)="goToPokemon(pokemon.name)">
-            <button class="remove-favorite" (click)="removeFavorite($event, pokemon.id)">
+          <div
+            class="pokemon-card"
+            role="link"
+            tabindex="0"
+            [attr.aria-label]="'Ver ficha de ' + pokemon.name"
+            (click)="goToPokemon(pokemon.name)"
+            (keydown.enter)="goToPokemon(pokemon.name)"
+          >
+            <button
+              class="remove-favorite"
+              aria-label="Quitar de favoritos"
+              (click)="removeFavorite($event, pokemon.id)"
+              (keydown.enter)="$event.stopPropagation()"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"

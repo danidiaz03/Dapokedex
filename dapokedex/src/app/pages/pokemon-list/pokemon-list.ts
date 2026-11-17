@@ -257,6 +257,11 @@ export class PokemonList implements OnInit {
     }
   }
 
+  /** Permite abrir la ficha con Enter cuando la tarjeta tiene el foco. */
+  openPokemon(name: string): void {
+    this.router.navigate(['/pokemon', name]);
+  }
+
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.router.navigate([], {
