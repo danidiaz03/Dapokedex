@@ -10,6 +10,7 @@ import {
   PokemonType,
   PokemonGeneration,
   PokemonAbility,
+  PokemonItem,
   pokemonSpecies,
   pokemonEvolutionChain,
 } from '../interfaces/pokemon';
@@ -89,6 +90,10 @@ export class PokemonService {
   public getMove(nameOrUrl: string): Promise<PokemonMove> {
     const url = nameOrUrl.startsWith('http') ? nameOrUrl : `${this.apiUrl}/move/${nameOrUrl}`;
     return firstValueFrom(this.getCached<PokemonMove>(url));
+  }
+
+  public getItem(url: string): Observable<PokemonItem> {
+    return this.getCached<PokemonItem>(url);
   }
 
   public getAbility(url: string): Observable<PokemonAbility> {

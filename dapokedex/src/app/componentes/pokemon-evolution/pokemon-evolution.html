@@ -37,12 +37,28 @@
             <div class="center-column">
               <span class="name">{{ step.name }}</span>
               <span class="stage">
-                {{ pokemonId() === step.id ? 'Etapa actual' : 'Evolución' }}
+                #{{ step.id }} · {{ pokemonId() === step.id ? 'Etapa actual' : 'Evolución' }}
               </span>
+              @if (step.types.length) {
+                <span class="evo-types">
+                  @for (t of step.types; track t) {
+                    <span class="type-badge type-badge--{{ t }}">{{ t | tipo }}</span>
+                  }
+                </span>
+              }
             </div>
           </div>
 
-          <span class="min-level">{{ step.requirement }}</span>
+          <span class="requirements" [attr.aria-label]="'Requisito: ' + step.requirement">
+            @for (part of step.parts; track $index) {
+              <span class="min-level">
+                @if (part.icon) {
+                  <img class="item-icon" [src]="part.icon" alt="" width="24" height="24" />
+                }
+                {{ part.text }}
+              </span>
+            }
+          </span>
         </a>
       }
     </div>

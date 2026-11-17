@@ -117,3 +117,32 @@
   color: #5e3f3a;
   width: 100%;
 }
+.requirements {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 50%;
+}
+.evolution .min-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: normal;
+  text-align: right;
+}
+.item-icon {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  margin: -4px 0;
+}
+.evo-types {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.evo-types .type-badge {
+  font-size: 10px;
+  padding: 1px 8px;
+}

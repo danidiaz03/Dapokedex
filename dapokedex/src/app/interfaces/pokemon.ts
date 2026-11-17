@@ -150,14 +150,42 @@ export interface PokemonGeneration {
 }
 
 /** Nodo recursivo de una cadena evolutiva (admite ramificaciones como Eevee). */
+type NamedResource = { name: string; url: string };
+
+/** Condiciones de una evolución. PokeAPI devuelve null en las que no aplican. */
+export interface EvolutionDetail {
+  min_level: number | null;
+  min_happiness?: number | null;
+  min_affection?: number | null;
+  min_beauty?: number | null;
+  trigger?: { name: string };
+  item?: NamedResource | null;
+  held_item?: NamedResource | null;
+  known_move?: NamedResource | null;
+  known_move_type?: NamedResource | null;
+  location?: NamedResource | null;
+  party_species?: NamedResource | null;
+  party_type?: NamedResource | null;
+  trade_species?: NamedResource | null;
+  gender?: number | null;
+  time_of_day?: string;
+  needs_overworld_rain?: boolean;
+  turn_upside_down?: boolean;
+  near_special_rock?: boolean;
+  relative_physical_stats?: number | null;
+  is_default?: boolean;
+}
+
 export interface EvolutionNode {
   species: { name: string; url: string };
-  evolution_details: {
-    min_level: number | null;
-    min_happiness?: number | null;
-    trigger?: { name: string };
-  }[];
+  evolution_details: EvolutionDetail[];
   evolves_to: EvolutionNode[];
+}
+
+export interface PokemonItem {
+  name: string;
+  names: LocalizedName[];
+  sprites: { default: string | null };
 }
 export interface pokemonEvolutionChain {
   chain: EvolutionNode;

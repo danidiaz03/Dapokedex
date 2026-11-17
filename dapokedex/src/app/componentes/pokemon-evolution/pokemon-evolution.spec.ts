@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { PokemonEvolution } from './pokemon-evolution';
 import { EvolutionNode } from '../../interfaces/pokemon';
 
@@ -15,7 +17,9 @@ const node = (
 });
 
 function createComponent(chain: EvolutionNode, pokemonId: number) {
-  TestBed.configureTestingModule({ providers: [provideRouter([])] });
+  TestBed.configureTestingModule({
+    providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+  });
   const fixture = TestBed.createComponent(PokemonEvolution);
   fixture.componentRef.setInput('evolution', { chain });
   fixture.componentRef.setInput('pokemonId', pokemonId);
@@ -49,7 +53,7 @@ describe('PokemonEvolution', () => {
     const stages = createComponent(chain, 133).stages();
 
     expect(stages.length).toBe(2);
-    expect(stages[1].map((p) => p.requirement)).toEqual(['Objeto', 'Amistad']);
+    expect(stages[1].map((p) => p.requirement)).toEqual(['Objeto', 'Amistad alta']);
   });
 
   it('no falla con Pokémon que no evolucionan', () => {
