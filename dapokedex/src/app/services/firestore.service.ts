@@ -1,18 +1,15 @@
 import { Injectable } from '@angular/core';
-import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-} from 'firebase/firestore';
-import { environment } from '../../environments/environment';
+import { doc, getDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { db } from '../firebase';
 
-const app = initializeApp(environment.firebase);
-const db = getFirestore(app);
+export interface UserData {
+  favorites: number[];
+  starter: number | null;
+  collection: number[];
+  team: number[];
+}
+
+export const MAX_TEAM_SIZE = 6;
 
 @Injectable({
   providedIn: 'root',
@@ -22,79 +19,73 @@ export class FirestoreService {
     return doc(db, 'users', userId);
   }
 
-  async getFavorites(userId: string): Promise<number[]> {
+  /** Lee el documento del usuario una sola vez con todos sus campos normalizados. */
+  async getUserData(userId: string): Promise<UserData> {
     const docSnap = await getDoc(this.getUserDoc(userId));
-    return docSnap.exists() ? (docSnap.data()['favorites'] ?? []) : [];
+    const data = docSnap.exists() ? docSnap.data() : {};
+    return {
+      favorites: data['favorites'] ?? [],
+      starter: data['starter'] ?? null,
+      collection: data['collection'] ?? [],
+      team: data['team'] ?? [],
+    };
+  }
+
+  // setDoc con merge crea el documento si no existe y si existe solo toca los
+  // campos indicados, así nos ahorramos la lectura previa en cada escritura.
+  private merge(userId: string, data: Record<string, unknown>) {
+    return setDoc(this.getUserDoc(userId), data, { merge: true });
+  }
+
+  async getFavorites(userId: string): Promise<number[]> {
+    return (await this.getUserData(userId)).favorites;
   }
 
   async addFavorite(userId: string, pokemonId: number) {
-    const ref = this.getUserDoc(userId);
-    const docSnap = await getDoc(ref);
-    if (docSnap.exists()) {
-      await updateDoc(ref, { favorites: arrayUnion(pokemonId) });
-    } else {
-      await setDoc(ref, { favorites: [pokemonId] });
-    }
+    await this.merge(userId, { favorites: arrayUnion(pokemonId) });
   }
 
   async removeFavorite(userId: string, pokemonId: number) {
-    await updateDoc(this.getUserDoc(userId), {
-      favorites: arrayRemove(pokemonId),
-    });
+    await this.merge(userId, { favorites: arrayRemove(pokemonId) });
   }
 
   async getStarter(userId: string): Promise<number | null> {
-    const docSnap = await getDoc(this.getUserDoc(userId));
-    return docSnap.exists() ? (docSnap.data()['starter'] ?? null) : null;
+    return (await this.getUserData(userId)).starter;
   }
 
+  /** Guarda el inicial y lo añade directamente a la colección y al equipo. */
   async setStarter(userId: string, pokemonId: number) {
-    const ref = this.getUserDoc(userId);
-    const docSnap = await getDoc(ref);
-    if (docSnap.exists()) {
-      await updateDoc(ref, { starter: pokemonId, collection: [pokemonId] });
-    } else {
-      await setDoc(ref, { favorites: [], starter: pokemonId, collection: [pokemonId] });
-    }
+    await this.merge(userId, {
+      starter: pokemonId,
+      collection: arrayUnion(pokemonId),
+      team: arrayUnion(pokemonId),
+    });
   }
 
   async getCollection(userId: string): Promise<number[]> {
-    const docSnap = await getDoc(this.getUserDoc(userId));
-    return docSnap.exists() ? (docSnap.data()['collection'] ?? []) : [];
+    return (await this.getUserData(userId)).collection;
   }
 
-  async addToCollection(userId: string, pokemonId: number) {
-    const ref = this.getUserDoc(userId);
-    const docSnap = await getDoc(ref);
-    if (docSnap.exists()) {
-      await updateDoc(ref, { collection: arrayUnion(pokemonId) });
-    } else {
-      await setDoc(ref, { favorites: [], collection: [pokemonId] });
-    }
+  async addToCollection(userId: string, ...pokemonIds: number[]) {
+    if (pokemonIds.length === 0) return;
+    await this.merge(userId, { collection: arrayUnion(...pokemonIds) });
   }
+
   async getTeam(userId: string): Promise<number[]> {
-    const docSnap = await getDoc(this.getUserDoc(userId));
-    return docSnap.exists() ? (docSnap.data()['team'] ?? []) : [];
+    return (await this.getUserData(userId)).team;
   }
 
   async addToTeam(userId: string, pokemonId: number): Promise<void> {
-    const ref = this.getUserDoc(userId);
-    const docSnap = await getDoc(ref);
-    const team = docSnap.exists() ? (docSnap.data()['team'] ?? []) : [];
+    const team = await this.getTeam(userId);
 
-    if (team.length >= 6) throw new Error('El equipo ya tiene 6 Pokémon');
+    if (team.length >= MAX_TEAM_SIZE)
+      throw new Error(`El equipo ya tiene ${MAX_TEAM_SIZE} Pokémon`);
     if (team.includes(pokemonId)) throw new Error('Este Pokémon ya está en el equipo');
 
-    if (docSnap.exists()) {
-      await updateDoc(ref, { team: arrayUnion(pokemonId) });
-    } else {
-      await setDoc(ref, { favorites: [], collection: [], team: [pokemonId] });
-    }
+    await this.merge(userId, { team: arrayUnion(pokemonId) });
   }
 
   async removeFromTeam(userId: string, pokemonId: number): Promise<void> {
-    await updateDoc(this.getUserDoc(userId), {
-      team: arrayRemove(pokemonId),
-    });
+    await this.merge(userId, { team: arrayRemove(pokemonId) });
   }
 }

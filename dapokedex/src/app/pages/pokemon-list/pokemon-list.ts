@@ -32,7 +32,7 @@ export class PokemonList implements OnInit {
   constructor(private pokemonService: PokemonService) {}
 
   async ngOnInit(): Promise<void> {
-    const userId = this.authService.currentUser()?.uid;
+    const userId = (await this.authService.waitForUser())?.uid;
     if (userId) {
       const favs = await this.firestoreService.getFavorites(userId);
       this.favorites.set(favs);

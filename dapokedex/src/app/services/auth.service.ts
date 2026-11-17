@@ -1,44 +1,37 @@
 import { Injectable, signal } from '@angular/core';
-import { initializeApp } from 'firebase/app';
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import {
-  getAuth,
   signInWithPopup,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
-import { environment } from '../../environments/environment';
-
-const app = initializeApp(environment.firebase);
-
-// En desarrollo (localhost) usamos un token de depuración en lugar de reCAPTCHA.
-// El token real se genera en la consola del navegador la primera vez y se
-// registra en Firebase Console → App Check → Apps → gestionar tokens de depuración.
-if (!environment.production) {
-  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-}
-
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider(environment.recaptchaSiteKey),
-  isTokenAutoRefreshEnabled: true,
-});
-
-const auth = getAuth(app);
+import { auth } from '../firebase';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  currentUser = signal<User | null>(null);
+  currentUser = signal<User | null>(auth.currentUser);
 
   constructor() {
     onAuthStateChanged(auth, (user) => {
       this.currentUser.set(user);
     });
+  }
+
+  /**
+   * Espera a que Firebase resuelva la sesión persistida y devuelve el usuario.
+   * Al recargar la página `currentUser()` es null durante unos milisegundos,
+   * así que las páginas deben usar esto en vez de leer el signal directamente.
+   */
+  async waitForUser(): Promise<User | null> {
+    await auth.authStateReady();
+    this.currentUser.set(auth.currentUser);
+    return auth.currentUser;
   }
 
   loginWithGoogle() {
@@ -52,6 +45,10 @@ export class AuthService {
 
   registerWithEmail(email: string, password: string) {
     return createUserWithEmailAndPassword(auth, email, password);
+  }
+
+  resetPassword(email: string) {
+    return sendPasswordResetEmail(auth, email);
   }
 
   logout() {

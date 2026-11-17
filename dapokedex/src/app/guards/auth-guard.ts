@@ -1,19 +1,18 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = () => {
+// Antes se registraba un onAuthStateChanged en cada navegación y nunca se
+// desuscribía; authStateReady() resuelve una sola vez y no deja listeners vivos.
+export const authGuard: CanActivateFn = async () => {
   const router = inject(Router);
-  const auth = getAuth();
+  const user = await inject(AuthService).waitForUser();
+  return user ? true : router.createUrlTree(['/login']);
+};
 
-  return new Promise((resolve) => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        resolve(true);
-      } else {
-        router.navigate(['/login']);
-        resolve(false);
-      }
-    });
-  });
+// Evita que un usuario ya autenticado vuelva a ver la pantalla de login.
+export const guestGuard: CanActivateFn = async () => {
+  const router = inject(Router);
+  const user = await inject(AuthService).waitForUser();
+  return user ? router.createUrlTree(['/']) : true;
 };

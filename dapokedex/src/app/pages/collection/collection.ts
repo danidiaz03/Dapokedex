@@ -28,9 +28,7 @@ export class Collection implements OnInit {
   }
 
   async ngOnInit() {
-    await this.waitForUser();
-
-    const userId = this.authService.currentUser()?.uid;
+    const userId = (await this.authService.waitForUser())?.uid;
     if (!userId) return;
 
     const [collectionIds, teamIds] = await Promise.all([
@@ -48,16 +46,6 @@ export class Collection implements OnInit {
     this.filteredPokemons.set(pokemons);
     this.teamIds.set(teamIds);
     this.loading.set(false);
-  }
-
-  waitForUser(): Promise<void> {
-    return new Promise((resolve) => {
-      const check = () => {
-        if (this.authService.currentUser() !== null) resolve();
-        else setTimeout(check, 100);
-      };
-      check();
-    });
   }
 
   onSearch(term: string) {

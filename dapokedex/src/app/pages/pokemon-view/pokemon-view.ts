@@ -47,7 +47,7 @@ export class PokemonView implements OnInit {
         next: async (data) => {
           this.pokemonDetail.set(data);
 
-          const userId = this.authService.currentUser()?.uid;
+          const userId = (await this.authService.waitForUser())?.uid;
           if (userId) {
             const favs = await this.firestoreService.getFavorites(userId);
             this.isFavorite.set(favs.includes(data.id));

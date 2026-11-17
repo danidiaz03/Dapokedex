@@ -21,7 +21,7 @@ export class Account implements OnInit {
   loading = signal(true);
 
   async ngOnInit() {
-    const userId = this.user()?.uid;
+    const userId = (await this.authService.waitForUser())?.uid;
     if (!userId) return;
 
     const favoriteIds = await this.firestoreService.getFavorites(userId);

@@ -31,7 +31,7 @@ export class Game implements OnInit {
   }
 
   async ngOnInit() {
-    const userId = this.authService.currentUser()?.uid;
+    const userId = (await this.authService.waitForUser())?.uid;
     if (!userId) return;
 
     const starter = await this.firestoreService.getStarter(userId);
