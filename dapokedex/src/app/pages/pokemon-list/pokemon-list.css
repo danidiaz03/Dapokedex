@@ -182,3 +182,46 @@
 .favorite-btn--active svg {
   fill: #cc0000;
 }
+
+.pokemon-miniature {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.pokemon-miniature__id {
+  color: #786ec6;
+  font-weight: 400;
+  margin-right: 4px;
+}
+.pokemon-miniature__image {
+  height: auto;
+}
+.pokemon-listing--loading {
+  opacity: 0.4;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.listing-status {
+  font: 400 14px/20px Space Grotesk;
+  color: #5e3f3a;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.listing-status--error {
+  color: #9e0000;
+}
+.retry-btn {
+  border: 1px solid #9e0000;
+  background: transparent;
+  color: #9e0000;
+  border-radius: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.pagination-info {
+  font: 700 14px/20px Space Grotesk;
+  color: #1a1a2e;
+  align-self: center;
+}

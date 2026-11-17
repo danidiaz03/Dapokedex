@@ -3,19 +3,49 @@
     type="search"
     name="listing-search"
     id="listing-search"
-    placeholder="Buscar Pokemon..."
+    placeholder="Buscar Pokémon por nombre o número..."
+    aria-label="Buscar Pokémon"
     (input)="onSearch($any($event.target).value)"
   />
 
-  <div class="pokemon-listing">
-    @for (pokemon of filteredPokemons(); track $index) {
+  @if (searchTerm()) {
+    <p class="listing-status">
+      @if (isSearching()) {
+        Buscando...
+      } @else if (searchMatches() === 0) {
+        No se ha encontrado ningún Pokémon con "{{ searchTerm() }}".
+      } @else if (searchMatches() > filteredPokemons().length) {
+        Mostrando {{ filteredPokemons().length }} de {{ searchMatches() }} resultados. Afina la
+        búsqueda para ver más.
+      } @else {
+        {{ searchMatches() }} {{ searchMatches() === 1 ? 'resultado' : 'resultados' }}
+      }
+    </p>
+  } @else if (hasError()) {
+    <div class="listing-status listing-status--error">
+      No se pudo cargar el listado.
+      <button class="retry-btn" (click)="retry()">Reintentar</button>
+    </div>
+  } @else if (isLoading()) {
+    <p class="listing-status">Cargando Pokémon...</p>
+  }
+
+  <div class="pokemon-listing" [class.pokemon-listing--loading]="isLoading() && !searchTerm()">
+    @for (pokemon of filteredPokemons(); track pokemon.id) {
       <div class="pokemon-miniature" [routerLink]="['/pokemon', pokemon.name]">
         <div class="pokemon-miniature__header">
-          <span class="pokemon-miniature__name">{{ pokemon.name }}</span>
+          <span class="pokemon-miniature__name">
+            <span class="pokemon-miniature__id">#{{ pokemon.id }}</span>
+            {{ pokemon.name }}
+          </span>
           <button
             class="favorite-btn"
             [class.favorite-btn--active]="isFavorite(pokemon.id)"
             (click)="toggleFavorite($event, pokemon.id)"
+            [attr.aria-label]="
+              isFavorite(pokemon.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'
+            "
+            [attr.aria-pressed]="isFavorite(pokemon.id)"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -35,7 +65,14 @@
           </button>
         </div>
         <div class="pokemon-miniature-image-container">
-          <img [src]="pokemon.img" [alt]="pokemon.name" class="pokemon-miniature__image" />
+          <img
+            [src]="pokemon.img"
+            [alt]="pokemon.name"
+            class="pokemon-miniature__image"
+            loading="lazy"
+            width="475"
+            height="475"
+          />
         </div>
         <div class="pokemon-miniature__types">
           @for (t of pokemon.types; track $index) {
@@ -50,7 +87,11 @@
 
   @if (!searchTerm()) {
     <div class="pagination">
-      <button class="pagination-btn" (click)="goTo(previousUrl())" [disabled]="!previousUrl()">
+      <button
+        class="pagination-btn"
+        (click)="goToPage(page() - 1)"
+        [disabled]="page() <= 1 || isLoading()"
+      >
         <div class="icon-container">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -65,11 +106,17 @@
             />
           </svg>
         </div>
-        <span>PREV</span>
+        <span>ANTERIOR</span>
       </button>
 
-      <button class="pagination-btn" (click)="goTo(nextUrl())" [disabled]="!nextUrl()">
-        <span>NEXT</span>
+      <span class="pagination-info">{{ page() }} / {{ totalPages() }}</span>
+
+      <button
+        class="pagination-btn"
+        (click)="goToPage(page() + 1)"
+        [disabled]="page() >= totalPages() || isLoading()"
+      >
+        <span>SIGUIENTE</span>
         <div class="icon-container">
           <svg
             xmlns="http://www.w3.org/2000/svg"
