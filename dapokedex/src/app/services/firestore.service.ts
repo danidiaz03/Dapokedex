@@ -11,6 +11,8 @@ export interface UserData {
   starter: number | null;
   collection: number[];
   team: number[];
+  /** Progreso del entrenador sin normalizar (ver game/progress.ts). */
+  progress?: Record<string, unknown>;
 }
 
 export const MAX_TEAM_SIZE = 6;
@@ -32,6 +34,7 @@ export class FirestoreService {
       starter: data['starter'] ?? null,
       collection: data['collection'] ?? [],
       team: data['team'] ?? [],
+      progress: data['progress'],
     };
   }
 
@@ -87,6 +90,14 @@ export class FirestoreService {
     if (team.includes(pokemonId)) throw new Error('Este Pokémon ya está en el equipo');
 
     await this.merge(userId, { team: arrayUnion(pokemonId) });
+  }
+
+  /**
+   * Sustituye el campo progress completo. Con merge normal Firestore fusionaría
+   * los mapas anidados y no se borrarían los contadores de días anteriores.
+   */
+  async saveProgress(userId: string, progress: object): Promise<void> {
+    await setDoc(this.getUserDoc(userId), { progress }, { mergeFields: ['progress'] });
   }
 
   async removeFromTeam(userId: string, pokemonId: number): Promise<void> {

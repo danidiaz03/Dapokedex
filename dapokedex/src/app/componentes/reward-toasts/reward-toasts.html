@@ -1,0 +1,35 @@
+<div class="toasts" aria-live="polite">
+  @for (toast of feed.toasts(); track toast.id) {
+    <button class="toast toast--{{ toast.tone }}" (click)="feed.dismiss(toast.id)">
+      <span class="toast__icon" aria-hidden="true">{{ toast.icon }}</span>
+      <span class="toast__body">
+        <strong>{{ toast.title }}</strong>
+        @if (toast.text) {
+          <span>{{ toast.text }}</span>
+        }
+      </span>
+    </button>
+  }
+</div>
+
+@if (feed.levelUp(); as up) {
+  <div class="level-up" role="alert" (click)="feed.levelUp.set(null)">
+    @for (c of confetti; track $index) {
+      <span
+        class="confetti"
+        [style.left.%]="c.left"
+        [style.animation-delay.s]="c.delay"
+        [style.background]="c.color"
+      ></span>
+    }
+    <div class="level-up__card">
+      <span class="level-up__eyebrow">¡Subes de nivel!</span>
+      <span class="level-up__level">{{ up.level }}</span>
+      @if (up.unlock) {
+        <span class="level-up__unlock">🗺️ Desbloqueas rivales de {{ up.unlock }}</span>
+      } @else {
+        <span class="level-up__unlock">Sigue así, entrenador</span>
+      }
+    </div>
+  </div>
+}
