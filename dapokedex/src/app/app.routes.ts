@@ -3,6 +3,8 @@ import { authGuard, guestGuard } from './guards/auth-guard';
 
 // Cada página se carga bajo demanda (lazy loading) para reducir el bundle
 // inicial: antes todo, incluida la batalla, se descargaba al abrir la web.
+// La Pokédex (listado, fichas, tipos y comparador) es pública para que se pueda
+// compartir; la cuenta solo hace falta para favoritos, colección y juego.
 export const routes: Routes = [
   {
     path: 'login',
@@ -13,25 +15,21 @@ export const routes: Routes = [
   {
     path: '',
     title: 'Pokédex · Dapokedex',
-    canActivate: [authGuard],
     loadComponent: () => import('./pages/pokemon-list/pokemon-list').then((m) => m.PokemonList),
   },
   {
     path: 'pokemon/:name',
     title: 'Pokémon · Dapokedex',
-    canActivate: [authGuard],
     loadComponent: () => import('./pages/pokemon-view/pokemon-view').then((m) => m.PokemonView),
   },
   {
     path: 'tipo/:name',
     title: 'Tipo · Dapokedex',
-    canActivate: [authGuard],
     loadComponent: () => import('./pages/type/type-page').then((m) => m.TypePage),
   },
   {
     path: 'comparar',
     title: 'Comparar Pokémon · Dapokedex',
-    canActivate: [authGuard],
     loadComponent: () => import('./pages/compare/compare').then((m) => m.Compare),
   },
   {

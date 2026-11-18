@@ -4,10 +4,11 @@ import { AuthService } from '../services/auth.service';
 
 // Antes se registraba un onAuthStateChanged en cada navegación y nunca se
 // desuscribía; authStateReady() resuelve una sola vez y no deja listeners vivos.
-export const authGuard: CanActivateFn = async () => {
+export const authGuard: CanActivateFn = async (_route, state) => {
   const router = inject(Router);
   const user = await inject(AuthService).waitForUser();
-  return user ? true : router.createUrlTree(['/login']);
+  // Guardamos la ruta pedida para volver a ella después de iniciar sesión.
+  return user ? true : router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 
 // Evita que un usuario ya autenticado vuelva a ver la pantalla de login.

@@ -16,10 +16,13 @@ import { auth } from '../firebase';
 })
 export class AuthService {
   currentUser = signal<User | null>(auth.currentUser);
+  /** false hasta que Firebase resuelve la sesión guardada (evita parpadeos en la UI). */
+  authReady = signal(false);
 
   constructor() {
     onAuthStateChanged(auth, (user) => {
       this.currentUser.set(user);
+      this.authReady.set(true);
     });
   }
 

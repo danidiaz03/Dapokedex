@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FirebaseError } from 'firebase/app';
 import { AuthService } from '../../services/auth.service';
@@ -29,6 +29,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   email = '';
   password = '';
@@ -37,6 +38,16 @@ export class LoginComponent {
   errorMessage = signal('');
   infoMessage = signal('');
   showPassword = signal(false);
+
+  /**
+   * Vuelve a la página desde la que se pidió iniciar sesión (?returnUrl=...).
+   * Solo se aceptan rutas internas para no permitir redirecciones a otros dominios.
+   */
+  private goBack() {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    const safe = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//');
+    this.router.navigateByUrl(safe ? returnUrl : '/');
+  }
 
   private getErrorMessage(error: unknown, fallback: string): string {
     if (!(error instanceof FirebaseError)) return fallback;
@@ -55,7 +66,7 @@ export class LoginComponent {
     this.isLoading.set(true);
     try {
       await this.authService.loginWithGoogle();
-      this.router.navigate(['/']);
+      this.goBack();
     } catch (error) {
       // Cerrar la ventana de Google no es un error que haya que mostrar.
       if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') return;
@@ -75,7 +86,7 @@ export class LoginComponent {
       } else {
         await this.authService.loginWithEmail(this.email.trim(), this.password);
       }
-      this.router.navigate(['/']);
+      this.goBack();
     } catch (error) {
       this.errorMessage.set(
         this.getErrorMessage(

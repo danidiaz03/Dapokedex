@@ -1,6 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { PokemonDetailPage, pokemonEvolutionChain, pokemonSpecies } from '../../interfaces/pokemon';
@@ -119,6 +119,7 @@ export class PokemonView implements OnInit {
   private authService = inject(AuthService);
   private firestoreService = inject(FirestoreService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private service = inject(PokemonService);
   private title = inject(Title);
   private destroyRef = inject(DestroyRef);
@@ -366,7 +367,12 @@ export class PokemonView implements OnInit {
   async toggleFavorite(): Promise<void> {
     const userId = this.authService.currentUser()?.uid;
     const pokemonId = this.pokemonDetail()?.id;
-    if (!userId || !pokemonId) return;
+    // Sin sesión, guardar favoritos lleva a iniciar sesión.
+    if (!userId) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    if (!pokemonId) return;
 
     const wasFavorite = this.isFavorite();
     this.isFavorite.set(!wasFavorite);

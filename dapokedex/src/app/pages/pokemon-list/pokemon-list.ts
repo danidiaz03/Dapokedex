@@ -255,7 +255,11 @@ export class PokemonList implements OnInit {
   async toggleFavorite(event: Event, pokemonId: number): Promise<void> {
     event.stopPropagation();
     const userId = this.authService.currentUser()?.uid;
-    if (!userId) return;
+    // Sin sesión, guardar favoritos lleva a iniciar sesión.
+    if (!userId) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
 
     // Actualización optimista: el corazón cambia al instante y se revierte si falla.
     const previous = this.favorites();
