@@ -10,7 +10,7 @@
       >
         Inicio
       </li>
-      <li class="menu-link" routerLink="/tipo/fire" routerLinkActive="active">Tipos</li>
+      <li class="menu-link" routerLink="/tipo/fire" [class.active]="inTypes()">Tipos</li>
       <li class="menu-link" routerLink="/comparar" routerLinkActive="active">Comparar</li>
       <li class="menu-link" routerLink="/game" routerLinkActive="active">Juego</li>
       <li class="menu-link" routerLink="/collection" routerLinkActive="active">Colección</li>
@@ -63,6 +63,43 @@
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
     <span>Inicio</span>
+  </a>
+
+  <a class="mobile-nav-item" routerLink="/tipo/fire" [class.mobile-nav-item--active]="inTypes()">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 2c3 4 6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 3-7 6-11z" />
+    </svg>
+    <span>Tipos</span>
+  </a>
+
+  <a class="mobile-nav-item" routerLink="/comparar" routerLinkActive="mobile-nav-item--active">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <line x1="12" y1="3" x2="12" y2="21" />
+      <path d="M5 7h14" />
+      <path d="M5 7l-3 7a3 3 0 0 0 6 0z" />
+      <path d="M19 7l-3 7a3 3 0 0 0 6 0z" />
+    </svg>
+    <span>Comparar</span>
   </a>
 
   <a class="mobile-nav-item" routerLink="/game" routerLinkActive="mobile-nav-item--active">
