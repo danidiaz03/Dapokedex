@@ -25,6 +25,7 @@ import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
+import { DailyPokemon } from '../../componentes/daily-pokemon/daily-pokemon';
 
 const PAGE_SIZE = 24;
 // Máximo de resultados de búsqueda a cargar: buscar "a" coincidía con cientos
@@ -36,7 +37,7 @@ const LAST_NATIONAL_DEX = 1025;
 
 @Component({
   selector: 'app-pokemon-list',
-  imports: [RouterLink, TypeNamePipe, PokemonNamePipe],
+  imports: [RouterLink, TypeNamePipe, PokemonNamePipe, DailyPokemon],
   templateUrl: './pokemon-list.html',
   styleUrl: './pokemon-list.css',
 })

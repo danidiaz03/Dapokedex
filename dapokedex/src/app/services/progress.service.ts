@@ -40,6 +40,17 @@ export class ProgressService {
     return progress;
   }
 
+  /** Captura el Pokémon del día: lo añade a la colección y da XP una vez al día. */
+  async claimDailyPokemon(pokemonId: number): Promise<boolean> {
+    const userId = (await this.auth.waitForUser())?.uid;
+    if (!userId) return false;
+    const rewards = await this.record({ type: 'daily-pokemon' });
+    if (!rewards.some((r) => r.kind === 'xp' && r.reason === 'Pokémon del día')) return false;
+    await this.firestore.addToCollection(userId, pokemonId);
+    this.collectionSize.update((n) => n + 1);
+    return true;
+  }
+
   /** Aplica un evento de juego, lo guarda y muestra las recompensas. */
   record(event: GameEvent): Promise<Reward[]> {
     const task = this.queue.then(() => this.apply(event));

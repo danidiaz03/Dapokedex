@@ -1,0 +1,99 @@
+.daily {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #fff7ed, #fef3c7);
+  border: 2px solid #fde68a;
+  border-radius: 24px;
+  padding: 16px 24px;
+  margin-bottom: 20px;
+}
+.daily__img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  animation: daily-float 3s ease-in-out infinite;
+}
+.daily__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.daily__eyebrow {
+  font: 700 12px/16px Space Grotesk;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #b45309;
+}
+.daily__name {
+  font: 700 28px/34px Space Grotesk;
+  color: #1a1a2e;
+  text-decoration: none;
+}
+.daily__name:hover {
+  color: #9e0000;
+}
+.daily__types {
+  display: flex;
+  gap: 6px;
+}
+.daily__action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.daily__btn {
+  border: none;
+  background: #b91c1c;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 22px;
+  font: 700 16px Space Grotesk;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.daily__btn:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+.daily__btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.daily__done {
+  font: 700 15px Space Grotesk;
+  color: #15803d;
+}
+.daily__hint {
+  font: 400 12px/16px Be Vietnam Pro;
+  color: #5e3f3a;
+}
+@keyframes daily-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@media (max-width: 575px) {
+  .daily {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+  .daily__img {
+    width: 96px;
+    height: 96px;
+  }
+  .daily__types {
+    justify-content: center;
+  }
+  .daily__action {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily__img {
+    animation: none;
+  }
+}

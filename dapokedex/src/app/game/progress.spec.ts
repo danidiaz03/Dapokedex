@@ -2,6 +2,8 @@ import {
   XP,
   applyEvent,
   dailyChallenges,
+  dailyPokemonClaimed,
+  dailyPokemonId,
   emptyProgress,
   levelFromXp,
   levelProgress,
@@ -158,5 +160,27 @@ describe('ranking semanal', () => {
         { kind: 'level', level: 3 },
       ]),
     ).toBe(170);
+  });
+});
+
+describe('Pokémon del día', () => {
+  it('es estable durante el día y válido', () => {
+    const id = dailyPokemonId(today);
+    expect(dailyPokemonId(today)).toBe(id);
+    expect(id).toBeGreaterThanOrEqual(1);
+    expect(id).toBeLessThanOrEqual(1025);
+  });
+
+  it('solo da la recompensa una vez al día', () => {
+    const first = applyEvent(emptyProgress(), { type: 'daily-pokemon' }, options);
+    const second = applyEvent(first.progress, { type: 'daily-pokemon' }, options);
+    expect(first.rewards).toContainEqual({
+      kind: 'xp',
+      amount: XP.dailyPokemon,
+      reason: 'Pokémon del día',
+    });
+    expect(second.rewards.some((r) => r.kind === 'xp')).toBe(false);
+    expect(dailyPokemonClaimed(second.progress, today)).toBe(true);
+    expect(dailyPokemonClaimed(second.progress, '2026-11-19')).toBe(false);
   });
 });

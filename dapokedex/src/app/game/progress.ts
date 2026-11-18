@@ -31,7 +31,8 @@ export type GameEvent =
       capturedTypes: string[][];
       shinies: number[];
     }
-  | { type: 'guess'; correct: boolean; streak: number };
+  | { type: 'guess'; correct: boolean; streak: number }
+  | { type: 'daily-pokemon' };
 
 export type Reward =
   | { kind: 'xp'; amount: number; reason: string }
@@ -51,6 +52,7 @@ export const XP = {
   perKo: 15,
   newShiny: 200,
   guessCorrect: 10,
+  dailyPokemon: 30,
   /** Extra por cada 5 aciertos seguidos en "Adivina el Pokémon". */
   guessStreakBonus: 25,
   challenge: 50,
@@ -160,6 +162,16 @@ export function dailyChallenges(date: string): DailyChallenge[] {
       goal: 1,
     },
   ];
+}
+
+/** Pokémon del día: el mismo para todos los jugadores durante ese día. */
+export function dailyPokemonId(date: string): number {
+  return Math.floor(seededRandom(`pokemon-${date}`)() * 1025) + 1;
+}
+
+/** ¿Ya se ha capturado hoy el Pokémon del día? */
+export function dailyPokemonClaimed(progress: TrainerProgress | null, today: string): boolean {
+  return progress?.daily.date === today && progress.daily.rewarded.includes('daily-pokemon');
 }
 
 // ---------------------------------------------------------------------------
@@ -419,6 +431,11 @@ export function applyEvent(
     }
   }
 
+  if (event.type === 'daily-pokemon' && !p.daily.rewarded.includes('daily-pokemon')) {
+    p.daily.rewarded.push('daily-pokemon');
+    gainXp(XP.dailyPokemon, 'Pokémon del día');
+  }
+
   // Retos diarios completados con este evento.
   const challenges = dailyChallenges(options.today);
   for (const c of challenges) {
@@ -426,7 +443,7 @@ export function applyEvent(
       p.daily.rewarded.push(c.id);
       p.xp += XP.challenge;
       rewards.push({ kind: 'challenge', title: c.title, xp: XP.challenge });
-      if (p.daily.rewarded.length === challenges.length) {
+      if (challenges.every((ch) => p.daily.rewarded.includes(ch.id))) {
         gainXp(XP.allChallenges, '¡Todos los retos del día!');
       }
     }

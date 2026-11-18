@@ -1,4 +1,7 @@
 <div class="home-content c-container">
+  @if (!searchTerm() && !hasFilters() && page() === 1) {
+    <app-daily-pokemon />
+  }
   <input
     type="search"
     name="listing-search"
