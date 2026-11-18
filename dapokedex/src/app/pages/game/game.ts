@@ -5,6 +5,15 @@ import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService, getArtworkUrl } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
+import { ProgressService } from '../../services/progress.service';
+import {
+  ACHIEVEMENTS,
+  dailyChallenges,
+  dayKey,
+  nextRegion,
+  maxEnemyId,
+  REGIONS,
+} from '../../game/progress';
 
 const STARTERS = [
   { id: 1, name: 'Bulbasaur' },
@@ -23,8 +32,39 @@ export class Game implements OnInit {
   private firestoreService = inject(FirestoreService);
   private pokemonService = inject(PokemonService);
   private router = inject(Router);
+  private progressService = inject(ProgressService);
 
   starters = STARTERS;
+
+  // Progreso del entrenador
+  progress = this.progressService.progress;
+  level = this.progressService.level;
+  xpPercent = computed(() => {
+    const l = this.level();
+    return Math.min(100, (l.current / l.needed) * 100);
+  });
+  region = computed(() => REGIONS.filter((r) => r.level <= this.level().level).at(-1)!);
+  nextRegion = computed(() => nextRegion(this.level().level));
+  maxEnemyId = computed(() => maxEnemyId(this.level().level));
+
+  /** Retos de hoy con su avance. */
+  challenges = computed(() => {
+    const today = dayKey();
+    const daily = this.progress()?.daily;
+    const counters = daily?.date === today ? daily.counters : {};
+    const rewarded = daily?.date === today ? daily.rewarded : [];
+    return dailyChallenges(today).map((c) => {
+      const value = Math.min(counters[c.counter] ?? 0, c.goal);
+      return { ...c, value, percent: (value / c.goal) * 100, done: rewarded.includes(c.id) };
+    });
+  });
+  challengesDone = computed(() => this.challenges().filter((c) => c.done).length);
+
+  achievements = computed(() => {
+    const unlocked = new Set(this.progress()?.achievements ?? []);
+    return ACHIEVEMENTS.map((a) => ({ ...a, unlocked: unlocked.has(a.id) }));
+  });
+  achievementsUnlocked = computed(() => this.achievements().filter((a) => a.unlocked).length);
   hasStarter = signal(false);
   loading = signal(true);
   selectedStarter = signal<number | null>(null);
@@ -37,6 +77,9 @@ export class Game implements OnInit {
   async ngOnInit() {
     const userId = (await this.authService.waitForUser())?.uid;
     if (!userId) return;
+
+    // Cargamos el progreso y contamos la visita para la racha de días.
+    this.progressService.load().then(() => this.progressService.record({ type: 'visit' }));
 
     const starter = await this.firestoreService.getStarter(userId);
     if (starter) {

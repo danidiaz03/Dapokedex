@@ -1,4 +1,87 @@
 <div class="game-wrapper c-container">
+  @if (progress(); as p) {
+    <section class="trainer-card" aria-label="Tu progreso">
+      <div class="trainer-card__level">
+        <span class="trainer-card__level-label">Nivel</span>
+        <span class="trainer-card__level-value">{{ level().level }}</span>
+      </div>
+      <div class="trainer-card__main">
+        <div class="trainer-card__row">
+          <strong>Entrenador de {{ region().name }}</strong>
+          <span class="trainer-card__xp">{{ level().current }} / {{ level().needed }} XP</span>
+        </div>
+        <div
+          class="xp-bar"
+          role="progressbar"
+          [attr.aria-valuenow]="level().current"
+          [attr.aria-valuemax]="level().needed"
+        >
+          <div class="xp-bar__fill" [style.width.%]="xpPercent()"></div>
+        </div>
+        <div class="trainer-card__chips">
+          <span class="chip chip--fire"
+            >🔥 {{ p.streak.days }} {{ p.streak.days === 1 ? 'día' : 'días' }} de racha</span
+          >
+          <span class="chip">🏆 {{ p.stats.battlesWon }} victorias</span>
+          <span class="chip">✨ {{ p.shinies.length }} shiny</span>
+          <span class="chip">🗺️ Rivales hasta el #{{ maxEnemyId() }}</span>
+        </div>
+        @if (nextRegion(); as next) {
+          <p class="trainer-card__next">
+            Próximo desbloqueo: <strong>{{ next.name }}</strong> en el nivel {{ next.level }}
+          </p>
+        }
+      </div>
+    </section>
+
+    <div class="hub-grid">
+      <section class="hub-panel">
+        <div class="hub-panel__header">
+          <h2>Retos de hoy</h2>
+          <span class="hub-panel__count">{{ challengesDone() }}/{{ challenges().length }}</span>
+        </div>
+        <ul class="challenges">
+          @for (c of challenges(); track c.id) {
+            <li class="challenge" [class.challenge--done]="c.done">
+              <span class="challenge__check" aria-hidden="true">{{ c.done ? '✅' : '🎯' }}</span>
+              <div class="challenge__body">
+                <span class="challenge__title">{{ c.title }}</span>
+                <div class="challenge__bar">
+                  <div [style.width.%]="c.percent"></div>
+                </div>
+              </div>
+              <span class="challenge__value">{{ c.value }}/{{ c.goal }}</span>
+            </li>
+          }
+        </ul>
+        <p class="hub-panel__hint">+50 XP por reto y +100 XP extra si completas los tres.</p>
+      </section>
+
+      <section class="hub-panel">
+        <div class="hub-panel__header">
+          <h2>Logros</h2>
+          <span class="hub-panel__count"
+            >{{ achievementsUnlocked() }}/{{ achievements().length }}</span
+          >
+        </div>
+        <ul class="achievements">
+          @for (a of achievements(); track a.id) {
+            <li
+              class="achievement"
+              [class.achievement--locked]="!a.unlocked"
+              [attr.title]="a.title + ': ' + a.description"
+            >
+              <span class="achievement__icon" aria-hidden="true">{{
+                a.unlocked ? a.icon : '🔒'
+              }}</span>
+              <span class="achievement__title">{{ a.title }}</span>
+              <span class="achievement__desc">{{ a.description }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    </div>
+  }
   <a class="minigame-banner" routerLink="/game/guess">
     <span class="minigame-banner__icon" aria-hidden="true">❓</span>
     <span>
