@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { ProgressService } from '../../../services/progress.service';
 import {
   GENERATIONS,
   PokemonService,
@@ -36,6 +37,7 @@ const GENERATION_RANGES: Record<number, [number, number]> = {
 })
 export class Guess implements OnInit, OnDestroy {
   private pokemonService = inject(PokemonService);
+  private progressService = inject(ProgressService);
 
   readonly generations = GENERATIONS;
   generation = signal<number | null>(1);
@@ -121,6 +123,10 @@ export class Guess implements OnInit, OnDestroy {
         this.bestStreak.set(this.streak());
         this.saveBestStreak(this.streak());
       }
+      // Cada acierto suma XP y avanza el reto diario de siluetas.
+      this.progressService
+        .record({ type: 'guess', correct: true, streak: this.streak() })
+        .catch(() => {});
     } else {
       this.streak.set(0);
     }

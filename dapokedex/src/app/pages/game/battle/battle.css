@@ -678,3 +678,35 @@
 .move-btn--empty {
   filter: grayscale(1);
 }
+.shiny-badge {
+  right: auto;
+  left: 8px;
+  background: linear-gradient(135deg, #f59e0b, #ec4899);
+}
+.shiny-mark {
+  font-size: 18px;
+}
+.result-rewards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 16px;
+}
+.result-rewards__xp {
+  font: 700 32px/40px Space Grotesk;
+  color: #15803d;
+  animation: reward-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.result-rewards__item {
+  font: 600 14px/20px Space Grotesk;
+  background: #fef3c7;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+@keyframes reward-pop {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}

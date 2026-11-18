@@ -6,6 +6,11 @@ import { PokemonService, getArtworkUrl } from '../../../services/pokemon';
 import { PokemonDetailPage, PokemonMove } from '../../../interfaces/pokemon';
 import { TypeNamePipe } from '../../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../../pipes/pokemon-name.pipe';
+import { ProgressService } from '../../../services/progress.service';
+import { Reward, SHINY_CHANCE, levelFromXp, maxEnemyId } from '../../../game/progress';
+
+const SHINY_ARTWORK_URL =
+  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny';
 
 interface BattleMove {
   name: string;
@@ -30,6 +35,7 @@ interface BattlePokemon {
   types: string[];
   moves: BattleMove[];
   sprite: string;
+  shiny: boolean;
   fainted: boolean;
 }
 
@@ -68,6 +74,7 @@ export class Battle implements OnInit, OnDestroy {
   private firestoreService = inject(FirestoreService);
   private pokemonService = inject(PokemonService);
   private router = inject(Router);
+  private progressService = inject(ProgressService);
 
   playerTeam = signal<BattlePokemon[]>([]);
   enemyTeam = signal<BattlePokemon[]>([]);
@@ -85,6 +92,9 @@ export class Battle implements OnInit, OnDestroy {
   enemyShaking = signal(false);
   playerFlashing = signal(false);
   enemyFlashing = signal(false);
+  /** Recompensas de la última batalla para el resumen final. */
+  rewards = signal<Reward[]>([]);
+  rewardXp = signal(0);
 
   private logCounter = 0;
   private audioCtx: AudioContext | null = null;
@@ -192,15 +202,20 @@ export class Battle implements OnInit, OnDestroy {
     }
 
     try {
-      const enemyIds = this.generateEnemyIds(teamIds.length, teamIds);
+      // Cuanto más nivel tiene el entrenador, de más regiones salen los rivales.
+      const progress = await this.progressService.load().catch(() => null);
+      const maxId = maxEnemyId(levelFromXp(progress?.xp ?? 0));
+      const ownedShinies = progress?.shinies ?? [];
+      const enemyIds = this.generateEnemyIds(teamIds.length, teamIds, maxId);
       const [playerData, enemyData] = await Promise.all([
         this.pokemonService.getPokemons(teamIds),
         this.pokemonService.getPokemons(enemyIds),
       ]);
 
       const [playerTeam, enemyTeam] = await Promise.all([
-        Promise.all(playerData.map((d) => this.mapPokemon(d))),
-        Promise.all(enemyData.map((d) => this.mapPokemon(d))),
+        // Los shinies capturados aparecen brillantes en tu equipo.
+        Promise.all(playerData.map((d) => this.mapPokemon(d, ownedShinies.includes(d.id)))),
+        Promise.all(enemyData.map((d) => this.mapPokemon(d, Math.random() < SHINY_CHANCE))),
       ]);
 
       this.playerTeam.set(playerTeam);
@@ -213,10 +228,10 @@ export class Battle implements OnInit, OnDestroy {
     this.loading.set(false);
   }
 
-  generateEnemyIds(count: number, exclude: number[] = []): number[] {
+  generateEnemyIds(count: number, exclude: number[] = [], maxId = 151): number[] {
     const ids: number[] = [];
     while (ids.length < count) {
-      const id = Math.floor(Math.random() * 151) + 1;
+      const id = Math.floor(Math.random() * maxId) + 1;
       if (!ids.includes(id) && !exclude.includes(id)) ids.push(id);
     }
     return ids;
@@ -260,7 +275,7 @@ export class Battle implements OnInit, OnDestroy {
     return moves.sort((a, b) => score(b) - score(a)).slice(0, 4);
   }
 
-  async mapPokemon(data: PokemonDetailPage): Promise<BattlePokemon> {
+  async mapPokemon(data: PokemonDetailPage, shiny = false): Promise<BattlePokemon> {
     const getStat = (name: string) => data.stats.find((s) => s.stat.name === name)?.base_stat ?? 50;
     const types = data.types.map((t) => t.type.name);
 
@@ -276,7 +291,8 @@ export class Battle implements OnInit, OnDestroy {
       speed: getStat('speed'),
       types,
       moves: await this.pickMoves(data, types),
-      sprite: getArtworkUrl(data.id),
+      sprite: shiny ? `${SHINY_ARTWORK_URL}/${data.id}.png` : getArtworkUrl(data.id),
+      shiny,
       fainted: false,
     };
   }
@@ -290,6 +306,7 @@ export class Battle implements OnInit, OnDestroy {
 
     this.playCry(player.id);
     this.schedule(() => this.playCry(enemy.id), 800);
+    if (enemy.shiny) this.typewriterLog(`✨ ¡Increíble! ¡${enemy.name} es shiny!`);
 
     const playerFirst = this.playerGoesFirst();
     this.typewriterLog(`¡${playerFirst ? player.name : enemy.name} es más rápido y ataca primero!`);
@@ -486,7 +503,11 @@ export class Battle implements OnInit, OnDestroy {
     }
     this.activeEnemy.set(nextEnemy);
     this.playCry(nextEnemy.id);
-    this.typewriterLog(`¡El rival saca a ${nextEnemy.name}!`);
+    this.typewriterLog(
+      nextEnemy.shiny
+        ? `✨ ¡El rival saca a ${nextEnemy.name} shiny!`
+        : `¡El rival saca a ${nextEnemy.name}!`,
+    );
     this.startRound();
   }
 
@@ -531,6 +552,39 @@ export class Battle implements OnInit, OnDestroy {
     } else {
       this.typewriterLog('¡Perdiste la batalla!');
     }
+
+    // Experiencia, retos diarios y logros: también se gana algo al perder.
+    const enemies = this.enemyTeam();
+    const rewards = await this.progressService
+      .record({
+        type: 'battle',
+        won,
+        kos: enemies.filter((p) => p.fainted).length,
+        capturedTypes: won ? enemies.map((p) => p.types) : [],
+        shinies: won ? enemies.filter((p) => p.shiny).map((p) => p.id) : [],
+      })
+      .catch(() => [] as Reward[]);
+    this.rewards.set(rewards);
+    this.rewardXp.set(
+      rewards.reduce(
+        (sum, r) =>
+          sum +
+          (r.kind === 'xp' ? r.amount : r.kind === 'challenge' || r.kind === 'streak' ? r.xp : 0),
+        0,
+      ),
+    );
+  }
+
+  /** Recompensas destacadas (no de XP) para el resumen de la batalla. */
+  highlightRewards(): string[] {
+    return this.rewards().flatMap((r) => {
+      if (r.kind === 'level')
+        return [`⭐ ¡Nivel ${r.level}!${r.unlock ? ` Desbloqueas ${r.unlock}` : ''}`];
+      if (r.kind === 'achievement') return [`${r.icon} Logro: ${r.title}`];
+      if (r.kind === 'challenge') return [`✅ Reto completado: ${r.title}`];
+      if (r.kind === 'bonus') return [`🎁 ${r.text}`];
+      return [];
+    });
   }
 
   isNewCapture(pokemonId: number): boolean {
@@ -562,6 +616,8 @@ export class Battle implements OnInit, OnDestroy {
     this.activePokemon.set(null);
     this.activeEnemy.set(null);
     this.newCaptures.set([]);
+    this.rewards.set([]);
+    this.rewardXp.set(0);
     this.playerWon.set(false);
     this.phase.set('preview');
     await this.loadBattle();

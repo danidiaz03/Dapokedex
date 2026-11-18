@@ -6,6 +6,14 @@
   } @else if (loadError()) {
     <div class="loading-screen">
       <p>{{ loadError() }}</p>
+      @if (rewardXp() > 0 || highlightRewards().length) {
+        <div class="result-rewards">
+          <span class="result-rewards__xp">+{{ rewardXp() }} XP</span>
+          @for (line of highlightRewards(); track $index) {
+            <span class="result-rewards__item">{{ line }}</span>
+          }
+        </div>
+      }
       <div class="result-actions">
         <button class="btn-secondary" (click)="goBack()">Volver al juego</button>
         <button class="btn-primary" (click)="newBattle()">Reintentar</button>
@@ -22,6 +30,9 @@
             @for (pokemon of playerTeam(); track pokemon.id) {
               <div class="preview-card">
                 <img [src]="pokemon.sprite" [alt]="pokemon.name" class="preview-sprite" />
+                @if (pokemon.shiny) {
+                  <span class="shiny-mark" title="Shiny">✨</span>
+                }
                 <p class="preview-name">{{ pokemon.name | nombre: pokemon.id }}</p>
                 <div class="preview-types">
                   @for (type of pokemon.types; track $index) {
@@ -41,6 +52,9 @@
             @for (pokemon of enemyTeam(); track pokemon.id) {
               <div class="preview-card">
                 <img [src]="pokemon.sprite" [alt]="pokemon.name" class="preview-sprite" />
+                @if (pokemon.shiny) {
+                  <span class="shiny-mark" title="Shiny">✨</span>
+                }
                 <p class="preview-name">{{ pokemon.name | nombre: pokemon.id }}</p>
                 <div class="preview-types">
                   @for (type of pokemon.types; track $index) {
@@ -255,6 +269,9 @@
                 @if (isNewCapture(pokemon.id)) {
                   <span class="new-badge">¡Nuevo!</span>
                 }
+                @if (pokemon.shiny) {
+                  <span class="new-badge shiny-badge">✨ Shiny</span>
+                }
                 <img [src]="pokemon.sprite" [alt]="pokemon.name" class="captured-sprite" />
                 <p class="captured-name">{{ pokemon.name | nombre: pokemon.id }}</p>
               </div>
@@ -265,6 +282,14 @@
         <div class="result-content">
           <h1 class="result-title lose">¡Derrota!</h1>
           <p class="result-subtitle">Tu equipo ha sido derrotado. ¡Inténtalo de nuevo!</p>
+        </div>
+      }
+      @if (rewardXp() > 0 || highlightRewards().length) {
+        <div class="result-rewards">
+          <span class="result-rewards__xp">+{{ rewardXp() }} XP</span>
+          @for (line of highlightRewards(); track $index) {
+            <span class="result-rewards__item">{{ line }}</span>
+          }
         </div>
       }
       <div class="result-actions">
