@@ -115,9 +115,12 @@ export interface LocalizedName {
 }
 
 export interface PokemonAbility {
+  id?: number;
   name: string;
   names: LocalizedName[];
   flavor_text_entries: { flavor_text: string; language: { name: string } }[];
+  generation?: { name: string; url: string };
+  pokemon?: { is_hidden: boolean; pokemon: { name: string; url: string } }[];
 }
 
 export interface PokemonMove {
@@ -128,6 +131,24 @@ export interface PokemonMove {
   type: { name: string };
   damage_class: { name: string };
   names: { name: string; language: { name: string } }[];
+  id?: number;
+  priority?: number;
+  effect_chance?: number | null;
+  generation?: { name: string; url: string };
+  flavor_text_entries?: { flavor_text: string; language: { name: string } }[];
+  learned_by_pokemon?: { name: string; url: string }[];
+  stat_changes?: { change: number; stat: { name: string } }[];
+  meta?: {
+    ailment: { name: string };
+    ailment_chance: number;
+    crit_rate: number;
+    drain: number;
+    healing: number;
+    flinch_chance: number;
+    stat_chance: number;
+    min_hits: number | null;
+    max_hits: number | null;
+  } | null;
 }
 
 export interface PokemonType {

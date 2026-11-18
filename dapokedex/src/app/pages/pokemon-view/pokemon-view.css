@@ -379,3 +379,14 @@
   font-weight: 700;
   text-transform: capitalize;
 }
+.ability__link,
+.moves-table__name a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: #e8bdb6;
+  text-underline-offset: 3px;
+}
+.ability__link:hover,
+.moves-table__name a:hover {
+  color: #9e0000;
+}

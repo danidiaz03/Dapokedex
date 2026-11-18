@@ -6,15 +6,8 @@ import { PokemonDetailPage, PokemonType } from '../../interfaces/pokemon';
 import { PokemonService } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
+import { STAT_LABELS } from '../../shared/labels';
 
-const STAT_LABELS: Record<string, string> = {
-  hp: 'PS',
-  attack: 'Ataque',
-  defense: 'Defensa',
-  'special-attack': 'At. Esp.',
-  'special-defense': 'Def. Esp.',
-  speed: 'Velocidad',
-};
 const STAT_BAR_MAX = 180;
 
 interface Side {

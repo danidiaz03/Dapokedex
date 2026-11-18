@@ -6,7 +6,7 @@ import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { PokemonType } from '../../interfaces/pokemon';
 import { FORMS_ID_START, PokemonService, getIdFromUrl } from '../../services/pokemon';
 import { ALL_TYPES, TYPE_NAMES_ES, TypeNamePipe } from '../../pipes/type-name.pipe';
-import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
+import { PokemonGrid } from '../../componentes/pokemon-grid/pokemon-grid';
 
 interface Relation {
   label: string;
@@ -14,11 +14,9 @@ interface Relation {
   tone: 'weak' | 'resist' | 'immune';
 }
 
-const SPRITE_URL = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
-
 @Component({
   selector: 'app-type-page',
-  imports: [RouterLink, TypeNamePipe, PokemonNamePipe],
+  imports: [RouterLink, TypeNamePipe, PokemonGrid],
   templateUrl: './type-page.html',
   styleUrl: './type-page.css',
 })
@@ -74,11 +72,7 @@ export class TypePage {
     (this.type()?.pokemon ?? [])
       .map(({ pokemon }) => {
         const id = getIdFromUrl(pokemon.url);
-        return {
-          id,
-          name: pokemon.name,
-          img: `${SPRITE_URL}/${id}.png`,
-        };
+        return { id, name: pokemon.name };
       })
       .filter((p) => p.id < FORMS_ID_START)
       .sort((a, b) => a.id - b.id),

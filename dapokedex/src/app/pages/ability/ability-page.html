@@ -1,0 +1,21 @@
+<div class="c-container detail-page">
+  @if (notFound()) {
+    <h1 class="detail-page__title">No hemos encontrado esa habilidad</h1>
+    <a class="detail-page__back" routerLink="/">Volver a la Pokédex</a>
+  } @else if (!ability()) {
+    <p class="detail-page__status">Cargando habilidad...</p>
+  } @else {
+    <span class="detail-page__eyebrow">Habilidad</span>
+    <h1 class="detail-page__title">{{ displayName() }}</h1>
+    @if (generation()) {
+      <div class="detail-page__tags">
+        <span class="detail-page__tag">Gen. {{ generation() }}</span>
+      </div>
+    }
+    @if (description()) {
+      <p class="detail-page__description">{{ description() }}</p>
+    }
+    <h2 class="detail-page__subtitle">La tienen {{ pokemons().length }} Pokémon</h2>
+    <app-pokemon-grid [pokemons]="pokemons()" />
+  }
+</div>

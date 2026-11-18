@@ -61,14 +61,6 @@
     </div>
 
     <h2 class="type-section-title">Pokémon de tipo {{ name() | tipo }}</h2>
-    <div class="type-pokemon-grid">
-      @for (p of pokemons(); track p.id) {
-        <a class="type-pokemon" [routerLink]="['/pokemon', p.name]">
-          <img [src]="p.img" [alt]="p.name" loading="lazy" width="96" height="96" />
-          <span class="type-pokemon__id">#{{ p.id }}</span>
-          <span class="type-pokemon__name">{{ p.name | nombre: p.id }}</span>
-        </a>
-      }
-    </div>
+    <app-pokemon-grid [pokemons]="pokemons()" />
   }
 </div>

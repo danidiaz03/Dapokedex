@@ -15,11 +15,13 @@ import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
+import { STAT_LABELS } from '../../shared/labels';
 
 type Tab = 'about' | 'stats' | 'evolution' | 'moves';
 type MoveMethod = 'level-up' | 'machine' | 'egg' | 'tutor';
 
 interface AbilityInfo {
+  slug: string;
   name: string;
   description: string;
   hidden: boolean;
@@ -27,6 +29,7 @@ interface AbilityInfo {
 
 interface MoveRow {
   level: number;
+  slug: string;
   name: string;
   type: string;
   damageClass: string;
@@ -40,15 +43,6 @@ interface TypeMatchup {
   types: string[];
   tone: 'weak' | 'resist' | 'immune';
 }
-
-const STAT_LABELS: Record<string, string> = {
-  hp: 'PS',
-  attack: 'Ataque',
-  defense: 'Defensa',
-  'special-attack': 'At. Esp.',
-  'special-defense': 'Def. Esp.',
-  speed: 'Velocidad',
-};
 
 export const MOVE_METHODS: { id: MoveMethod; label: string }[] = [
   { id: 'level-up', label: 'Por nivel' },
@@ -302,6 +296,7 @@ export class PokemonView implements OnInit {
           const move = await this.service.getMove(entry.url);
           return {
             level: entry.level,
+            slug: move.name,
             name: pickLocalized(move.names)?.name ?? move.name.replace(/-/g, ' '),
             type: move.type.name,
             damageClass: move.damage_class.name,
@@ -419,6 +414,7 @@ export class PokemonView implements OnInit {
           abilities.map((ability, i) => {
             const flavor = pickLocalized(ability.flavor_text_entries)?.flavor_text;
             return {
+              slug: ability.name,
               name: pickLocalized(ability.names)?.name ?? ability.name.replace(/-/g, ' '),
               description: flavor ? cleanFlavorText(flavor) : '',
               hidden: data.abilities[i].is_hidden,
@@ -429,6 +425,7 @@ export class PokemonView implements OnInit {
       error: () =>
         this.abilities.set(
           data.abilities.map((a) => ({
+            slug: a.ability.name,
             name: a.ability.name.replace(/-/g, ' '),
             description: '',
             hidden: a.is_hidden,

@@ -1,0 +1,58 @@
+<div class="c-container detail-page">
+  @if (notFound()) {
+    <h1 class="detail-page__title">No hemos encontrado ese movimiento</h1>
+    <a class="detail-page__back" routerLink="/">Volver a la Pokédex</a>
+  } @else if (!move()) {
+    <p class="detail-page__status">Cargando movimiento...</p>
+  } @else {
+    <span class="detail-page__eyebrow">Movimiento</span>
+    <h1 class="detail-page__title">{{ displayName() }}</h1>
+    <div class="detail-page__tags">
+      <a
+        class="type-badge type-badge--{{ move()!.type.name }}"
+        [routerLink]="['/tipo', move()!.type.name]"
+      >
+        {{ move()!.type.name | tipo }}
+      </a>
+      <span class="detail-page__tag">{{ damageClass() }}</span>
+      @if (generation()) {
+        <span class="detail-page__tag">Gen. {{ generation() }}</span>
+      }
+    </div>
+
+    @if (description()) {
+      <p class="detail-page__description">{{ description() }}</p>
+    }
+
+    <dl class="detail-page__data">
+      <div>
+        <dt>Potencia</dt>
+        <dd>{{ move()!.power ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Precisión</dt>
+        <dd>{{ move()!.accuracy !== null ? move()!.accuracy + '%' : '—' }}</dd>
+      </div>
+      <div>
+        <dt>PP</dt>
+        <dd>{{ move()!.pp }}</dd>
+      </div>
+      <div>
+        <dt>Prioridad</dt>
+        <dd>{{ (move()!.priority ?? 0) > 0 ? '+' : '' }}{{ move()!.priority ?? 0 }}</dd>
+      </div>
+    </dl>
+
+    @if (effects().length) {
+      <h2 class="detail-page__subtitle">Efectos</h2>
+      <ul class="detail-page__effects">
+        @for (effect of effects(); track $index) {
+          <li>{{ effect }}</li>
+        }
+      </ul>
+    }
+
+    <h2 class="detail-page__subtitle">Lo aprenden {{ learnedBy().length }} Pokémon</h2>
+    <app-pokemon-grid [pokemons]="learnedBy()" />
+  }
+</div>

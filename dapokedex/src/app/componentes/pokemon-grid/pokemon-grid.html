@@ -1,0 +1,18 @@
+<div class="pokemon-grid">
+  @for (p of pokemons(); track p.id) {
+    <a class="pokemon-grid__item" [routerLink]="['/pokemon', p.name]">
+      <img
+        [src]="sprite(p.id)"
+        [alt]="p.name | nombre: p.id"
+        loading="lazy"
+        width="96"
+        height="96"
+      />
+      <span class="pokemon-grid__id">#{{ p.id }}</span>
+      <span class="pokemon-grid__name">{{ p.name | nombre: p.id }}</span>
+      @if (p.badge) {
+        <span class="pokemon-grid__badge">{{ p.badge }}</span>
+      }
+    </a>
+  }
+</div>

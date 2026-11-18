@@ -225,7 +225,7 @@
               @for (a of abilities(); track $index) {
                 <li class="ability">
                   <span class="ability__name">
-                    {{ a.name }}
+                    <a class="ability__link" [routerLink]="['/habilidad', a.slug]">{{ a.name }}</a>
                     @if (a.hidden) {
                       <span class="ability__hidden">Oculta</span>
                     }
@@ -320,12 +320,14 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (move of moveRows(); track move.name) {
+                    @for (move of moveRows(); track move.slug) {
                       <tr>
                         @if (moveMethod() === 'level-up') {
                           <td>{{ move.level || '—' }}</td>
                         }
-                        <td class="moves-table__name">{{ move.name }}</td>
+                        <td class="moves-table__name">
+                          <a [routerLink]="['/movimiento', move.slug]">{{ move.name }}</a>
+                        </td>
                         <td>
                           <span class="type-badge type-badge--{{ move.type }}">{{
                             move.type | tipo

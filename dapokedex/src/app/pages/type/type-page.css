@@ -85,39 +85,6 @@
 .matchup__types .type-badge {
   text-decoration: none;
 }
-.type-pokemon-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 12px;
-}
-.type-pokemon {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px;
-  border-radius: 16px;
-  background: #fff;
-  text-decoration: none;
-  color: #1a1a2e;
-  transition: box-shadow 0.3s ease;
-}
-.type-pokemon:hover {
-  box-shadow: 0 0 5px 0 #b91c1c;
-}
-.type-pokemon img {
-  width: 96px;
-  height: 96px;
-  image-rendering: pixelated;
-}
-.type-pokemon__id {
-  font: 400 12px/16px Roboto Mono;
-  color: #5e3f3a;
-}
-.type-pokemon__name {
-  font: 700 14px/20px Space Grotesk;
-  text-transform: capitalize;
-  text-align: center;
-}
 @media (max-width: 768px) {
   .type-relations {
     grid-template-columns: 1fr;

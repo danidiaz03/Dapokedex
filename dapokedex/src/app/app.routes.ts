@@ -28,6 +28,16 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/type/type-page').then((m) => m.TypePage),
   },
   {
+    path: 'movimiento/:name',
+    title: 'Movimiento · Dapokedex',
+    loadComponent: () => import('./pages/move/move-page').then((m) => m.MovePage),
+  },
+  {
+    path: 'habilidad/:name',
+    title: 'Habilidad · Dapokedex',
+    loadComponent: () => import('./pages/ability/ability-page').then((m) => m.AbilityPage),
+  },
+  {
     path: 'comparar',
     title: 'Comparar Pokémon · Dapokedex',
     loadComponent: () => import('./pages/compare/compare').then((m) => m.Compare),
