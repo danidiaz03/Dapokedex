@@ -3,6 +3,7 @@
 // poder probarlas y ajustar el equilibrio del juego en un solo sitio.
 
 import { TYPE_NAMES_ES } from '../pipes/type-name.pipe';
+import { LAST_NATIONAL_DEX } from '../services/pokemon';
 
 export interface TrainerProgress {
   xp: number;
@@ -61,6 +62,9 @@ export const XP = {
   streakPerDay: 10,
 };
 
+/** Motivo de la XP del Pokémon del día (también identifica la captura). */
+export const DAILY_POKEMON_REASON = 'Pokémon del día';
+
 /** Probabilidad de que una victoria dé el doble de XP. */
 export const SURPRISE_BONUS_CHANCE = 0.15;
 /** Probabilidad de que un rival salga shiny (mucho más alta que en los juegos, a propósito). */
@@ -97,7 +101,7 @@ export const REGIONS = [
   { level: 11, name: 'Kalos', lastId: 721 },
   { level: 13, name: 'Alola', lastId: 809 },
   { level: 15, name: 'Galar', lastId: 905 },
-  { level: 17, name: 'Paldea', lastId: 1025 },
+  { level: 17, name: 'Paldea', lastId: LAST_NATIONAL_DEX },
 ];
 
 /** Último número de Pokédex que puede salir como rival según el nivel. */
@@ -178,7 +182,7 @@ export function dailyChallenges(date: string): DailyChallenge[] {
 
 /** Pokémon del día: el mismo para todos los jugadores durante ese día. */
 export function dailyPokemonId(date: string): number {
-  return Math.floor(seededRandom(`pokemon-${date}`)() * 1025) + 1;
+  return Math.floor(seededRandom(`pokemon-${date}`)() * LAST_NATIONAL_DEX) + 1;
 }
 
 /** ¿Ya se ha capturado hoy el Pokémon del día? */
@@ -473,7 +477,7 @@ export function applyEvent(
 
   if (event.type === 'daily-pokemon' && !p.daily.rewarded.includes('daily-pokemon')) {
     p.daily.rewarded.push('daily-pokemon');
-    gainXp(XP.dailyPokemon, 'Pokémon del día');
+    gainXp(XP.dailyPokemon, DAILY_POKEMON_REASON);
   }
 
   // Retos diarios completados con este evento.

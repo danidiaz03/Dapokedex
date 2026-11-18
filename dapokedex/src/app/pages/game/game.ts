@@ -80,7 +80,10 @@ export class Game implements OnInit {
     if (!userId) return;
 
     // Cargamos el progreso y contamos la visita para la racha de días.
-    this.progressService.load().then(() => this.progressService.record({ type: 'visit' }));
+    this.progressService
+      .load()
+      .then(() => this.progressService.record({ type: 'visit' }))
+      .catch((error) => console.warn('No se pudo cargar el progreso', error));
 
     const starter = await this.firestoreService.getStarter(userId);
     if (starter) {

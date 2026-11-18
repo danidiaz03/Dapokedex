@@ -211,3 +211,15 @@ export const GENERATIONS = [
 
 /** Las formas alternativas (megas, regionales...) tienen ids a partir de 10001. */
 export const FORMS_ID_START = 10001;
+
+/** Último Pokémon con número de Pokédex nacional (Pecharunt). */
+export const LAST_NATIONAL_DEX = 1025;
+
+/** Reproduce el grito de un Pokémon; si el navegador lo bloquea, no hace nada. */
+export function playPokemonCry(id: number, volume = 0.5): void {
+  const audio = new Audio(
+    `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${id}.ogg`,
+  );
+  audio.volume = volume;
+  audio.play().catch(() => {});
+}

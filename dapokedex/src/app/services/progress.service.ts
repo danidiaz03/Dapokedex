@@ -13,8 +13,11 @@ import {
   normalizeProgress,
   trainerTitle,
   weekKey,
-  xpFromRewards,
+  DAILY_POKEMON_REASON,
 } from '../game/progress';
+
+/** Antigüedad máxima de la copia local del progreso antes de volver a leerlo. */
+const CACHE_MAX_AGE_MS = 60_000;
 
 /** Guarda el progreso del entrenador en Firestore y anuncia las recompensas. */
 @Injectable({ providedIn: 'root' })
@@ -31,14 +34,19 @@ export class ProgressService {
   // rápido y dos escrituras simultáneas se pisarían la una a la otra.
   private queue: Promise<unknown> = Promise.resolve();
 
+  // Último estado leído de Firestore. Los aciertos de "Adivina el Pokémon"
+  // reutilizan esta copia en vez de leer el documento entero en cada respuesta.
+  private cache: {
+    uid: string;
+    progress: TrainerProgress;
+    collectionSize: number;
+    at: number;
+  } | null = null;
+
   async load(): Promise<TrainerProgress | null> {
     const userId = (await this.auth.waitForUser())?.uid;
     if (!userId) return null;
-    const data = await this.firestore.getUserData(userId);
-    const progress = normalizeProgress(data.progress as Partial<TrainerProgress>);
-    this.progress.set(progress);
-    this.collectionSize.set(data.collection.length);
-    return progress;
+    return (await this.read(userId)).progress;
   }
 
   /** Captura el Pokémon del día: lo añade a la colección y da XP una vez al día. */
@@ -46,9 +54,10 @@ export class ProgressService {
     const userId = (await this.auth.waitForUser())?.uid;
     if (!userId) return false;
     const rewards = await this.record({ type: 'daily-pokemon' });
-    if (!rewards.some((r) => r.kind === 'xp' && r.reason === 'Pokémon del día')) return false;
+    if (!rewards.some((r) => r.kind === 'xp' && r.reason === DAILY_POKEMON_REASON)) return false;
     await this.firestore.addToCollection(userId, pokemonId);
     this.collectionSize.update((n) => n + 1);
+    if (this.cache) this.cache.collectionSize++;
     return true;
   }
 
@@ -59,26 +68,47 @@ export class ProgressService {
     return task;
   }
 
+  private async read(userId: string) {
+    const data = await this.firestore.getUserData(userId);
+    const progress = normalizeProgress(data.progress as Partial<TrainerProgress>);
+    this.cache = { uid: userId, progress, collectionSize: data.collection.length, at: Date.now() };
+    this.progress.set(progress);
+    this.collectionSize.set(data.collection.length);
+    return this.cache;
+  }
+
+  /**
+   * Las batallas cambian la colección y deben leer el documento; el resto de
+   * eventos usan la copia si es reciente (por si hay otra pestaña jugando).
+   */
+  private async current(userId: string, event: GameEvent) {
+    const fresh =
+      this.cache?.uid === userId &&
+      event.type !== 'battle' &&
+      Date.now() - this.cache.at < CACHE_MAX_AGE_MS;
+    return fresh ? this.cache! : this.read(userId);
+  }
+
   private async apply(event: GameEvent): Promise<Reward[]> {
     const userId = (await this.auth.waitForUser())?.uid;
     if (!userId) return [];
 
-    const data = await this.firestore.getUserData(userId);
-    const current = normalizeProgress(data.progress as Partial<TrainerProgress>);
-    const { progress, rewards } = applyEvent(current, event, {
+    const { progress: before, collectionSize } = await this.current(userId, event);
+    const { progress, rewards } = applyEvent(before, event, {
       today: dayKey(),
-      collectionSize: data.collection.length,
+      collectionSize,
     });
 
     if (rewards.length > 0 || event.type !== 'visit') {
       await this.firestore.saveProgress(userId, progress);
     }
+    this.cache = { uid: userId, progress, collectionSize, at: this.cache?.at ?? Date.now() };
     this.progress.set(progress);
-    this.collectionSize.set(data.collection.length);
     this.feed.show(rewards);
 
-    // El ranking no debe romper el juego si falla (sin conexión, reglas...).
-    const gained = xpFromRewards(rewards);
+    // Se usa la diferencia real de XP: algunas ganancias (cada acierto) no
+    // generan un aviso propio y antes se quedaban fuera del ranking semanal.
+    const gained = progress.xp - before.xp;
     if (gained > 0) {
       this.firestore
         .addLeaderboardXp(userId, {

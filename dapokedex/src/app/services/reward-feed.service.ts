@@ -20,6 +20,7 @@ export class RewardFeedService {
   readonly levelUp = signal<{ level: number; unlock?: string } | null>(null);
   private nextId = 0;
   private pending = 0;
+  private levelUpTimer?: ReturnType<typeof setTimeout>;
   private audio: AudioContext | null = null;
 
   show(rewards: Reward[]): void {
@@ -64,7 +65,9 @@ export class RewardFeedService {
       if (r.kind === 'level') {
         this.levelUp.set({ level: r.level, unlock: r.unlock });
         this.chime([523, 659, 784, 1047]);
-        setTimeout(() => this.levelUp.set(null), LEVEL_DURATION);
+        // Si ya había una celebración, su temporizador no debe cerrar esta.
+        clearTimeout(this.levelUpTimer);
+        this.levelUpTimer = setTimeout(() => this.levelUp.set(null), LEVEL_DURATION);
       }
     }
   }
