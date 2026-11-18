@@ -1,0 +1,194 @@
+.evolve-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 46, 0.75);
+  padding: 16px;
+}
+.evolve-card {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 32px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.evolve-title {
+  font: 700 22px/30px Space Grotesk;
+  color: #1a1a2e;
+}
+.evolve-text {
+  font: 400 15px/22px Be Vietnam Pro;
+  color: #5e3f3a;
+}
+.evolve-sprite {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+}
+.evolve-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+.evolve-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid #efecff;
+  background: #f7f5ff;
+  border-radius: 16px;
+  padding: 10px;
+  cursor: pointer;
+  font: 700 14px Space Grotesk;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+.evolve-option:hover {
+  border-color: #b91c1c;
+  transform: translateY(-2px);
+}
+.evolve-option img {
+  width: 80px;
+  height: 80px;
+}
+.evolve-later {
+  border: none;
+  background: none;
+  color: #5e3f3a;
+  font: 600 14px Space Grotesk;
+  cursor: pointer;
+}
+.evolve-confirm {
+  border: none;
+  background: #b91c1c;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 28px;
+  font: 700 16px Space Grotesk;
+  cursor: pointer;
+}
+.evolve-stage {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+.evolve-stage .evolve-sprite {
+  position: absolute;
+  inset: 0;
+}
+/* Siluetas blancas que alternan cada vez más rápido, como en los juegos. */
+.evolve-sprite--from {
+  filter: brightness(0) invert(1) drop-shadow(0 0 12px #60a5fa);
+  animation: evolve-from 3.6s ease-in forwards;
+}
+.evolve-sprite--to {
+  filter: brightness(0) invert(1) drop-shadow(0 0 12px #60a5fa);
+  opacity: 0;
+  animation: evolve-to 3.6s ease-in forwards;
+}
+.evolve-glow {
+  position: absolute;
+  inset: -40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(96, 165, 250, 0) 70%);
+  animation: evolve-glow 3.6s ease-in forwards;
+}
+.evolve-stage {
+  background: #1a1a2e;
+  border-radius: 50%;
+}
+.evolve-sprite--reveal {
+  animation: evolve-reveal 0.8s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes evolve-from {
+  0%,
+  20%,
+  40%,
+  55%,
+  67%,
+  77%,
+  85%,
+  91%,
+  96% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  10%,
+  30%,
+  48%,
+  61%,
+  72%,
+  81%,
+  88%,
+  94%,
+  100% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+@keyframes evolve-to {
+  0%,
+  20%,
+  40%,
+  55%,
+  67%,
+  77%,
+  85%,
+  91%,
+  96% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  10%,
+  30%,
+  48%,
+  61%,
+  72%,
+  81%,
+  88%,
+  94%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes evolve-glow {
+  0%,
+  80% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+}
+@keyframes evolve-reveal {
+  from {
+    transform: scale(0.5);
+    filter: brightness(3);
+  }
+  to {
+    transform: none;
+    filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .evolve-sprite--from,
+  .evolve-sprite--to,
+  .evolve-glow,
+  .evolve-sprite--reveal {
+    animation: none;
+  }
+}

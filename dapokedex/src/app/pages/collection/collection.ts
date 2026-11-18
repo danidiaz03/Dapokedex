@@ -5,10 +5,18 @@ import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
+import { EvolutionService } from '../../services/evolution.service';
+import { EvolveDialog } from '../../componentes/evolve-dialog/evolve-dialog';
+import {
+  EvolutionOption,
+  availableEvolutions,
+  pokemonLevel,
+  pokemonLevelPercent,
+} from '../../game/pokemon-levels';
 
 @Component({
   selector: 'app-collection',
-  imports: [TypeNamePipe, PokemonNamePipe],
+  imports: [TypeNamePipe, PokemonNamePipe, EvolveDialog],
   templateUrl: './collection.html',
   styleUrl: './collection.css',
 })
@@ -17,6 +25,7 @@ export class Collection implements OnInit {
   private firestoreService = inject(FirestoreService);
   private pokemonService = inject(PokemonService);
   private router = inject(Router);
+  private evolutionService = inject(EvolutionService);
 
   pokemons = signal<any[]>([]);
   filteredPokemons = signal<any[]>([]);
@@ -25,6 +34,10 @@ export class Collection implements OnInit {
   searchTerm = signal('');
   selectedType = signal('');
   teamError = signal('');
+  pokemonXp = signal<Record<number, number>>({});
+  /** Evoluciones ya disponibles por id de Pokémon. */
+  evolutions = signal<Record<number, EvolutionOption[]>>({});
+  evolving = signal<{ id: number; name: string; options: EvolutionOption[] } | null>(null);
 
   get types(): string[] {
     const all = this.pokemons().flatMap((p) => p.types.map((t: any) => t.type.name));
@@ -35,17 +48,53 @@ export class Collection implements OnInit {
     const userId = (await this.authService.waitForUser())?.uid;
     if (!userId) return;
 
-    const [collectionIds, teamIds] = await Promise.all([
-      this.firestoreService.getCollection(userId),
-      this.firestoreService.getTeam(userId),
-    ]);
+    await this.load(userId);
+  }
 
-    const pokemons = await this.pokemonService.getPokemons(collectionIds);
+  private async load(userId: string) {
+    const data = await this.firestoreService.getUserData(userId);
+    const pokemons = await this.pokemonService.getPokemons(data.collection);
 
     this.pokemons.set(pokemons);
-    this.filteredPokemons.set(pokemons);
-    this.teamIds.set(teamIds);
+    this.teamIds.set(data.team);
+    this.pokemonXp.set(data.pokemonXp);
+    this.applyFilters();
     this.loading.set(false);
+    this.loadEvolutions(data.pokemonXp);
+  }
+
+  /** Solo se consulta PokeAPI para los Pokémon con experiencia suficiente. */
+  private async loadEvolutions(xp: Record<number, number>) {
+    const candidates = Object.entries(xp)
+      .map(([id, value]) => ({ id: Number(id), xp: value }))
+      .filter((p) => pokemonLevel(p.xp) > 5);
+    const result: Record<number, EvolutionOption[]> = {};
+    await Promise.all(
+      candidates.map(async (p) => {
+        const options = availableEvolutions(await this.evolutionService.optionsFor(p.id), p.xp);
+        if (options.length) result[p.id] = options;
+      }),
+    );
+    this.evolutions.set(result);
+  }
+
+  level(id: number): number {
+    return pokemonLevel(this.pokemonXp()[id] ?? 0);
+  }
+
+  levelPercent(id: number): number {
+    return pokemonLevelPercent(this.pokemonXp()[id] ?? 0);
+  }
+
+  openEvolution(pokemon: { id: number; name: string }) {
+    const options = this.evolutions()[pokemon.id];
+    if (options) this.evolving.set({ id: pokemon.id, name: pokemon.name, options });
+  }
+
+  async onEvolutionClosed() {
+    this.evolving.set(null);
+    const userId = this.authService.currentUser()?.uid;
+    if (userId) await this.load(userId);
   }
 
   onSearch(term: string) {

@@ -7,6 +7,14 @@ import { PokemonDetailPage, PokemonMove } from '../../../interfaces/pokemon';
 import { TypeNamePipe } from '../../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../../pipes/pokemon-name.pipe';
 import { ProgressService } from '../../../services/progress.service';
+import { EvolutionService } from '../../../services/evolution.service';
+import { EvolveDialog } from '../../../componentes/evolve-dialog/evolve-dialog';
+import {
+  EvolutionOption,
+  availableEvolutions,
+  battleXp,
+  pokemonLevel,
+} from '../../../game/pokemon-levels';
 import {
   Reward,
   SHINY_CHANCE,
@@ -45,6 +53,17 @@ interface BattlePokemon {
   fainted: boolean;
 }
 
+/** Cómo ha crecido cada Pokémon del equipo tras la batalla. */
+interface TeamGrowth {
+  id: number;
+  name: string;
+  xp: number;
+  gained: number;
+  levelBefore: number;
+  levelAfter: number;
+  evolutions: EvolutionOption[];
+}
+
 interface BattleLogEntry {
   id: number;
   text: string;
@@ -71,7 +90,7 @@ const TURN_DELAY = 3000;
 
 @Component({
   selector: 'app-battle',
-  imports: [TypeNamePipe, PokemonNamePipe],
+  imports: [TypeNamePipe, PokemonNamePipe, EvolveDialog],
   templateUrl: './battle.html',
   styleUrl: './battle.css',
 })
@@ -81,6 +100,7 @@ export class Battle implements OnInit, OnDestroy {
   private pokemonService = inject(PokemonService);
   private router = inject(Router);
   private progressService = inject(ProgressService);
+  private evolutionService = inject(EvolutionService);
 
   playerTeam = signal<BattlePokemon[]>([]);
   enemyTeam = signal<BattlePokemon[]>([]);
@@ -101,6 +121,12 @@ export class Battle implements OnInit, OnDestroy {
   /** Recompensas de la última batalla para el resumen final. */
   rewards = signal<Reward[]>([]);
   rewardXp = signal(0);
+  /** Experiencia de cada Pokémon del equipo (para su nivel). */
+  teamXp = signal<Record<number, number>>({});
+  teamGrowth = signal<TeamGrowth[]>([]);
+  evolving = signal<TeamGrowth | null>(null);
+  /** Rivales derrotados por cada Pokémon del jugador en esta batalla. */
+  private koBy = new Map<number, number>();
 
   private logCounter = 0;
   private audioCtx: AudioContext | null = null;
@@ -201,7 +227,9 @@ export class Battle implements OnInit, OnDestroy {
 
     // El equipo se lee de Firestore: antes se tomaba de ?team= en la URL y se
     // podía combatir (y capturar) con cualquier Pokémon editando el enlace.
-    const teamIds = await this.firestoreService.getTeam(userId);
+    const userData = await this.firestoreService.getUserData(userId);
+    const teamIds = userData.team;
+    this.teamXp.set(userData.pokemonXp);
     if (teamIds.length === 0) {
       this.router.navigate(['/game']);
       return;
@@ -396,6 +424,8 @@ export class Battle implements OnInit, OnDestroy {
     if (this.phase() !== 'battle') return;
 
     if (defenderFainted) {
+      const attacker = this.activePokemon()!.id;
+      this.koBy.set(attacker, (this.koBy.get(attacker) ?? 0) + 1);
       this.schedule(() => {
         this.typewriterLog(`¡${this.activeEnemy()!.name} se debilitó!`);
         this.schedule(() => this.checkNextEnemy(), 2500);
@@ -572,6 +602,64 @@ export class Battle implements OnInit, OnDestroy {
       .catch(() => [] as Reward[]);
     this.rewards.set(rewards);
     this.rewardXp.set(xpFromRewards(rewards));
+    await this.growTeam(won);
+  }
+
+  pokemonSprite(id: number): string {
+    return getArtworkUrl(id);
+  }
+
+  pokemonLevel(id: number): number {
+    return pokemonLevel(this.teamXp()[id] ?? 0);
+  }
+
+  /** Reparte experiencia al equipo y comprueba quién puede evolucionar. */
+  private async growTeam(won: boolean) {
+    const userId = this.authService.currentUser()?.uid;
+    if (!userId) return;
+    const before = this.teamXp();
+    const gains: Record<number, number> = {};
+    for (const p of this.playerTeam()) gains[p.id] = battleXp(won, this.koBy.get(p.id) ?? 0);
+
+    try {
+      await this.firestoreService.addPokemonXp(userId, gains);
+    } catch {
+      return;
+    }
+
+    const growth = await Promise.all(
+      this.playerTeam().map(async (p) => {
+        const xp = (before[p.id] ?? 0) + gains[p.id];
+        const options = await this.evolutionService.optionsFor(p.id);
+        return {
+          id: p.id,
+          name: p.name,
+          xp,
+          gained: gains[p.id],
+          levelBefore: pokemonLevel(before[p.id] ?? 0),
+          levelAfter: pokemonLevel(xp),
+          evolutions: availableEvolutions(options, xp),
+        };
+      }),
+    );
+    this.teamXp.set({ ...before, ...Object.fromEntries(growth.map((g) => [g.id, g.xp])) });
+    this.teamGrowth.set(growth);
+  }
+
+  /** Tras evolucionar, el Pokémon se muestra con su nueva forma en el resumen. */
+  onEvolved(from: TeamGrowth, toId: number) {
+    this.teamGrowth.update((list) =>
+      list.map((g) =>
+        g.id === from.id
+          ? {
+              ...g,
+              id: toId,
+              name: g.evolutions.find((e) => e.id === toId)?.name ?? g.name,
+              evolutions: [],
+            }
+          : g,
+      ),
+    );
   }
 
   /** Recompensas destacadas (no de XP) para el resumen de la batalla. */
@@ -615,6 +703,9 @@ export class Battle implements OnInit, OnDestroy {
     this.activePokemon.set(null);
     this.activeEnemy.set(null);
     this.newCaptures.set([]);
+    this.teamGrowth.set([]);
+    this.evolving.set(null);
+    this.koBy.clear();
     this.rewards.set([]);
     this.rewardXp.set(0);
     this.playerWon.set(false);

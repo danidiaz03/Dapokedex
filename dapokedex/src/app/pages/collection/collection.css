@@ -286,3 +286,32 @@
     flex-direction: column;
   }
 }
+.pokemon-level {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  font: 700 12px Roboto Mono;
+  color: #1a1a2e;
+}
+.pokemon-level__bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e0fc;
+  overflow: hidden;
+}
+.pokemon-level__bar div {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 999px;
+}
+.btn-evolve {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #3b82f6, #a855f7);
+  color: #fff;
+  font: 700 13px Space Grotesk;
+  cursor: pointer;
+}

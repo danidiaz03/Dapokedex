@@ -1,0 +1,45 @@
+<div class="evolve-backdrop" role="dialog" aria-modal="true" aria-label="Evolución">
+  <div class="evolve-card">
+    @switch (phase()) {
+      @case ('choose') {
+        <h2 class="evolve-title">¡{{ pokemonName() | nombre: pokemonId() }} quiere evolucionar!</h2>
+        <img class="evolve-sprite" [src]="fromImg()" [alt]="pokemonName()" />
+        @if (options().length > 1) {
+          <p class="evolve-text">Elige en qué quieres que evolucione:</p>
+        }
+        <div class="evolve-options">
+          @for (o of options(); track o.id) {
+            <button class="evolve-option" (click)="evolve(o)">
+              <img [src]="img(o.id)" [alt]="o.name" />
+              <span>{{ o.name | nombre: o.id }}</span>
+            </button>
+          }
+        </div>
+        <button class="evolve-later" (click)="closed.emit()">Ahora no</button>
+      }
+      @case ('evolving') {
+        <h2 class="evolve-title">
+          ¿Qué? ¡{{ pokemonName() | nombre: pokemonId() }} está evolucionando!
+        </h2>
+        <div class="evolve-stage">
+          <img class="evolve-sprite evolve-sprite--from" [src]="fromImg()" alt="" />
+          <img class="evolve-sprite evolve-sprite--to" [src]="toImg()" alt="" />
+          <span class="evolve-glow" aria-hidden="true"></span>
+        </div>
+      }
+      @case ('done') {
+        <h2 class="evolve-title">
+          ¡Enhorabuena! ¡Tu {{ pokemonName() | nombre: pokemonId() }} ha evolucionado a
+          {{ target()!.name | nombre: target()!.id }}!
+        </h2>
+        <img class="evolve-sprite evolve-sprite--reveal" [src]="toImg()" [alt]="target()!.name" />
+        <button class="evolve-confirm" (click)="closed.emit()">¡Genial!</button>
+      }
+      @case ('error') {
+        <h2 class="evolve-title">No se pudo completar la evolución</h2>
+        <p class="evolve-text">Revisa tu conexión e inténtalo de nuevo.</p>
+        <button class="evolve-confirm" (click)="closed.emit()">Cerrar</button>
+      }
+    }
+  </div>
+</div>

@@ -16,6 +16,7 @@ import {
   increment,
   serverTimestamp,
   writeBatch,
+  deleteField,
 } from 'firebase/firestore';
 import { firebaseApp } from '../firebase';
 
@@ -30,6 +31,8 @@ export interface UserData {
   team: number[];
   /** Progreso del entrenador sin normalizar (ver game/progress.ts). */
   progress?: Record<string, unknown>;
+  /** Experiencia de cada Pokémon de la colección, por id. */
+  pokemonXp: Record<number, number>;
 }
 
 export const MAX_TEAM_SIZE = 6;
@@ -62,6 +65,7 @@ export class FirestoreService {
       collection: data['collection'] ?? [],
       team: data['team'] ?? [],
       progress: data['progress'],
+      pokemonXp: data['pokemonXp'] ?? {},
     };
   }
 
@@ -125,6 +129,28 @@ export class FirestoreService {
    */
   async saveProgress(userId: string, progress: object): Promise<void> {
     await setDoc(this.getUserDoc(userId), { progress }, { mergeFields: ['progress'] });
+  }
+
+  /** Suma experiencia a varios Pokémon a la vez (increment evita pisar datos). */
+  async addPokemonXp(userId: string, gains: Record<number, number>): Promise<void> {
+    const pokemonXp: Record<string, unknown> = {};
+    for (const [id, xp] of Object.entries(gains)) pokemonXp[id] = increment(xp);
+    await this.merge(userId, { pokemonXp });
+  }
+
+  /**
+   * Evoluciona un Pokémon: ocupa su sitio en el equipo, se añade a la
+   * colección y hereda su experiencia. La forma anterior sigue en la colección.
+   */
+  async evolvePokemon(userId: string, fromId: number, toId: number): Promise<void> {
+    const data = await this.getUserData(userId);
+    const xp = data.pokemonXp[fromId] ?? 0;
+    const team = data.team.map((id) => (id === fromId ? toId : id));
+    await this.merge(userId, {
+      team: [...new Set(team)],
+      collection: arrayUnion(toId),
+      pokemonXp: { [toId]: xp, [fromId]: deleteField() },
+    });
   }
 
   async removeFromTeam(userId: string, pokemonId: number): Promise<void> {

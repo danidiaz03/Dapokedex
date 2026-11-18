@@ -49,6 +49,15 @@
               />
             </div>
             <p class="pokemon-name">{{ pokemon.name | nombre: pokemon.id }}</p>
+            <div class="pokemon-level">
+              <span>Nv. {{ level(pokemon.id) }}</span>
+              <div class="pokemon-level__bar">
+                <div [style.width.%]="levelPercent(pokemon.id)"></div>
+              </div>
+            </div>
+            @if (evolutions()[pokemon.id]) {
+              <button class="btn-evolve" (click)="openEvolution(pokemon)">✨ ¡Evolucionar!</button>
+            }
             <div class="pokemon-types">
               @for (t of pokemon.types; track $index) {
                 <span class="type-badge type-badge--{{ t.type.name }}">{{
@@ -75,3 +84,12 @@
     }
   }
 </div>
+
+@if (evolving(); as e) {
+  <app-evolve-dialog
+    [pokemonId]="e.id"
+    [pokemonName]="e.name"
+    [options]="e.options"
+    (closed)="onEvolutionClosed()"
+  />
+}
