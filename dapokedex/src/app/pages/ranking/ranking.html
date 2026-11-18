@@ -1,0 +1,84 @@
+<div class="c-container ranking">
+  <header class="ranking__header">
+    <div>
+      <h1 class="ranking__title">Ranking de entrenadores</h1>
+      <p class="ranking__subtitle">
+        Gana batallas, acierta siluetas y completa retos para subir puestos.
+      </p>
+    </div>
+    @if (board() === 'week') {
+      <span class="ranking__countdown">⏳ Se reinicia en {{ countdown() }}</span>
+    }
+  </header>
+
+  <div class="ranking__tabs" role="tablist">
+    <button
+      role="tab"
+      class="ranking__tab"
+      [class.ranking__tab--active]="board() === 'week'"
+      [attr.aria-selected]="board() === 'week'"
+      (click)="setBoard('week')"
+    >
+      Esta semana
+    </button>
+    <button
+      role="tab"
+      class="ranking__tab"
+      [class.ranking__tab--active]="board() === 'alltime'"
+      [attr.aria-selected]="board() === 'alltime'"
+      (click)="setBoard('alltime')"
+    >
+      Histórico
+    </button>
+  </div>
+
+  @if (loading()) {
+    <p class="ranking__status">Cargando ranking...</p>
+  } @else if (error()) {
+    <div class="ranking__status">
+      No se pudo cargar el ranking.
+      <button class="ranking__retry" (click)="load()">Reintentar</button>
+    </div>
+  } @else if (entries().length === 0) {
+    <div class="ranking__empty">
+      <p>Aún no hay nadie en el ranking {{ board() === 'week' ? 'esta semana' : '' }}.</p>
+      <a class="ranking__cta" routerLink="/game">¡Sé el primero! Ir a jugar →</a>
+    </div>
+  } @else {
+    <ol class="ranking__list">
+      @for (entry of entries(); track entry.uid; let i = $index) {
+        <li
+          class="ranking__row"
+          [class.ranking__row--me]="entry.uid === userId()"
+          [class.ranking__row--podium]="i < 3"
+        >
+          <span class="ranking__pos">{{ medal(i) }}</span>
+          <span class="ranking__name">
+            {{ entry.name }}
+            @if (entry.uid === userId()) {
+              <span class="ranking__you">Tú</span>
+            }
+          </span>
+          <span class="ranking__level">Nv. {{ entry.level }}</span>
+          <span class="ranking__xp">{{ entry.xp }} XP</span>
+        </li>
+      }
+    </ol>
+
+    @if (myRank(); as me) {
+      @if (!inTop()) {
+        <div class="ranking__row ranking__row--me ranking__row--mine">
+          <span class="ranking__pos">#{{ me.rank }}</span>
+          <span class="ranking__name">Tu posición <span class="ranking__you">Tú</span></span>
+          <span class="ranking__level">de {{ me.total }}</span>
+          <span class="ranking__xp">{{ me.xp }} XP</span>
+        </div>
+      }
+    } @else {
+      <p class="ranking__hint">
+        Todavía no apareces en este ranking. <a routerLink="/game">Juega una partida</a> para
+        entrar.
+      </p>
+    }
+  }
+</div>

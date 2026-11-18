@@ -1,5 +1,22 @@
 import { Injectable } from '@angular/core';
-import { getFirestore, doc, getDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  arrayUnion,
+  arrayRemove,
+  collection,
+  query,
+  orderBy,
+  limit,
+  where,
+  getDocs,
+  getCountFromServer,
+  increment,
+  serverTimestamp,
+  writeBatch,
+} from 'firebase/firestore';
 import { firebaseApp } from '../firebase';
 
 // Firestore se inicializa aquí y no en firebase.ts para que solo se descargue
@@ -16,6 +33,16 @@ export interface UserData {
 }
 
 export const MAX_TEAM_SIZE = 6;
+
+export interface LeaderboardEntry {
+  uid: string;
+  name: string;
+  xp: number;
+  level: number;
+}
+
+/** Ranking de la semana ("week-2026-W47") o de siempre ("alltime"). */
+export type LeaderboardId = `week-${string}` | 'alltime';
 
 @Injectable({
   providedIn: 'root',
@@ -102,5 +129,58 @@ export class FirestoreService {
 
   async removeFromTeam(userId: string, pokemonId: number): Promise<void> {
     await this.merge(userId, { team: arrayRemove(pokemonId) });
+  }
+
+  // --- Ranking -------------------------------------------------------------
+  // Cada ranking es leaderboard/{id}/players/{uid}: solo nombre, nivel y XP,
+  // para no exponer el documento del usuario (favoritos, colección...).
+
+  private players(board: LeaderboardId) {
+    return collection(db, 'leaderboard', board, 'players');
+  }
+
+  /** Suma XP a la semana actual y actualiza el total histórico en una sola escritura. */
+  async addLeaderboardXp(
+    userId: string,
+    data: { name: string; level: number; gained: number; totalXp: number; week: string },
+  ): Promise<void> {
+    const batch = writeBatch(db);
+    const common = { name: data.name, level: data.level, updatedAt: serverTimestamp() };
+    batch.set(
+      doc(this.players(`week-${data.week}`), userId),
+      { ...common, xp: increment(data.gained) },
+      { merge: true },
+    );
+    batch.set(
+      doc(this.players('alltime'), userId),
+      { ...common, xp: data.totalXp },
+      { merge: true },
+    );
+    await batch.commit();
+  }
+
+  async getLeaderboard(board: LeaderboardId, size = 50): Promise<LeaderboardEntry[]> {
+    const snap = await getDocs(query(this.players(board), orderBy('xp', 'desc'), limit(size)));
+    return snap.docs.map((d) => ({
+      uid: d.id,
+      name: d.get('name') ?? 'Entrenador',
+      xp: d.get('xp') ?? 0,
+      level: d.get('level') ?? 1,
+    }));
+  }
+
+  /** Posición del usuario (aunque no esté en el top) contando quién tiene más XP. */
+  async getLeaderboardRank(
+    board: LeaderboardId,
+    userId: string,
+  ): Promise<{ rank: number; xp: number; total: number } | null> {
+    const mine = await getDoc(doc(this.players(board), userId));
+    if (!mine.exists()) return null;
+    const xp = mine.get('xp') ?? 0;
+    const [above, total] = await Promise.all([
+      getCountFromServer(query(this.players(board), where('xp', '>', xp))),
+      getCountFromServer(this.players(board)),
+    ]);
+    return { rank: above.data().count + 1, xp, total: total.data().count };
   }
 }

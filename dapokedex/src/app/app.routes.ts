@@ -67,6 +67,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/game/guess/guess').then((m) => m.Guess),
   },
   {
+    path: 'ranking',
+    title: 'Ranking · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/ranking/ranking').then((m) => m.Ranking),
+  },
+  {
     path: 'collection',
     title: 'Mi colección · Dapokedex',
     canActivate: [authGuard],

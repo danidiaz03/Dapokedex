@@ -9,7 +9,10 @@ import {
   applyEvent,
   dayKey,
   levelProgress,
+  levelFromXp,
   normalizeProgress,
+  weekKey,
+  xpFromRewards,
 } from '../game/progress';
 
 /** Guarda el progreso del entrenador en Firestore y anuncia las recompensas. */
@@ -61,6 +64,30 @@ export class ProgressService {
     this.progress.set(progress);
     this.collectionSize.set(data.collection.length);
     this.feed.show(rewards);
+
+    // El ranking no debe romper el juego si falla (sin conexión, reglas...).
+    const gained = xpFromRewards(rewards);
+    if (gained > 0) {
+      this.firestore
+        .addLeaderboardXp(userId, {
+          name: this.trainerName(),
+          level: levelFromXp(progress.xp),
+          gained,
+          totalXp: progress.xp,
+          week: weekKey(),
+        })
+        .catch((error) => console.warn('No se pudo actualizar el ranking', error));
+    }
     return rewards;
+  }
+
+  /**
+   * Nombre público en el ranking: solo el nombre de pila de la cuenta, nunca
+   * el email, para no exponer datos personales.
+   */
+  trainerName(): string {
+    const user = this.auth.currentUser();
+    const first = user?.displayName?.trim().split(/\s+/)[0];
+    return first || `Entrenador ${user?.uid.slice(0, 4).toUpperCase() ?? ''}`.trim();
   }
 }

@@ -20,7 +20,11 @@ Pokédex web construida con **Angular 21** que consume la [PokeAPI](https://poke
   - Daño con nivel, STAB, eficacia de tipos e inmunidades.
   - Movimientos con PP y precisión; el más rápido ataca primero.
   - Los rivales derrotados se añaden a tu colección.
+  - Rivales de nuevas regiones según tu nivel y rivales **shiny** por sorpresa.
 - ❓ Minijuego **Adivina el Pokémon** por su silueta, con racha y filtro por generación.
+- 🏅 **Progreso del entrenador**: XP y niveles, retos diarios, racha de días y logros.
+- 🏆 **Ranking** semanal e histórico entre jugadores.
+- 📚 Páginas de **tipos**, **movimientos** y **habilidades**, y **comparador** de Pokémon.
 - ♿ Navegación con teclado y foco visible.
 
 ## 🛠️ Stack
@@ -73,18 +77,11 @@ Pasos en la [consola de Firebase](https://console.firebase.google.com):
 1. Crea un proyecto y registra una **app web**; copia su config al archivo de arriba.
 2. Activa **Authentication** → proveedores **Email/Password** y **Google**.
 3. Crea una base de datos **Cloud Firestore**.
-4. Publica estas **reglas de seguridad** (cada usuario solo accede a su propio documento):
-
-   ```
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /users/{userId} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-     }
-   }
-   ```
+4. Publica las **reglas de seguridad** de [`firestore.rules`](firestore.rules)
+   (Firestore Database → Reglas). Cada usuario solo accede a su propio
+   documento y, en el ranking, solo puede escribir su fila: la XP no puede
+   bajar ni subir de golpe más de lo que da una partida. Sin estas reglas el
+   ranking no se guarda.
 
 5. Activa **App Check** con un proveedor **reCAPTCHA v3** y copia la clave de
    sitio en `recaptchaSiteKey`. En local se usa un token de depuración que

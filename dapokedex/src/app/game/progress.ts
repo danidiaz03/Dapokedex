@@ -450,3 +450,35 @@ export function applyEvent(
 
   return { progress: p, rewards };
 }
+
+// ---------------------------------------------------------------------------
+// Ranking semanal
+// ---------------------------------------------------------------------------
+
+/** Semana ISO (empieza el lunes) en formato "2026-W47". */
+export function weekKey(date = new Date()): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  // El jueves de la semana determina a qué año pertenece.
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+/** Inicio del próximo lunes (hora local): cuando se reinicia el ranking semanal. */
+export function nextWeekStart(date = new Date()): Date {
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysUntilMonday = (8 - next.getDay()) % 7 || 7;
+  next.setDate(next.getDate() + daysUntilMonday);
+  return next;
+}
+
+/** XP total que suman unas recompensas (para el ranking). */
+export function xpFromRewards(rewards: Reward[]): number {
+  return rewards.reduce((sum, r) => {
+    if (r.kind === 'xp') return sum + r.amount;
+    if (r.kind === 'streak' || r.kind === 'challenge') return sum + r.xp;
+    return sum;
+  }, 0);
+}

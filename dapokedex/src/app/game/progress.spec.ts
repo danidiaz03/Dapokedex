@@ -6,8 +6,11 @@ import {
   levelFromXp,
   levelProgress,
   maxEnemyId,
+  nextWeekStart,
   normalizeProgress,
+  weekKey,
   xpForLevel,
+  xpFromRewards,
 } from './progress';
 
 const today = '2026-11-18';
@@ -129,5 +132,31 @@ describe('normalizeProgress', () => {
     expect(p.stats.battlesWon).toBe(2);
     expect(p.stats.kos).toBe(0);
     expect(p.achievements).toEqual([]);
+  });
+});
+
+describe('ranking semanal', () => {
+  it('calcula la semana ISO, también en el cambio de año', () => {
+    expect(weekKey(new Date(2026, 10, 18))).toBe('2026-W47');
+    expect(weekKey(new Date(2026, 10, 16))).toBe('2026-W47');
+    expect(weekKey(new Date(2026, 10, 15))).toBe('2026-W46');
+    expect(weekKey(new Date(2027, 0, 1))).toBe('2026-W53');
+  });
+
+  it('el reinicio es el próximo lunes', () => {
+    const next = nextWeekStart(new Date(2026, 10, 18, 15, 30));
+    expect([next.getDate(), next.getDay(), next.getHours()]).toEqual([23, 1, 0]);
+    expect(nextWeekStart(new Date(2026, 10, 16, 9)).getDate()).toBe(23);
+  });
+
+  it('suma la XP de todas las recompensas', () => {
+    expect(
+      xpFromRewards([
+        { kind: 'xp', amount: 100, reason: 'Victoria' },
+        { kind: 'streak', days: 2, xp: 20 },
+        { kind: 'challenge', title: 'Reto', xp: 50 },
+        { kind: 'level', level: 3 },
+      ]),
+    ).toBe(170);
   });
 });

@@ -26,6 +26,7 @@
           <span class="chip">✨ {{ p.shinies.length }} shiny</span>
           <span class="chip">🗺️ Rivales hasta el #{{ maxEnemyId() }}</span>
         </div>
+        <a class="trainer-card__ranking" routerLink="/ranking">🏅 Ver el ranking semanal →</a>
         @if (nextRegion(); as next) {
           <p class="trainer-card__next">
             Próximo desbloqueo: <strong>{{ next.name }}</strong> en el nivel {{ next.level }}

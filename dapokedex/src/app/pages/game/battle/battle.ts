@@ -7,7 +7,13 @@ import { PokemonDetailPage, PokemonMove } from '../../../interfaces/pokemon';
 import { TypeNamePipe } from '../../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../../pipes/pokemon-name.pipe';
 import { ProgressService } from '../../../services/progress.service';
-import { Reward, SHINY_CHANCE, levelFromXp, maxEnemyId } from '../../../game/progress';
+import {
+  Reward,
+  SHINY_CHANCE,
+  levelFromXp,
+  maxEnemyId,
+  xpFromRewards,
+} from '../../../game/progress';
 
 const SHINY_ARTWORK_URL =
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny';
@@ -565,14 +571,7 @@ export class Battle implements OnInit, OnDestroy {
       })
       .catch(() => [] as Reward[]);
     this.rewards.set(rewards);
-    this.rewardXp.set(
-      rewards.reduce(
-        (sum, r) =>
-          sum +
-          (r.kind === 'xp' ? r.amount : r.kind === 'challenge' || r.kind === 'streak' ? r.xp : 0),
-        0,
-      ),
-    );
+    this.rewardXp.set(xpFromRewards(rewards));
   }
 
   /** Recompensas destacadas (no de XP) para el resumen de la batalla. */

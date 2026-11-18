@@ -531,3 +531,12 @@
     align-self: center;
   }
 }
+.trainer-card__ranking {
+  align-self: flex-start;
+  color: #fde68a;
+  font: 700 14px/20px Space Grotesk;
+  text-decoration: none;
+}
+.trainer-card__ranking:hover {
+  text-decoration: underline;
+}
