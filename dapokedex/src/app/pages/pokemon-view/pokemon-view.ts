@@ -5,10 +5,12 @@ import { Title } from '@angular/platform-browser';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { PokemonDetailPage, pokemonEvolutionChain, pokemonSpecies } from '../../interfaces/pokemon';
 import {
+  LAST_NATIONAL_DEX,
   PokemonService,
   cleanFlavorText,
   getIdFromUrl,
   pickLocalized,
+  playPokemonCry,
 } from '../../services/pokemon';
 import { PokemonEvolution } from '../../componentes/pokemon-evolution/pokemon-evolution';
 import { AuthService } from '../../services/auth.service';
@@ -100,8 +102,6 @@ const EGG_GROUPS: Record<string, string> = {
 // Referencia para las barras: casi ningún stat base supera 180, y así los
 // valores altos (Blissey 255 PS) ya no desbordan la barra.
 const STAT_BAR_MAX = 180;
-// Último Pokémon con número de Pokédex nacional (las formas tienen ids > 10000).
-const LAST_NATIONAL_DEX = 1025;
 
 @Component({
   selector: 'app-pokemon-view',
@@ -382,11 +382,7 @@ export class PokemonView implements OnInit {
   playCry(): void {
     const id = this.pokemonDetail()?.id;
     if (!id) return;
-    const audio = new Audio(
-      `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${id}.ogg`,
-    );
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
+    playPokemonCry(id);
   }
 
   private loadSpecies(data: PokemonDetailPage) {

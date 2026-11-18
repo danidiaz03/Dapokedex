@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
@@ -21,7 +21,7 @@ const ABILITY_URL = 'https://pokeapi.co/api/v2/ability';
   selector: 'app-ability-page',
   imports: [RouterLink, PokemonGrid],
   templateUrl: './ability-page.html',
-  styleUrl: './detail-page.css',
+  styleUrl: '../../shared/detail-page.css',
 })
 export class AbilityPage {
   private service = inject(PokemonService);
@@ -47,10 +47,14 @@ export class AbilityPage {
   displayName = computed(() => {
     const ability = this.ability();
     if (!ability) return formatPokemonName(this.name());
-    const name = pickLocalized(ability.names)?.name ?? formatPokemonName(ability.name);
-    this.title.setTitle(`${name} · Dapokedex`);
-    return name;
+    return pickLocalized(ability.names)?.name ?? formatPokemonName(ability.name);
   });
+
+  constructor() {
+    effect(() => {
+      if (this.ability()) this.title.setTitle(`${this.displayName()} · Dapokedex`);
+    });
+  }
 
   description = computed(() => {
     const text = pickLocalized(this.ability()?.flavor_text_entries)?.flavor_text;

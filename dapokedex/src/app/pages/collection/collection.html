@@ -12,7 +12,7 @@
   @if (!loading()) {
     <section class="dex-progress" aria-label="Pokédex completada">
       <div class="dex-progress__head">
-        <strong>Pokédex: {{ dexCount() }} / 1025</strong>
+        <strong>Pokédex: {{ dexCount() }} / {{ dexTotal }}</strong>
         <span>{{ dexPercent() }}%</span>
       </div>
       <div class="dex-progress__bar"><div [style.width.%]="dexPercent()"></div></div>
@@ -109,6 +109,7 @@
     [pokemonId]="e.id"
     [pokemonName]="e.name"
     [options]="e.options"
+    (evolved)="onEvolved()"
     (closed)="onEvolutionClosed()"
   />
 }

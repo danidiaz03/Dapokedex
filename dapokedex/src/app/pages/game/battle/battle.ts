@@ -2,7 +2,7 @@ import { Component, inject, OnDestroy, OnInit, signal, WritableSignal } from '@a
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { FirestoreService } from '../../../services/firestore.service';
-import { PokemonService, getArtworkUrl } from '../../../services/pokemon';
+import { PokemonService, getArtworkUrl, playPokemonCry } from '../../../services/pokemon';
 import { PokemonDetailPage, PokemonMove } from '../../../interfaces/pokemon';
 import { TypeNamePipe } from '../../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../../pipes/pokemon-name.pipe';
@@ -150,11 +150,7 @@ export class Battle implements OnInit, OnDestroy {
   }
 
   playCry(pokemonId: number) {
-    const audio = new Audio(
-      `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${pokemonId}.ogg`,
-    );
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
+    playPokemonCry(pokemonId);
   }
 
   playHitSound(effectiveness: number) {

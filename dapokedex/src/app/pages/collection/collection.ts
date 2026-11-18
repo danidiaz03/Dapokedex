@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
-import { PokemonService } from '../../services/pokemon';
+import { LAST_NATIONAL_DEX, PokemonService } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 import { EvolutionService } from '../../services/evolution.service';
@@ -37,9 +37,10 @@ export class Collection implements OnInit {
   teamError = signal('');
   pokemonXp = signal<Record<number, number>>({});
   collectionIds = signal<number[]>([]);
+  readonly dexTotal = LAST_NATIONAL_DEX;
   regions = computed(() => regionCompletion(this.collectionIds()));
   dexCount = computed(() => this.regions().reduce((sum, r) => sum + r.count, 0));
-  dexPercent = computed(() => Math.round((this.dexCount() / 1025) * 1000) / 10);
+  dexPercent = computed(() => Math.round((this.dexCount() / LAST_NATIONAL_DEX) * 1000) / 10);
   /** Evoluciones ya disponibles por id de Pokémon. */
   evolutions = signal<Record<number, EvolutionOption[]>>({});
   evolving = signal<{ id: number; name: string; options: EvolutionOption[] } | null>(null);
@@ -97,8 +98,17 @@ export class Collection implements OnInit {
     if (options) this.evolving.set({ id: pokemon.id, name: pokemon.name, options });
   }
 
+  private evolved = false;
+
+  onEvolved() {
+    this.evolved = true;
+  }
+
+  /** Solo se recarga la colección si de verdad ha evolucionado. */
   async onEvolutionClosed() {
     this.evolving.set(null);
+    if (!this.evolved) return;
+    this.evolved = false;
     const userId = this.authService.currentUser()?.uid;
     if (userId) await this.load(userId);
   }

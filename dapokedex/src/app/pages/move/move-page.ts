@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
@@ -25,7 +25,7 @@ import {
   selector: 'app-move-page',
   imports: [RouterLink, TypeNamePipe, PokemonGrid],
   templateUrl: './move-page.html',
-  styleUrl: '../ability/detail-page.css',
+  styleUrl: '../../shared/detail-page.css',
 })
 export class MovePage {
   private service = inject(PokemonService);
@@ -51,10 +51,14 @@ export class MovePage {
   displayName = computed(() => {
     const move = this.move();
     if (!move) return formatPokemonName(this.name());
-    const name = pickLocalized(move.names)?.name ?? formatPokemonName(move.name);
-    this.title.setTitle(`${name} · Dapokedex`);
-    return name;
+    return pickLocalized(move.names)?.name ?? formatPokemonName(move.name);
   });
+
+  constructor() {
+    effect(() => {
+      if (this.move()) this.title.setTitle(`${this.displayName()} · Dapokedex`);
+    });
+  }
 
   description = computed(() => {
     const text = pickLocalized(this.move()?.flavor_text_entries)?.flavor_text;

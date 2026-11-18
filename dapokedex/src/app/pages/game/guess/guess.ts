@@ -5,8 +5,10 @@ import { ProgressService } from '../../../services/progress.service';
 import {
   GENERATIONS,
   PokemonService,
+  LAST_NATIONAL_DEX,
   getArtworkUrl,
   pickLocalized,
+  playPokemonCry,
 } from '../../../services/pokemon';
 
 interface GuessOption {
@@ -14,7 +16,6 @@ interface GuessOption {
   name: string;
 }
 
-const LAST_NATIONAL_DEX = 1025;
 const BEST_STREAK_KEY = 'dapokedex-guess-best-streak';
 // Rango de números de Pokédex de cada generación, para jugar solo con una.
 const GENERATION_RANGES: Record<number, [number, number]> = {
@@ -26,7 +27,7 @@ const GENERATION_RANGES: Record<number, [number, number]> = {
   6: [650, 721],
   7: [722, 809],
   8: [810, 905],
-  9: [906, 1025],
+  9: [906, LAST_NATIONAL_DEX],
 };
 
 @Component({
@@ -137,11 +138,7 @@ export class Guess implements OnInit, OnDestroy {
   playCry() {
     const answer = this.answer();
     if (!answer) return;
-    const audio = new Audio(
-      `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${answer.id}.ogg`,
-    );
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
+    playPokemonCry(answer.id);
   }
 
   optionState(option: GuessOption): 'correct' | 'wrong' | '' {

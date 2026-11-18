@@ -15,6 +15,7 @@ import {
 import {
   FORMS_ID_START,
   GENERATIONS,
+  LAST_NATIONAL_DEX,
   PokemonService,
   getArtworkUrl,
   getIdFromUrl,
@@ -31,9 +32,6 @@ const PAGE_SIZE = 24;
 // Máximo de resultados de búsqueda a cargar: buscar "a" coincidía con cientos
 // de Pokémon y se lanzaba una petición de detalle por cada uno.
 const MAX_SEARCH_RESULTS = 24;
-
-// Último Pokémon con número de Pokédex nacional (las formas tienen ids > 10000).
-const LAST_NATIONAL_DEX = 1025;
 
 @Component({
   selector: 'app-pokemon-list',

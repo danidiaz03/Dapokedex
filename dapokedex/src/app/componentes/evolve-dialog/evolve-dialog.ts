@@ -2,7 +2,7 @@ import { Component, OnDestroy, computed, inject, input, output, signal } from '@
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { RewardFeedService } from '../../services/reward-feed.service';
-import { PokemonService, getArtworkUrl } from '../../services/pokemon';
+import { PokemonService, getArtworkUrl, playPokemonCry } from '../../services/pokemon';
 import { EvolutionOption } from '../../game/pokemon-levels';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 
@@ -71,10 +71,6 @@ export class EvolveDialog implements OnDestroy {
   }
 
   private playCry(id: number) {
-    const audio = new Audio(
-      `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${id}.ogg`,
-    );
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
+    playPokemonCry(id);
   }
 }
