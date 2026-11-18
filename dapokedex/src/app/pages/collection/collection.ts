@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
@@ -13,6 +13,7 @@ import {
   pokemonLevel,
   pokemonLevelPercent,
 } from '../../game/pokemon-levels';
+import { regionCompletion } from '../../game/progress';
 
 @Component({
   selector: 'app-collection',
@@ -35,6 +36,10 @@ export class Collection implements OnInit {
   selectedType = signal('');
   teamError = signal('');
   pokemonXp = signal<Record<number, number>>({});
+  collectionIds = signal<number[]>([]);
+  regions = computed(() => regionCompletion(this.collectionIds()));
+  dexCount = computed(() => this.regions().reduce((sum, r) => sum + r.count, 0));
+  dexPercent = computed(() => Math.round((this.dexCount() / 1025) * 1000) / 10);
   /** Evoluciones ya disponibles por id de Pokémon. */
   evolutions = signal<Record<number, EvolutionOption[]>>({});
   evolving = signal<{ id: number; name: string; options: EvolutionOption[] } | null>(null);
@@ -58,6 +63,7 @@ export class Collection implements OnInit {
     this.pokemons.set(pokemons);
     this.teamIds.set(data.team);
     this.pokemonXp.set(data.pokemonXp);
+    this.collectionIds.set(data.collection);
     this.applyFilters();
     this.loading.set(false);
     this.loadEvolutions(data.pokemonXp);

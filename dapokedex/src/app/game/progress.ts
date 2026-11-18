@@ -105,6 +105,18 @@ export function maxEnemyId(level: number): number {
   return REGIONS.filter((r) => r.level <= level).at(-1)!.lastId;
 }
 
+/** Cuántos Pokémon de cada región tiene la colección. */
+export function regionCompletion(collection: number[]) {
+  const owned = new Set(collection);
+  return REGIONS.map((region, i) => {
+    const firstId = i === 0 ? 1 : REGIONS[i - 1].lastId + 1;
+    const total = region.lastId - firstId + 1;
+    let count = 0;
+    for (let id = firstId; id <= region.lastId; id++) if (owned.has(id)) count++;
+    return { name: region.name, count, total, complete: count === total };
+  });
+}
+
 export function nextRegion(level: number) {
   return REGIONS.find((r) => r.level > level);
 }

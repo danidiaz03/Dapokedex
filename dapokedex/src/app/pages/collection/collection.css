@@ -315,3 +315,56 @@
   font: 700 13px Space Grotesk;
   cursor: pointer;
 }
+.dex-progress {
+  background: #fff;
+  border-radius: 24px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.dex-progress__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+}
+.dex-progress__bar,
+.region__bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #efecff;
+  overflow: hidden;
+}
+.dex-progress__bar div,
+.region__bar div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #b91c1c, #f59e0b);
+  transition: width 0.8s ease;
+}
+.dex-progress__regions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 20px;
+}
+.region {
+  display: grid;
+  grid-template-columns: 80px 1fr 64px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.region__bar {
+  height: 6px;
+}
+.region__count {
+  font: 400 12px Roboto Mono;
+  text-align: right;
+  color: #5e3f3a;
+}
+.region--complete .region__name {
+  font-weight: 700;
+  color: #b45309;
+}

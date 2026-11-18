@@ -9,6 +9,25 @@
     </button>
   </div>
 
+  @if (!loading()) {
+    <section class="dex-progress" aria-label="Pokédex completada">
+      <div class="dex-progress__head">
+        <strong>Pokédex: {{ dexCount() }} / 1025</strong>
+        <span>{{ dexPercent() }}%</span>
+      </div>
+      <div class="dex-progress__bar"><div [style.width.%]="dexPercent()"></div></div>
+      <div class="dex-progress__regions">
+        @for (r of regions(); track r.name) {
+          <div class="region" [class.region--complete]="r.complete">
+            <span class="region__name">{{ r.complete ? '🏅' : '' }} {{ r.name }}</span>
+            <div class="region__bar"><div [style.width.%]="(r.count / r.total) * 100"></div></div>
+            <span class="region__count">{{ r.count }}/{{ r.total }}</span>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
   @if (teamError()) {
     <p class="error-text">{{ teamError() }}</p>
   }

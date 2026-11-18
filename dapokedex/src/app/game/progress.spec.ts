@@ -10,6 +10,7 @@ import {
   maxEnemyId,
   nextWeekStart,
   normalizeProgress,
+  regionCompletion,
   weekKey,
   xpForLevel,
   xpFromRewards,
@@ -182,5 +183,15 @@ describe('Pokémon del día', () => {
     expect(second.rewards.some((r) => r.kind === 'xp')).toBe(false);
     expect(dailyPokemonClaimed(second.progress, today)).toBe(true);
     expect(dailyPokemonClaimed(second.progress, '2026-11-19')).toBe(false);
+  });
+});
+
+describe('regionCompletion', () => {
+  it('cuenta por región y marca las completas', () => {
+    const kanto = Array.from({ length: 151 }, (_, i) => i + 1);
+    const result = regionCompletion([...kanto, 152, 152, 10034]);
+    expect(result[0]).toEqual({ name: 'Kanto', count: 151, total: 151, complete: true });
+    expect(result[1]).toEqual({ name: 'Johto', count: 1, total: 100, complete: false });
+    expect(result.reduce((sum, r) => sum + r.total, 0)).toBe(1025);
   });
 });
