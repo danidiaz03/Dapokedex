@@ -77,6 +77,14 @@ export class PokemonList implements OnInit {
     return this.searchResults();
   });
 
+  /** Tarjetas de carga mientras llega la primera página o una búsqueda. */
+  public readonly skeletons = Array.from({ length: 12 }, (_, i) => i);
+  public showSkeletons = computed(() =>
+    this.searchTerm()
+      ? this.isSearching() && this.searchResults().length === 0
+      : this.isLoading() && this.pokemons().length === 0,
+  );
+
   private search$ = new Subject<string>();
 
   async ngOnInit(): Promise<void> {

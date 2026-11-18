@@ -52,13 +52,24 @@
       No se pudo cargar el listado.
       <button class="retry-btn" (click)="retry()">Reintentar</button>
     </div>
-  } @else if (isLoading()) {
-    <p class="listing-status">Cargando Pokémon...</p>
   } @else if (hasFilters() && totalCount() === 0) {
     <p class="listing-status">Ningún Pokémon cumple estos filtros.</p>
   }
 
-  <div class="pokemon-listing" [class.pokemon-listing--loading]="isLoading() && !searchTerm()">
+  <div
+    class="pokemon-listing"
+    [class.pokemon-listing--loading]="isLoading() && !searchTerm()"
+    [attr.aria-busy]="showSkeletons()"
+  >
+    @if (showSkeletons()) {
+      @for (i of skeletons; track i) {
+        <div class="pokemon-miniature pokemon-miniature--skeleton" aria-hidden="true">
+          <div class="skeleton skeleton--title"></div>
+          <div class="pokemon-miniature-image-container skeleton skeleton--image"></div>
+          <div class="skeleton skeleton--badge"></div>
+        </div>
+      }
+    }
     @for (pokemon of filteredPokemons(); track pokemon.id) {
       <div
         class="pokemon-miniature"
