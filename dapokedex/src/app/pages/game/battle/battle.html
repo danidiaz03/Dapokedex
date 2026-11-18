@@ -22,7 +22,7 @@
             @for (pokemon of playerTeam(); track pokemon.id) {
               <div class="preview-card">
                 <img [src]="pokemon.sprite" [alt]="pokemon.name" class="preview-sprite" />
-                <p class="preview-name">{{ pokemon.name }}</p>
+                <p class="preview-name">{{ pokemon.name | nombre: pokemon.id }}</p>
                 <div class="preview-types">
                   @for (type of pokemon.types; track $index) {
                     <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
@@ -41,7 +41,7 @@
             @for (pokemon of enemyTeam(); track pokemon.id) {
               <div class="preview-card">
                 <img [src]="pokemon.sprite" [alt]="pokemon.name" class="preview-sprite" />
-                <p class="preview-name">{{ pokemon.name }}</p>
+                <p class="preview-name">{{ pokemon.name | nombre: pokemon.id }}</p>
                 <div class="preview-types">
                   @for (type of pokemon.types; track $index) {
                     <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
@@ -61,7 +61,7 @@
         <span class="side-label side-label--player">Tú</span>
         <div class="pokemon-info-box">
           <div class="pokemon-info-header">
-            <p class="pokemon-name">{{ activePokemon()!.name }}</p>
+            <p class="pokemon-name">{{ activePokemon()!.name | nombre: activePokemon()!.id }}</p>
             <div class="pokemon-types">
               @for (type of activePokemon()!.types; track $index) {
                 <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
@@ -99,7 +99,7 @@
         <span class="side-label side-label--enemy">Rival</span>
         <div class="pokemon-info-box">
           <div class="pokemon-info-header">
-            <p class="pokemon-name">{{ activeEnemy()!.name }}</p>
+            <p class="pokemon-name">{{ activeEnemy()!.name | nombre: activeEnemy()!.id }}</p>
             <div class="pokemon-types">
               @for (type of activeEnemy()!.types; track $index) {
                 <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
@@ -182,7 +182,7 @@
               (click)="selectNextPokemon(pokemon)"
             >
               <img [src]="pokemon.sprite" [alt]="pokemon.name" class="select-sprite" />
-              <p class="select-name">{{ pokemon.name }}</p>
+              <p class="select-name">{{ pokemon.name | nombre: pokemon.id }}</p>
               <div class="hp-bar-bg">
                 <div
                   class="hp-bar-fill"
@@ -256,7 +256,7 @@
                   <span class="new-badge">¡Nuevo!</span>
                 }
                 <img [src]="pokemon.sprite" [alt]="pokemon.name" class="captured-sprite" />
-                <p class="captured-name">{{ pokemon.name }}</p>
+                <p class="captured-name">{{ pokemon.name | nombre: pokemon.id }}</p>
               </div>
             }
           </div>

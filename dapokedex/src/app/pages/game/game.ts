@@ -4,6 +4,7 @@ import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService, getArtworkUrl } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
+import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 
 const STARTERS = [
   { id: 1, name: 'Bulbasaur' },
@@ -13,7 +14,7 @@ const STARTERS = [
 
 @Component({
   selector: 'app-game',
-  imports: [TypeNamePipe, RouterLink],
+  imports: [TypeNamePipe, RouterLink, PokemonNamePipe],
   templateUrl: './game.html',
   styleUrl: './game.css',
 })

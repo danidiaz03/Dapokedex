@@ -4,10 +4,11 @@ import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
+import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 
 @Component({
   selector: 'app-collection',
-  imports: [TypeNamePipe],
+  imports: [TypeNamePipe, PokemonNamePipe],
   templateUrl: './collection.html',
   styleUrl: './collection.css',
 })

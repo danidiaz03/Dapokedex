@@ -48,7 +48,7 @@
                 class="pokemon-image"
               />
             </div>
-            <p class="pokemon-name">{{ pokemon.name }}</p>
+            <p class="pokemon-name">{{ pokemon.name | nombre: pokemon.id }}</p>
             <div class="pokemon-types">
               @for (t of pokemon.types; track $index) {
                 <span class="type-badge type-badge--{{ t.type.name }}">{{

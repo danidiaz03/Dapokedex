@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
@@ -14,6 +14,7 @@ import { PokemonEvolution } from '../../componentes/pokemon-evolution/pokemon-ev
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
+import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 
 type Tab = 'about' | 'stats' | 'evolution' | 'moves';
 type MoveMethod = 'level-up' | 'machine' | 'egg' | 'tutor';
@@ -110,7 +111,7 @@ const LAST_NATIONAL_DEX = 1025;
 
 @Component({
   selector: 'app-pokemon-view',
-  imports: [PokemonEvolution, RouterLink, TypeNamePipe],
+  imports: [PokemonEvolution, RouterLink, TypeNamePipe, PokemonNamePipe],
   templateUrl: './pokemon-view.html',
   styleUrl: './pokemon-view.css',
 })
@@ -241,6 +242,14 @@ export class PokemonView implements OnInit {
   /** Número de Pokédex nacional (para las formas, el de su especie). */
   public dexNumber = computed(() => this.species()?.id ?? this.pokemonDetail()?.id ?? 0);
 
+  constructor() {
+    // El título se actualiza también cuando llegan los nombres en español.
+    effect(() => {
+      const data = this.pokemonDetail();
+      if (data) this.title.setTitle(`${this.service.displayName(data.name, data.id)} · Dapokedex`);
+    });
+  }
+
   statLabel(name: string): string {
     return STAT_LABELS[name] ?? name;
   }
@@ -340,7 +349,6 @@ export class PokemonView implements OnInit {
       .subscribe({
         next: async (data) => {
           this.pokemonDetail.set(data);
-          this.title.setTitle(`${this.capitalize(data.name.replace(/-/g, ' '))} · Dapokedex`);
           this.loadSpecies(data);
           this.loadAbilities(data);
           this.loadMatchups(data.types.map((t) => t.type.name));
@@ -455,9 +463,5 @@ export class PokemonView implements OnInit {
     } catch {
       this.matchups.set([]);
     }
-  }
-
-  private capitalize(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 }

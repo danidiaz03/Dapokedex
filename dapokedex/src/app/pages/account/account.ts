@@ -3,11 +3,12 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService } from '../../services/pokemon';
+import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [],
+  imports: [PokemonNamePipe],
   templateUrl: './account.html',
   styleUrl: './account.css',
 })

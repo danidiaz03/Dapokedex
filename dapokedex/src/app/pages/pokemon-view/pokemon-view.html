@@ -17,7 +17,7 @@
           }
         </span>
         <h2 class="name-pokemon">
-          {{ pokemonDetail()!.name }}
+          {{ pokemonDetail()!.name | nombre: pokemonDetail()!.id }}
         </h2>
         <div class="pokemon-miniature__types">
           @for (t of pokemonDetail()!.types; track $index) {
@@ -166,7 +166,10 @@
         @if (activeTab() === 'about') {
           <div class="stats-container">
             <div class="about-title statistic-title">
-              Sobre <span class="capitalize">{{ pokemonDetail()!.name }}</span>
+              Sobre
+              <span class="capitalize">{{
+                pokemonDetail()!.name | nombre: pokemonDetail()!.id
+              }}</span>
             </div>
             @if (genus()) {
               <p class="about-genus">{{ genus() }}</p>

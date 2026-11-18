@@ -25,7 +25,7 @@
             <div class="starter-image-container">
               <img [src]="getSpriteUrl(starter.id)" [alt]="starter.name" />
             </div>
-            <p class="starter-name">{{ starter.name }}</p>
+            <p class="starter-name">{{ starter.name | nombre: starter.id }}</p>
           </div>
         }
       </div>
@@ -63,7 +63,7 @@
                   class="pokemon-image"
                 />
               </div>
-              <p class="pokemon-name">{{ pokemon.name }}</p>
+              <p class="pokemon-name">{{ pokemon.name | nombre: pokemon.id }}</p>
               <div class="pokemon-types">
                 @for (t of pokemon.types; track $index) {
                   <span class="type-badge type-badge--{{ t.type.name }}">{{

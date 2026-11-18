@@ -18,11 +18,13 @@ import {
   PokemonService,
   getArtworkUrl,
   getIdFromUrl,
+  normalizeSearch,
 } from '../../services/pokemon';
 import { PokemonMiniatureDetail, PokemonResult } from '../../interfaces/pokemon';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
+import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 
 const PAGE_SIZE = 24;
 // Máximo de resultados de búsqueda a cargar: buscar "a" coincidía con cientos
@@ -34,7 +36,7 @@ const LAST_NATIONAL_DEX = 1025;
 
 @Component({
   selector: 'app-pokemon-list',
-  imports: [RouterLink, TypeNamePipe],
+  imports: [RouterLink, TypeNamePipe, PokemonNamePipe],
   templateUrl: './pokemon-list.html',
   styleUrl: './pokemon-list.css',
 })
@@ -78,6 +80,7 @@ export class PokemonList implements OnInit {
   private search$ = new Subject<string>();
 
   async ngOnInit(): Promise<void> {
+    this.pokemonService.loadSpeciesNames();
     this.pokemonService.getAllPokemonNames().subscribe({
       next: (data) => this.allPokemons.set(data.results),
     });
@@ -227,11 +230,20 @@ export class PokemonList implements OnInit {
       this.searchMatches.set(0);
       return of([]);
     }
-    // Se puede buscar por nombre o por número de Pokédex, dentro de los filtros activos.
+    // Se puede buscar por nombre (en inglés o en español, sin importar tildes ni
+    // signos) o por número de Pokédex, dentro de los filtros activos.
     const source = this.filteredBase() ?? this.allPokemons();
-    const matches = source.filter(
-      (p) => p.name.includes(term) || String(getIdFromUrl(p.url)) === term,
-    );
+    const query = normalizeSearch(term);
+    const names = this.pokemonService.speciesNames();
+    const matches = source.filter((p) => {
+      const id = getIdFromUrl(p.url);
+      if (String(id) === term) return true;
+      if (!query) return false;
+      return (
+        normalizeSearch(p.name).includes(query) ||
+        (!!names[id] && normalizeSearch(names[id]).includes(query))
+      );
+    });
     this.searchMatches.set(matches.length);
     return this.toMiniatures(matches.slice(0, MAX_SEARCH_RESULTS)).pipe(catchError(() => of([])));
   }
@@ -260,13 +272,13 @@ export class PokemonList implements OnInit {
     }
   }
 
-  /** Permite abrir la ficha con Enter cuando la tarjeta tiene el foco. */
   /** Abre la ficha de un Pokémon al azar de la Pokédex nacional. */
   openRandom(): void {
     const id = Math.floor(Math.random() * LAST_NATIONAL_DEX) + 1;
     this.router.navigate(['/pokemon', id]);
   }
 
+  /** Permite abrir la ficha con Enter cuando la tarjeta tiene el foco. */
   openPokemon(name: string): void {
     this.router.navigate(['/pokemon', name]);
   }

@@ -58,7 +58,7 @@
                 class="pokemon-image"
               />
             </div>
-            <p class="pokemon-name">{{ pokemon.name }}</p>
+            <p class="pokemon-name">{{ pokemon.name | nombre: pokemon.id }}</p>
           </div>
         }
       </div>

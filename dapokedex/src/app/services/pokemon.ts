@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { firstValueFrom, Observable, shareReplay } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { catchError, firstValueFrom, map, Observable, of, shareReplay } from 'rxjs';
 
 import {
   PokemonDetail,
@@ -17,6 +17,16 @@ import {
 
 const ARTWORK_URL =
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork';
+
+// PokeAPI también ofrece GraphQL: permite traer los 1025 nombres en español en
+// una sola petición en lugar de pedir /pokemon-species uno a uno.
+const GRAPHQL_URL = 'https://graphql.pokeapi.co/v1beta2';
+const SPANISH_LANGUAGE_ID = 7;
+const SPECIES_NAMES_QUERY = `{ pokemonspeciesname(where: {language_id: {_eq: ${SPANISH_LANGUAGE_ID}}}) { name pokemon_species_id } }`;
+
+interface SpeciesNamesResponse {
+  data?: { pokemonspeciesname: { name: string; pokemon_species_id: number }[] };
+}
 
 /** URL del artwork oficial a partir del id del Pokémon. */
 export function getArtworkUrl(id: number | string): string {
@@ -38,6 +48,37 @@ export class PokemonService {
   // PokeAPI es estática: cacheamos cada petición para no repetirla al navegar
   // entre páginas (listado → detalle → colección → batalla...).
   private cache = new Map<string, Observable<unknown>>();
+
+  /** Nombres oficiales en español indexados por número de Pokédex. */
+  public readonly speciesNames = signal<Record<number, string>>({});
+  private speciesNamesRequested = false;
+
+  /** Descarga los nombres en español una sola vez por sesión. */
+  public loadSpeciesNames(): void {
+    if (this.speciesNamesRequested) return;
+    this.speciesNamesRequested = true;
+    this.http
+      .post<SpeciesNamesResponse>(GRAPHQL_URL, { query: SPECIES_NAMES_QUERY })
+      .pipe(
+        map((res) => {
+          const names: Record<number, string> = {};
+          for (const n of res.data?.pokemonspeciesname ?? []) names[n.pokemon_species_id] = n.name;
+          return names;
+        }),
+        // Si GraphQL falla seguimos con los nombres de la API REST formateados.
+        catchError(() => {
+          this.speciesNamesRequested = false;
+          return of({});
+        }),
+      )
+      .subscribe((names) => this.speciesNames.set(names));
+  }
+
+  /** Nombre para mostrar: el oficial en español o el de la API formateado. */
+  public displayName(name: string, id?: number): string {
+    const official = id && id < FORMS_ID_START ? this.speciesNames()[id] : undefined;
+    return official ?? formatPokemonName(name);
+  }
 
   private getCached<T>(url: string): Observable<T> {
     if (!this.cache.has(url)) {
@@ -127,6 +168,24 @@ export function pickLocalized<T extends { language: { name: string } }>(
     [...entries].reverse().find((e) => e.language.name === 'es') ??
     [...entries].reverse().find((e) => e.language.name === 'en')
   );
+}
+
+/** "mr-mime" → "Mr Mime", "charizard-mega-x" → "Charizard Mega X". */
+export function formatPokemonName(name: string): string {
+  return name
+    .split('-')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+/** Normaliza para buscar sin tildes, mayúsculas ni signos ("Mr. Mime" = "mr-mime"). */
+export function normalizeSearch(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9♀♂]/g, '');
 }
 
 /** Limpia los saltos de línea y caracteres de control de los textos de la Pokédex. */

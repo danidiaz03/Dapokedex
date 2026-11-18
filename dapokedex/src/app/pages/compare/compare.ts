@@ -5,6 +5,7 @@ import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { PokemonDetailPage, PokemonType } from '../../interfaces/pokemon';
 import { PokemonService } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
+import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 
 const STAT_LABELS: Record<string, string> = {
   hp: 'PS',
@@ -41,7 +42,7 @@ export function bestMultiplier(attackerTypes: string[], defender: PokemonType[])
 
 @Component({
   selector: 'app-compare',
-  imports: [RouterLink, TypeNamePipe],
+  imports: [RouterLink, TypeNamePipe, PokemonNamePipe],
   templateUrl: './compare.html',
   styleUrl: './compare.css',
 })

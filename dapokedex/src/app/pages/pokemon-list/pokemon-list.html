@@ -64,14 +64,14 @@
         class="pokemon-miniature"
         role="link"
         tabindex="0"
-        [attr.aria-label]="'Ver ficha de ' + pokemon.name"
+        [attr.aria-label]="'Ver ficha de ' + (pokemon.name | nombre: pokemon.id)"
         [routerLink]="['/pokemon', pokemon.name]"
         (keydown.enter)="openPokemon(pokemon.name)"
       >
         <div class="pokemon-miniature__header">
           <span class="pokemon-miniature__name">
             <span class="pokemon-miniature__id">#{{ pokemon.id }}</span>
-            {{ pokemon.name }}
+            {{ pokemon.name | nombre: pokemon.id }}
           </span>
           <button
             class="favorite-btn"
@@ -103,7 +103,7 @@
         <div class="pokemon-miniature-image-container">
           <img
             [src]="pokemon.img"
-            [alt]="pokemon.name"
+            [alt]="pokemon.name | nombre: pokemon.id"
             class="pokemon-miniature__image"
             loading="lazy"
             width="475"

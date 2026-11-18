@@ -1,4 +1,11 @@
-import { cleanFlavorText, getArtworkUrl, getIdFromUrl, pickLocalized } from './pokemon';
+import {
+  cleanFlavorText,
+  formatPokemonName,
+  getArtworkUrl,
+  getIdFromUrl,
+  normalizeSearch,
+  pickLocalized,
+} from './pokemon';
 
 describe('helpers de PokemonService', () => {
   it('extrae el id de una URL de PokeAPI', () => {
@@ -28,5 +35,23 @@ describe('textos localizados de PokeAPI', () => {
 
   it('limpia saltos de línea y caracteres de control', () => {
     expect(cleanFlavorText('Escupe\nfuego\f muy­caliente')).toBe('Escupe fuego muy caliente');
+  });
+});
+
+describe('formatPokemonName', () => {
+  it('capitaliza cada palabra y quita los guiones', () => {
+    expect(formatPokemonName('mr-mime')).toBe('Mr Mime');
+    expect(formatPokemonName('charizard-mega-x')).toBe('Charizard Mega X');
+  });
+});
+
+describe('normalizeSearch', () => {
+  it('ignora mayúsculas, tildes y signos', () => {
+    expect(normalizeSearch('Mr. Mime')).toBe(normalizeSearch('mr-mime'));
+    expect(normalizeSearch('Código Cero')).toBe('codigocero');
+  });
+
+  it('conserva los símbolos de género de Nidoran', () => {
+    expect(normalizeSearch('Nidoran♀')).not.toBe(normalizeSearch('Nidoran♂'));
   });
 });

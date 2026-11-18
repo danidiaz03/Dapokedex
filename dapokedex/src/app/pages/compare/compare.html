@@ -44,7 +44,9 @@
             width="200"
             height="200"
           />
-          <a class="compare-card__name" [routerLink]="['/pokemon', p.name]">{{ p.name }}</a>
+          <a class="compare-card__name" [routerLink]="['/pokemon', p.name]">{{
+            p.name | nombre: p.id
+          }}</a>
           <div class="pokemon-miniature__types">
             @for (t of p.types; track t.type.name) {
               <a
@@ -101,14 +103,16 @@
       <div class="compare-advantage">
         <h2>Ventaja de tipo</h2>
         <p>
-          Mejor ataque con STAB de <strong>{{ left()?.pokemon?.name }}</strong
+          Mejor ataque con STAB de
+          <strong>{{ left()?.pokemon?.name | nombre: left()?.pokemon?.id }}</strong
           >:
           <span class="mult" [class.mult--good]="adv.aToB > 1" [class.mult--bad]="adv.aToB < 1">
             {{ formatMultiplier(adv.aToB) }}
           </span>
         </p>
         <p>
-          Mejor ataque con STAB de <strong>{{ right()?.pokemon?.name }}</strong
+          Mejor ataque con STAB de
+          <strong>{{ right()?.pokemon?.name | nombre: right()?.pokemon?.id }}</strong
           >:
           <span class="mult" [class.mult--good]="adv.bToA > 1" [class.mult--bad]="adv.bToA < 1">
             {{ formatMultiplier(adv.bToA) }}
