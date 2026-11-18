@@ -1,4 +1,5 @@
 import {
+  ACHIEVEMENTS,
   XP,
   applyEvent,
   dailyChallenges,
@@ -11,6 +12,7 @@ import {
   nextWeekStart,
   normalizeProgress,
   regionCompletion,
+  trainerTitle,
   weekKey,
   xpForLevel,
   xpFromRewards,
@@ -193,5 +195,17 @@ describe('regionCompletion', () => {
     expect(result[0]).toEqual({ name: 'Kanto', count: 151, total: 151, complete: true });
     expect(result[1]).toEqual({ name: 'Johto', count: 1, total: 100, complete: false });
     expect(result.reduce((sum, r) => sum + r.total, 0)).toBe(1025);
+  });
+});
+
+describe('trainerTitle', () => {
+  it('usa el logro más difícil conseguido', () => {
+    expect(trainerTitle([])).toBe('Novato');
+    expect(trainerTitle(['first-win'])).toBe('Primera victoria');
+    expect(trainerTitle(['first-win', 'first-shiny', 'wins-10'])).toBe('¡Brilla!');
+  });
+
+  it('tiene en cuenta todos los logros', () => {
+    expect(ACHIEVEMENTS.every((a) => trainerTitle([a.id]) === a.title)).toBe(true);
   });
 });

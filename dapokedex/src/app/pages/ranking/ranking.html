@@ -54,9 +54,14 @@
         >
           <span class="ranking__pos">{{ medal(i) }}</span>
           <span class="ranking__name">
-            {{ entry.name }}
-            @if (entry.uid === userId()) {
-              <span class="ranking__you">Tú</span>
+            <span class="ranking__name-text">
+              {{ entry.name }}
+              @if (entry.uid === userId()) {
+                <span class="ranking__you">Tú</span>
+              }
+            </span>
+            @if (entry.title) {
+              <span class="ranking__title-badge">{{ entry.title }}</span>
             }
           </span>
           <span class="ranking__level">Nv. {{ entry.level }}</span>

@@ -333,6 +333,34 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
+/** Del logro más difícil al más fácil: el primero conseguido da el título. */
+const TITLE_PRIORITY = [
+  'level-17',
+  'collection-500',
+  'wins-50',
+  'shiny-5',
+  'guess-streak-25',
+  'level-10',
+  'collection-151',
+  'ko-100',
+  'guesses-100',
+  'first-shiny',
+  'streak-7',
+  'wins-10',
+  'guess-streak-10',
+  'level-5',
+  'collection-50',
+  'streak-3',
+  'collection-10',
+  'first-win',
+];
+
+/** Título que luce el entrenador en el ranking según sus logros. */
+export function trainerTitle(achievements: string[]): string {
+  const id = TITLE_PRIORITY.find((a) => achievements.includes(a));
+  return ACHIEVEMENTS.find((a) => a.id === id)?.title ?? 'Novato';
+}
+
 // ---------------------------------------------------------------------------
 // Aplicar un evento
 // ---------------------------------------------------------------------------

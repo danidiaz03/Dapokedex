@@ -11,6 +11,7 @@ import {
   levelProgress,
   levelFromXp,
   normalizeProgress,
+  trainerTitle,
   weekKey,
   xpFromRewards,
 } from '../game/progress';
@@ -82,6 +83,7 @@ export class ProgressService {
       this.firestore
         .addLeaderboardXp(userId, {
           name: this.trainerName(),
+          title: trainerTitle(progress.achievements),
           level: levelFromXp(progress.xp),
           gained,
           totalXp: progress.xp,

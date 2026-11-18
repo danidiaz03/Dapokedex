@@ -40,6 +40,7 @@ export const MAX_TEAM_SIZE = 6;
 export interface LeaderboardEntry {
   uid: string;
   name: string;
+  title: string;
   xp: number;
   level: number;
 }
@@ -168,10 +169,22 @@ export class FirestoreService {
   /** Suma XP a la semana actual y actualiza el total histórico en una sola escritura. */
   async addLeaderboardXp(
     userId: string,
-    data: { name: string; level: number; gained: number; totalXp: number; week: string },
+    data: {
+      name: string;
+      title: string;
+      level: number;
+      gained: number;
+      totalXp: number;
+      week: string;
+    },
   ): Promise<void> {
     const batch = writeBatch(db);
-    const common = { name: data.name, level: data.level, updatedAt: serverTimestamp() };
+    const common = {
+      name: data.name,
+      title: data.title,
+      level: data.level,
+      updatedAt: serverTimestamp(),
+    };
     batch.set(
       doc(this.players(`week-${data.week}`), userId),
       { ...common, xp: increment(data.gained) },
@@ -190,6 +203,7 @@ export class FirestoreService {
     return snap.docs.map((d) => ({
       uid: d.id,
       name: d.get('name') ?? 'Entrenador',
+      title: d.get('title') ?? '',
       xp: d.get('xp') ?? 0,
       level: d.get('level') ?? 1,
     }));

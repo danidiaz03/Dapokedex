@@ -40,8 +40,9 @@ service cloud.firestore {
 
     function isValidEntry() {
       let data = request.resource.data;
-      return data.keys().hasOnly(['name', 'level', 'xp', 'updatedAt'])
+      return data.keys().hasOnly(['name', 'title', 'level', 'xp', 'updatedAt'])
         && data.name is string && data.name.size() <= 30
+        && data.title is string && data.title.size() <= 40
         && data.level is int && data.level >= 1 && data.level <= 100
         && data.xp is int && data.xp >= 0
         && data.updatedAt == request.time;
