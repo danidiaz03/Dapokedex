@@ -1,0 +1,348 @@
+<div class="c-container equipos">
+  <header class="equipos__cab">
+    <div>
+      <h1 class="titulo-zona">Preparar equipos</h1>
+      <p class="texto-zona">
+        Elige quién sale primero, sus movimientos, su habilidad y su objeto. Cada Pokémon tiene su
+        propia naturaleza y sus IV.
+      </p>
+    </div>
+    <a class="btn-caja" routerLink="/game">Volver al juego</a>
+  </header>
+
+  @if (loading()) {
+    <p class="texto-zona">Cargando tus Pokémon…</p>
+  } @else {
+    @if (error()) {
+      <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+    }
+    @if (notice()) {
+      <p class="aviso" role="status">{{ notice() }}</p>
+    }
+
+    <!-- Pestañas: equipo principal y guardados -->
+    <div class="pestanas" role="tablist">
+      <button
+        role="tab"
+        class="pestana"
+        [class.pestana--activa]="editing() === 'main'"
+        [attr.aria-selected]="editing() === 'main'"
+        (click)="edit('main')"
+      >
+        ★ Principal
+      </button>
+      @for (t of savedTeams(); track t.id) {
+        <button
+          role="tab"
+          class="pestana"
+          [class.pestana--activa]="editing() === t.id"
+          [attr.aria-selected]="editing() === t.id"
+          (click)="edit(t.id)"
+        >
+          {{ t.name }}
+        </button>
+      }
+      @if (savedTeams().length < maxSaved) {
+        <button class="pestana pestana--nueva" (click)="newTeam()">+ Nuevo equipo</button>
+      }
+    </div>
+
+    <section class="caja-equipo">
+      <div class="caja-equipo__cab">
+        @if (editingTeam(); as t) {
+          <label class="sr-only" for="nombre-equipo">Nombre del equipo</label>
+          <input
+            id="nombre-equipo"
+            class="nombre-equipo"
+            [ngModel]="t.name"
+            (blur)="rename($any($event.target).value)"
+            (keydown.enter)="$any($event.target).blur()"
+            maxlength="24"
+          />
+          <div class="caja-equipo__acciones">
+            <button class="btn-caja btn-caja--fuerte" (click)="useAsMain()">
+              Usar como principal
+            </button>
+            <button
+              class="btn-caja"
+              [class.btn-caja--accion]="confirmDelete()"
+              (click)="deleteTeam()"
+            >
+              {{ confirmDelete() ? '¿Seguro?' : 'Borrar' }}
+            </button>
+          </div>
+        } @else {
+          <p class="caja-equipo__nota">
+            El equipo principal es el que lucha contra la máquina y el único que lleva objetos. Los
+            guardados sirven para los combates con amigos.
+          </p>
+        }
+      </div>
+
+      <ol class="huecos-equipo">
+        @for (id of members(); track id; let i = $index) {
+          <li class="miembro" [class.miembro--abierto]="selected() === id">
+            <button
+              class="miembro__cuerpo"
+              (click)="open(id)"
+              [attr.aria-expanded]="selected() === id"
+            >
+              @if (i === 0) {
+                <span class="miembro__lider">Sale primero</span>
+              }
+              <img [src]="sprite(id)" [alt]="nameOf(id)" loading="lazy" />
+              <span class="miembro__nombre">{{ nameOf(id) }}</span>
+              <span class="miembro__detalle">Nv. {{ level(id) }} · {{ natureOf(id).name }}</span>
+              <span class="miembro__estado" [class.miembro__estado--listo]="isConfigured(id)">
+                {{ isConfigured(id) ? '✓ Preparado' : 'Movimientos al azar' }}
+              </span>
+              @if (editing() === 'main' && held()[id]) {
+                <span class="miembro__objeto">
+                  <img [src]="items.sprite(held()[id])" alt="" />{{ items.label(held()[id]) }}
+                </span>
+              }
+            </button>
+            <div class="miembro__mandos">
+              <button (click)="shift(i, -1)" [disabled]="i === 0" aria-label="Mover antes">
+                ◀
+              </button>
+              <button
+                (click)="shift(i, 1)"
+                [disabled]="i === members().length - 1"
+                aria-label="Mover después"
+              >
+                ▶
+              </button>
+              <button (click)="remove(id)" aria-label="Quitar del equipo">✕</button>
+            </div>
+          </li>
+        }
+        @if (members().length < maxTeam) {
+          <li>
+            <button class="hueco-vacio" (click)="picking.set(!picking())">+ Añadir Pokémon</button>
+          </li>
+        }
+      </ol>
+
+      @if (picking()) {
+        <div class="selector">
+          <input
+            class="campo"
+            type="search"
+            placeholder="Busca en tu colección"
+            [ngModel]="pickSearch()"
+            (ngModelChange)="pickSearch.set($event)"
+            aria-label="Buscar en tu colección"
+          />
+          @if (pickable().length === 0) {
+            <p class="caja-equipo__nota">No hay más Pokémon que coincidan.</p>
+          }
+          <div class="selector__lista">
+            @for (id of pickable(); track id) {
+              <button class="selector__opcion" (click)="add(id)">
+                <img [src]="sprite(id)" alt="" loading="lazy" />
+                <span>{{ nameOf(id) }}</span>
+                <small>Nv. {{ level(id) }}</small>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </section>
+
+    <!-- Editor del Pokémon elegido -->
+    @if (selected(); as id) {
+      <section class="editor" aria-label="Preparar Pokémon">
+        <div class="editor__cab">
+          <img class="editor__arte" [src]="artwork(id)" [alt]="nameOf(id)" />
+          <div>
+            <h2 class="editor__nombre">{{ nameOf(id) }}</h2>
+            <p class="editor__linea">
+              Nv. {{ level(id) }}
+              @for (t of selectedData()?.types ?? []; track t.type.name) {
+                · {{ t.type.name | tipo }}
+              }
+            </p>
+            @if (nature(); as n) {
+              <p class="editor__naturaleza">
+                Naturaleza <strong>{{ n.name }}</strong>
+                @if (n.up) {
+                  <span class="sube">+{{ statLabel(n.up) }}</span>
+                  <span class="baja">−{{ statLabel(n.down!) }}</span>
+                } @else {
+                  <span>(neutra)</span>
+                }
+              </p>
+            }
+            <p class="editor__linea">IV totales: {{ ivTotal() }} %</p>
+          </div>
+          <button class="editor__cerrar" (click)="selected.set(null)" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="editor__rejilla">
+          <!-- Características -->
+          <div class="bloque">
+            <h3>Características a su nivel</h3>
+            <table class="stats">
+              <tbody>
+                @for (r of statRows(); track r.key) {
+                  <tr [class.sube]="r.mark === 'up'" [class.baja]="r.mark === 'down'">
+                    <th>
+                      {{ r.label }}{{ r.mark === 'up' ? ' ▲' : r.mark === 'down' ? ' ▼' : '' }}
+                    </th>
+                    <td class="stats__valor">{{ r.value }}</td>
+                    <td class="stats__barra">
+                      <i [style.width.%]="statWidth(r.value)"></i>
+                    </td>
+                    <td class="stats__iv">IV {{ r.iv }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Habilidad y objeto -->
+          <div class="bloque">
+            <h3>Habilidad</h3>
+            <div class="opciones">
+              <label class="opcion">
+                <input
+                  type="radio"
+                  name="habilidad"
+                  value=""
+                  [checked]="draftAbility() === ''"
+                  (change)="draftAbility.set('')"
+                />
+                Al azar
+              </label>
+              @for (a of abilities(); track a.key) {
+                <label class="opcion">
+                  <input
+                    type="radio"
+                    name="habilidad"
+                    [value]="a.key"
+                    [checked]="draftAbility() === a.key"
+                    (change)="draftAbility.set(a.key)"
+                  />
+                  {{ a.name }}
+                  @if (a.hidden) {
+                    <small>(oculta)</small>
+                  }
+                </label>
+              }
+            </div>
+
+            <h3>Objeto</h3>
+            @if (editing() === 'main') {
+              <select
+                class="campo"
+                [value]="held()[id] || ''"
+                (change)="equip($any($event.target).value)"
+                aria-label="Objeto equipado"
+              >
+                <option value="">Ninguno</option>
+                @for (k of itemOptions(); track k) {
+                  <option [value]="k">{{ items.label(k) }}</option>
+                }
+              </select>
+              @if (held()[id]; as k) {
+                <p class="caja-equipo__nota">{{ itemDescription(k) }}</p>
+              }
+            } @else {
+              <p class="caja-equipo__nota">
+                Solo el equipo principal lleva objetos. Usa este equipo como principal para
+                equiparle uno.
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- Movimientos -->
+        <div class="bloque">
+          <h3>Movimientos ({{ draftMoves().length }}/{{ maxMoves }})</h3>
+          <div class="elegidos">
+            @for (m of chosenMoves(); track m.key) {
+              <button
+                class="mov mov--elegido"
+                (click)="toggleMove(m.key)"
+                [attr.aria-label]="'Quitar ' + m.name"
+              >
+                <span class="mov__tipo c-bg-{{ m.type }}">{{ m.type | tipo }}</span>
+                <span class="mov__nombre">{{ m.name }}</span>
+                <span class="mov__datos">
+                  {{ m.damageClass === 'status' ? 'Estado' : 'Pot. ' + m.power }}
+                </span>
+                <span aria-hidden="true">✕</span>
+              </button>
+            }
+            @for (n of emptyMoveSlots(); track $index) {
+              <span class="mov mov--vacio">Elige un movimiento</span>
+            }
+          </div>
+
+          @if (loadingMoves()) {
+            <p class="caja-equipo__nota">Cargando los movimientos que puede aprender…</p>
+          } @else {
+            <div class="filtros">
+              <input
+                class="campo"
+                type="search"
+                placeholder="Buscar movimiento"
+                [ngModel]="moveSearch()"
+                (ngModelChange)="moveSearch.set($event)"
+                aria-label="Buscar movimiento"
+              />
+              <select
+                class="campo"
+                [value]="moveType()"
+                (change)="moveType.set($any($event.target).value)"
+                aria-label="Filtrar por tipo"
+              >
+                <option value="">Todos los tipos</option>
+                @for (t of moveTypes(); track t) {
+                  <option [value]="t">{{ t | tipo }}</option>
+                }
+              </select>
+            </div>
+            <div class="lista-movs">
+              @for (m of filteredMoves(); track m.key) {
+                <button
+                  class="mov"
+                  [class.mov--marcado]="draftMoves().includes(m.key)"
+                  [disabled]="!draftMoves().includes(m.key) && draftMoves().length >= maxMoves"
+                  (click)="toggleMove(m.key)"
+                >
+                  <span class="mov__tipo c-bg-{{ m.type }}">{{ m.type | tipo }}</span>
+                  <span class="mov__nombre">{{ m.name }}</span>
+                  <span class="mov__datos">
+                    {{
+                      m.damageClass === 'status'
+                        ? 'Estado'
+                        : (m.damageClass === 'physical' ? 'Físico' : 'Especial') + ' · ' + m.power
+                    }}
+                    · {{ m.accuracy ? m.accuracy + ' %' : '—' }}
+                  </span>
+                </button>
+              } @empty {
+                <p class="caja-equipo__nota">No hay movimientos con ese filtro.</p>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="editor__pie">
+          @if (isConfigured(id)) {
+            <button class="btn-caja" (click)="resetBuild()">Volver a movimientos al azar</button>
+          }
+          <button
+            class="btn-caja btn-caja--accion"
+            [disabled]="draftMoves().length === 0 || !buildChanged() || saving()"
+            (click)="saveBuild()"
+          >
+            {{ saving() ? 'Guardando…' : 'Guardar movimientos y habilidad' }}
+          </button>
+        </div>
+      </section>
+    }
+  }
+</div>

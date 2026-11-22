@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseApp } from '../firebase';
 import { Bag, Held, STARTER_KIT, normalizeBag, normalizeHeld } from '../game/bag';
+import { Build, Builds, SavedTeam, normalizeBuilds, normalizeTeams } from '../game/builds';
 
 // Firestore se inicializa aquí y no en firebase.ts para que solo se descargue
 // con las páginas que lo usan (todas cargadas en diferido).
@@ -40,6 +41,10 @@ export interface UserData {
   held: Held;
   /** Aún no tiene mochila: recibe el kit inicial al entrar al juego. */
   bagMissing: boolean;
+  /** Movimientos y habilidad elegidos para cada Pokémon. */
+  builds: Builds;
+  /** Equipos guardados con nombre. */
+  savedTeams: SavedTeam[];
 }
 
 export const MAX_TEAM_SIZE = 6;
@@ -82,6 +87,8 @@ export class FirestoreService {
       team: data['team'] ?? [],
       progress: data['progress'],
       pokemonXp: data['pokemonXp'] ?? {},
+      builds: normalizeBuilds(data['builds']),
+      savedTeams: normalizeTeams(data['savedTeams'], data['collection'] ?? []),
     };
   }
 
@@ -180,6 +187,42 @@ export class FirestoreService {
       team: arrayRemove(pokemonId),
       held: { [pokemonId]: deleteField() },
     });
+  }
+
+  // --- Preparación de equipos -------------------------------------------
+
+  /** Guarda los movimientos y la habilidad elegidos para un Pokémon. */
+  async saveBuild(userId: string, pokemonId: number, build: Build): Promise<void> {
+    await this.merge(userId, { builds: { [pokemonId]: build } });
+  }
+
+  async resetBuild(userId: string, pokemonId: number): Promise<void> {
+    await this.merge(userId, { builds: { [pokemonId]: deleteField() } });
+  }
+
+  /** Sustituye la lista de equipos guardados. */
+  async saveTeams(userId: string, teams: SavedTeam[]): Promise<void> {
+    await setDoc(this.getUserDoc(userId), { savedTeams: teams }, { mergeFields: ['savedTeams'] });
+    this.changes.update((n) => n + 1);
+  }
+
+  /**
+   * Cambia el equipo principal (con su orden). Los que salen del equipo
+   * devuelven su objeto a la mochila, igual que al quitarlos uno a uno.
+   */
+  async setTeam(userId: string, ids: number[]): Promise<void> {
+    const data = await this.getUserData(userId);
+    const team = [...new Set(ids.filter((id) => data.collection.includes(id)))].slice(
+      0,
+      MAX_TEAM_SIZE,
+    );
+    const held: Record<string, unknown> = {};
+    for (const id of Object.keys(data.held)) {
+      if (!team.includes(Number(id))) held[id] = deleteField();
+    }
+    await setDoc(this.getUserDoc(userId), { team }, { mergeFields: ['team'] });
+    if (Object.keys(held).length) await this.merge(userId, { held });
+    else this.changes.update((n) => n + 1);
   }
 
   // --- Mochila ---------------------------------------------------------------

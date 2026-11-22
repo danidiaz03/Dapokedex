@@ -985,3 +985,19 @@
 .en-linea__reloj--poco {
   color: var(--marco);
 }
+
+.eleccion-equipo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 400 14px var(--px);
+  color: var(--texto-claro);
+}
+.eleccion-equipo select {
+  font: 400 16px var(--px);
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 2px solid var(--hueco-borde);
+  background: var(--hueco);
+  color: var(--tinta);
+}

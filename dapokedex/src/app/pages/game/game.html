@@ -75,6 +75,7 @@
         </div>
         <div class="equipo__acciones">
           <button class="btn-caja" (click)="goToCollection()">Gestionar equipo</button>
+          <a class="btn-caja btn-caja--fuerte" routerLink="/equipos">Preparar equipo</a>
           @if (team().length > 0) {
             <button class="btn-caja btn-caja--accion" (click)="startBattle()">
               ⚔️ ¡A batallar!

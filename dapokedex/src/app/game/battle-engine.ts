@@ -219,15 +219,28 @@ export function typeEffectiveness(moveType: string, defenderTypes: string[]): nu
 /* Características                                                     */
 /* ------------------------------------------------------------------ */
 
-/** IV fijos a 31 y sin EV, como un Pokémon "perfecto" recién capturado. */
+/** IV por defecto: 31, como un Pokémon "perfecto" recién capturado. Sin EV. */
 const IV = 31;
 
-export function calcHp(base: number, level: number): number {
-  return Math.floor(((2 * base + IV) * level) / 100) + level + 10;
+export type NatureStat = 'attack' | 'defense' | 'specialAttack' | 'specialDefense' | 'speed';
+export type Ivs = Record<'hp' | NatureStat, number>;
+
+export const MAX_IVS: Ivs = {
+  hp: IV,
+  attack: IV,
+  defense: IV,
+  specialAttack: IV,
+  specialDefense: IV,
+  speed: IV,
+};
+
+export function calcHp(base: number, level: number, iv = IV): number {
+  return Math.floor(((2 * base + iv) * level) / 100) + level + 10;
 }
 
-export function calcStat(base: number, level: number): number {
-  return Math.floor(((2 * base + IV) * level) / 100) + 5;
+/** Fórmula oficial: la naturaleza multiplica ×1,1 o ×0,9 al final. */
+export function calcStat(base: number, level: number, iv = IV, nature = 1): number {
+  return Math.floor((Math.floor(((2 * base + iv) * level) / 100) + 5) * nature);
 }
 
 export const EMPTY_STAGES: Record<StatKey, number> = {
@@ -254,9 +267,21 @@ export function createCombatant(input: {
   item?: string | null;
   itemName?: string;
   itemSprite?: string;
+  /** Valores individuales (0–31); por defecto, 31 en todo. */
+  ivs?: Ivs;
+  /** Naturaleza: sube una característica un 10 % y baja otra. */
+  nature?: { up: NatureStat | null; down: NatureStat | null };
 }): Combatant {
   const { base, level } = input;
-  const maxHp = calcHp(base.hp, level);
+  const ivs = input.ivs ?? MAX_IVS;
+  const mult = (k: NatureStat) =>
+    input.nature?.up === k && input.nature.down !== k
+      ? 1.1
+      : input.nature?.down === k && input.nature.up !== k
+        ? 0.9
+        : 1;
+  const stat = (k: NatureStat) => calcStat(base[k], level, ivs[k], mult(k));
+  const maxHp = calcHp(base.hp, level, ivs.hp);
   return {
     id: input.id,
     name: input.name,
@@ -267,11 +292,11 @@ export function createCombatant(input: {
     maxHp,
     hp: maxHp,
     stats: {
-      attack: calcStat(base.attack, level),
-      defense: calcStat(base.defense, level),
-      specialAttack: calcStat(base.specialAttack, level),
-      specialDefense: calcStat(base.specialDefense, level),
-      speed: calcStat(base.speed, level),
+      attack: stat('attack'),
+      defense: stat('defense'),
+      specialAttack: stat('specialAttack'),
+      specialDefense: stat('specialDefense'),
+      speed: stat('speed'),
     },
     moves: input.moves,
     fainted: false,

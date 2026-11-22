@@ -25,6 +25,17 @@
         }
       </p>
       <p class="texto-zona">Si nadie responde en unos minutos, el reto caduca.</p>
+      @if (match()?.status === 'pending' && savedTeams().length > 0) {
+        <label class="eleccion-equipo">
+          <span>Equipo para este combate</span>
+          <select [value]="teamChoice()" (change)="teamChoice.set($any($event.target).value)">
+            <option value="main">Equipo principal</option>
+            @for (t of savedTeams(); track t.id) {
+              <option [value]="t.id">{{ t.name }} ({{ t.members.length }})</option>
+            }
+          </select>
+        </label>
+      }
       @if (match()?.status === 'pending') {
         <div class="botonera">
           <button class="btn-caja" (click)="cancelChallenge()">Cancelar reto</button>
@@ -37,6 +48,17 @@
       <p class="texto-zona">
         Lucharás con tu equipo y los objetos que lleve. Los dos ganáis experiencia; quien gana, más.
       </p>
+      @if (savedTeams().length > 0) {
+        <label class="eleccion-equipo">
+          <span>Equipo para este combate</span>
+          <select [value]="teamChoice()" (change)="teamChoice.set($any($event.target).value)">
+            <option value="main">Equipo principal</option>
+            @for (t of savedTeams(); track t.id) {
+              <option [value]="t.id">{{ t.name }} ({{ t.members.length }})</option>
+            }
+          </select>
+        </label>
+      }
       <div class="botonera">
         <button class="btn-caja" (click)="declineChallenge()">Rechazar</button>
         <button class="btn-caja btn-caja--accion" (click)="acceptChallenge()">

@@ -11,7 +11,7 @@ service cloud.firestore {
     // y mochila. Cada usuario solo lee y escribe su propio documento.
     match /users/{userId} {
       allow read: if isOwner(userId);
-      allow write: if isOwner(userId) && isValidBag();
+      allow write: if isOwner(userId) && isValidBag() && isValidBuilds();
     }
 
     // Ranking: cualquier usuario con sesión puede verlo y cada uno solo
@@ -204,6 +204,13 @@ service cloud.firestore {
       let data = request.resource.data;
       return (!('bag' in data) || (data.bag is map && data.bag.keys().hasOnly(heldItems())))
         && (!('held' in data) || (data.held is map && data.held.size() <= 6));
+    }
+
+    // Equipos guardados (como mucho 5) y la configuración de cada Pokémon.
+    function isValidBuilds() {
+      let data = request.resource.data;
+      return (!('savedTeams' in data) || (data.savedTeams is list && data.savedTeams.size() <= 5))
+        && (!('builds' in data) || (data.builds is map && data.builds.size() <= 2000));
     }
 
     function heldItems() {
