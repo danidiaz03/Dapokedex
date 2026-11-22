@@ -16,10 +16,18 @@ import { PokemonEvolution } from '../../componentes/pokemon-evolution/pokemon-ev
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
+import { KeyboardService } from '../../services/keyboard.service';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 import { STAT_LABELS } from '../../shared/labels';
 
 type Tab = 'about' | 'stats' | 'evolution' | 'moves';
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'stats', label: 'Estadísticas' },
+  { id: 'about', label: 'Sobre' },
+  { id: 'evolution', label: 'Evolución' },
+  { id: 'moves', label: 'Movimientos' },
+];
 type MoveMethod = 'level-up' | 'machine' | 'egg' | 'tutor';
 
 interface AbilityInfo {
@@ -120,6 +128,10 @@ export class PokemonView implements OnInit {
 
   public pokemonName = signal('');
   public activeTab = signal<Tab>('stats');
+  public readonly tabs = TABS;
+  public tabIndex = computed(() => TABS.findIndex((t) => t.id === this.activeTab()));
+  public tabLabel = computed(() => TABS[this.tabIndex()].label);
+  private keyboard = inject(KeyboardService);
   public pokemonDetail = signal<PokemonDetailPage | null>(null);
   public species = signal<pokemonSpecies | null>(null);
   public pokeEvolution = signal<pokemonEvolutionChain | null>(null);
@@ -253,6 +265,50 @@ export class PokemonView implements OnInit {
     return Math.min(100, (value / STAT_BAR_MAX) * 100);
   }
 
+  /** Pasa de página como en las cajas (Q / E). */
+  flipTab(direction: 1 | -1): void {
+    const next = (this.tabIndex() + direction + TABS.length) % TABS.length;
+    this.setTab(TABS[next].id);
+  }
+
+  private onKey(e: KeyboardEvent): boolean {
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const data = this.pokemonDetail();
+    if (!data) return false;
+    switch (key) {
+      case 'q':
+      case 'ArrowLeft':
+        this.flipTab(-1);
+        return true;
+      case 'e':
+      case 'ArrowRight':
+        this.flipTab(1);
+        return true;
+      case 'ArrowUp':
+        if (!this.previousId()) return false;
+        this.router.navigate(['/pokemon', this.previousId()]);
+        return true;
+      case 'ArrowDown':
+        if (!this.nextId()) return false;
+        this.router.navigate(['/pokemon', this.nextId()]);
+        return true;
+      case 'f':
+        this.toggleFavorite();
+        return true;
+      case 's':
+        if (!data.sprites.other['official-artwork'].front_shiny) return false;
+        this.showShiny.update((v) => !v);
+        return true;
+      case 'c':
+        this.playCry();
+        return true;
+      case 'x':
+        this.router.navigate(['/comparar'], { queryParams: { a: data.name } });
+        return true;
+    }
+    return false;
+  }
+
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
     if (tab === 'moves' && this.moveRows().length === 0) this.loadMoves();
@@ -321,6 +377,20 @@ export class PokemonView implements OnInit {
   }
 
   ngOnInit(): void {
+    const unregister = this.keyboard.register(
+      (e) => this.onKey(e),
+      [
+        { keys: ['Q', 'E'], label: 'Página' },
+        { keys: ['↑', '↓'], label: 'Pokémon anterior / siguiente' },
+        { keys: ['F'], label: 'Favorito' },
+        { keys: ['S'], label: 'Variocolor' },
+        { keys: ['C'], label: 'Grito' },
+        { keys: ['X'], label: 'Comparar' },
+        { keys: ['B'], label: 'Volver (Esc)' },
+      ],
+      'Ficha',
+    );
+    this.destroyRef.onDestroy(unregister);
     // switchMap cancela la petición anterior si se navega rápido entre Pokémon.
     this.route.paramMap
       .pipe(

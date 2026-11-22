@@ -1,366 +1,336 @@
 @if (notFound()) {
-  <div class="not-found c-container">
-    <h2>No hemos encontrado a "{{ pokemonName() }}"</h2>
-    <p>Puede que el nombre esté mal escrito o que ese Pokémon no exista.</p>
-    <a class="back-link" routerLink="/">Volver al listado</a>
-  </div>
-} @else if (!pokemonDetail()) {
-  <p class="loading-detail c-container">Cargando Pokémon...</p>
-} @else {
-  <div class="detailContainer c-bg-{{ pokemonDetail()!.types[0].type.name }}">
-    <div class="pokemon-info c-container">
-      <div class="left-column">
-        <span class="id-pokemon">
-          #{{ dexNumber() }}
-          @if (rarity()) {
-            <span class="rarity-badge">{{ rarity() }}</span>
-          }
-        </span>
-        <h2 class="name-pokemon">
-          {{ pokemonDetail()!.name | nombre: pokemonDetail()!.id }}
-        </h2>
-        <div class="pokemon-miniature__types">
-          @for (t of pokemonDetail()!.types; track $index) {
-            <a
-              class="type-badge type-badge--{{ t.type.name }}"
-              [routerLink]="['/tipo', t.type.name]"
-            >
-              {{ t.type.name | tipo }}
-            </a>
-          }
+  <div class="zona">
+    <div class="caja">
+      <div class="mural vacio">
+        <div class="panel">
+          <h1 class="panel-titulo">No hemos encontrado a "{{ pokemonName() }}"</h1>
+          <p>Puede que el nombre esté mal escrito o que ese Pokémon no exista.</p>
+          <a class="btn-caja btn-caja--fuerte" routerLink="/">Volver a las cajas</a>
         </div>
-        @if (varieties().length > 0) {
-          <div class="varieties" aria-label="Formas">
-            @for (v of varieties(); track v.name) {
-              <a
-                class="variety-chip"
-                [class.variety-chip--active]="v.name === pokemonDetail()!.name"
-                [routerLink]="['/pokemon', v.name]"
-              >
-                {{ v.label }}
-              </a>
-            }
-          </div>
-        }
-        <div class="detail-actions">
-          <button
-            class="favorite-btn"
-            [class.favorite-btn--active]="isFavorite()"
-            [attr.aria-pressed]="isFavorite()"
-            (click)="toggleFavorite()"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path
-                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-              />
-            </svg>
-            {{ isFavorite() ? 'Quitar de favoritos' : 'Añadir a favoritos' }}
-          </button>
-          <button class="favorite-btn" (click)="playCry()" aria-label="Escuchar grito">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-            </svg>
-            Grito
-          </button>
-          <a
-            class="favorite-btn"
-            routerLink="/comparar"
-            [queryParams]="{ a: pokemonDetail()!.name }"
-          >
-            ⚖️ Comparar
-          </a>
-          @if (pokemonDetail()!.sprites.other['official-artwork'].front_shiny) {
-            <button
-              class="favorite-btn"
-              [class.favorite-btn--active]="showShiny()"
-              [attr.aria-pressed]="showShiny()"
-              (click)="showShiny.update((v) => !v)"
-            >
-              ✨ {{ showShiny() ? 'Ver normal' : 'Ver shiny' }}
-            </button>
-          }
-        </div>
-      </div>
-      <div class="detailImageContainer">
-        <img [src]="artwork()" [alt]="pokemonDetail()!.name + (showShiny() ? ' shiny' : '')" />
       </div>
     </div>
   </div>
-  <div class="c-poke-content c-container">
-    <nav class="dex-nav" aria-label="Navegación entre Pokémon">
-      @if (previousId()) {
-        <a class="dex-nav__link" [routerLink]="['/pokemon', previousId()]">← #{{ previousId() }}</a>
-      } @else {
-        <span></span>
-      }
-      @if (nextId()) {
-        <a class="dex-nav__link" [routerLink]="['/pokemon', nextId()]">#{{ nextId() }} →</a>
-      }
-    </nav>
-
-    <div class="poke-tabs">
-      <div class="tabs" role="tablist">
-        <button
-          class="tab"
-          role="tab"
-          [class.tab--active]="activeTab() === 'stats'"
-          [attr.aria-selected]="activeTab() === 'stats'"
-          (click)="setTab('stats')"
-        >
-          Estadísticas
-        </button>
-        <button
-          class="tab"
-          role="tab"
-          [class.tab--active]="activeTab() === 'about'"
-          [attr.aria-selected]="activeTab() === 'about'"
-          (click)="setTab('about')"
-        >
-          Sobre
-        </button>
-        <button
-          class="tab"
-          role="tab"
-          [class.tab--active]="activeTab() === 'evolution'"
-          [attr.aria-selected]="activeTab() === 'evolution'"
-          (click)="setTab('evolution')"
-        >
-          Evolución
-        </button>
-        <button
-          class="tab"
-          role="tab"
-          [class.tab--active]="activeTab() === 'moves'"
-          [attr.aria-selected]="activeTab() === 'moves'"
-          (click)="setTab('moves')"
-        >
-          Movimientos
-        </button>
-      </div>
-
-      <div class="tab-content" role="tabpanel">
-        @if (activeTab() === 'about') {
-          <div class="stats-container">
-            <div class="about-title statistic-title">
-              Sobre
-              <span class="capitalize">{{
-                pokemonDetail()!.name | nombre: pokemonDetail()!.id
-              }}</span>
-            </div>
-            @if (genus()) {
-              <p class="about-genus">{{ genus() }}</p>
-            }
-            @if (description()) {
-              <p class="about-description">{{ description() }}</p>
-            } @else if (!species()) {
-              <p class="about-description">Cargando descripción...</p>
-            }
-            <dl class="about-data">
-              <div>
-                <dt>Altura</dt>
-                <dd>{{ pokemonDetail()!.height / 10 }} m</dd>
-              </div>
-              <div>
-                <dt>Peso</dt>
-                <dd>{{ pokemonDetail()!.weight / 10 }} kg</dd>
-              </div>
-              @if (gender()) {
-                <div>
-                  <dt>Género</dt>
-                  <dd>{{ gender() }}</dd>
-                </div>
-              }
-              @if (species()) {
-                <div>
-                  <dt>Ratio de captura</dt>
-                  <dd>{{ species()!.capture_rate }} / 255</dd>
-                </div>
-              }
-              @if (habitat()) {
-                <div>
-                  <dt>Hábitat</dt>
-                  <dd>{{ habitat() }}</dd>
-                </div>
-              }
-              @if (eggGroups().length > 0) {
-                <div>
-                  <dt>Grupos huevo</dt>
-                  <dd>{{ eggGroups().join(', ') }}</dd>
-                </div>
-              }
-              @if (pokemonDetail()!.base_experience) {
-                <div>
-                  <dt>Experiencia base</dt>
-                  <dd>{{ pokemonDetail()!.base_experience }}</dd>
-                </div>
-              }
-            </dl>
-
-            <div class="about-title statistic-title">Habilidades</div>
-            <ul class="abilities-list">
-              @for (a of abilities(); track $index) {
-                <li class="ability">
-                  <span class="ability__name">
-                    <a class="ability__link" [routerLink]="['/habilidad', a.slug]">{{ a.name }}</a>
-                    @if (a.hidden) {
-                      <span class="ability__hidden">Oculta</span>
-                    }
-                  </span>
-                  @if (a.description) {
-                    <span class="ability__description">{{ a.description }}</span>
-                  }
-                </li>
-              } @empty {
-                <li class="about-description">Cargando habilidades...</li>
-              }
-            </ul>
-          </div>
+} @else if (!pokemonDetail()) {
+  <div class="zona"><p class="titulo-zona cargando">Abriendo la ficha…</p></div>
+} @else {
+  <div class="zona">
+    <div class="zona-cab">
+      <h1 class="titulo-zona">Ficha</h1>
+      <nav class="dex-nav" aria-label="Navegación entre Pokémon">
+        @if (previousId()) {
+          <a class="btn-caja" [routerLink]="['/pokemon', previousId()]">◂ Nº {{ previousId() }}</a>
         }
-        @if (activeTab() === 'stats') {
-          <div class="stats-container">
-            <div class="about-title statistic-title">Estadísticas base</div>
-            <div class="base-statistics">
-              @for (stat of pokemonDetail()!.stats; track $index) {
-                <div class="stat-row">
-                  <span class="stat-row__name">{{ statLabel(stat.stat.name) }}</span>
-                  <span class="stat-row__value">{{ stat.base_stat }}</span>
-                  <div class="stat-row__bar bg-stat-{{ stat.stat.name }}">
-                    <div
-                      class="stat-row__bar-fill"
-                      [style.width.%]="statPercent(stat.base_stat)"
-                    ></div>
-                  </div>
-                </div>
-              }
-              <div class="stat-row stat-row--total">
-                <span class="stat-row__name">Total</span>
-                <span class="stat-row__value">{{ statTotal() }}</span>
-              </div>
-            </div>
-
-            <div class="about-title statistic-title">Efectividad de tipos</div>
-            <p class="about-description">Daño que recibe de cada tipo de ataque.</p>
-            <div class="matchups">
-              @for (m of matchups(); track m.label) {
-                <div class="matchup matchup--{{ m.tone }}">
-                  <span class="matchup__label">{{ m.label }}</span>
-                  <div class="matchup__types">
-                    @for (type of m.types; track type) {
-                      <a class="type-badge type-badge--{{ type }}" [routerLink]="['/tipo', type]">{{
-                        type | tipo
-                      }}</a>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
+        @if (nextId()) {
+          <a class="btn-caja" [routerLink]="['/pokemon', nextId()]">Nº {{ nextId() }} ▸</a>
         }
-        @if (activeTab() === 'moves') {
-          <div class="stats-container">
-            <div class="about-title statistic-title">Movimientos</div>
-            <p class="about-description">En {{ versionGroupLabel() }}.</p>
-            <div class="move-methods" role="group" aria-label="Método de aprendizaje">
-              @for (method of moveMethods; track method.id) {
-                @if (moveCounts()[method.id]) {
-                  <button
-                    class="variety-chip"
-                    [class.variety-chip--active]="moveMethod() === method.id"
-                    [attr.aria-pressed]="moveMethod() === method.id"
-                    (click)="setMoveMethod(method.id)"
+      </nav>
+    </div>
+
+    <div class="mesa">
+      <!-- Resumen del Pokémon -->
+      <aside class="resumen">
+        <div class="resumen-cab">
+          Resumen
+          <span>{{ genus() || 'Pokémon' }}</span>
+        </div>
+        <div class="escaparate mural mural--tipo c-bg-{{ pokemonDetail()!.types[0].type.name }}">
+          @if (rarity()) {
+            <span class="bocadillo">{{ rarity() }}</span>
+          }
+          <img
+            [src]="artwork()"
+            [alt]="
+              (pokemonDetail()!.name | nombre: pokemonDetail()!.id) + (showShiny() ? ' shiny' : '')
+            "
+            width="475"
+            height="475"
+          />
+        </div>
+        <div class="resumen-cuerpo">
+          <span class="num">Nº {{ dexNumber() }}</span>
+          <h2 class="nombre">{{ pokemonDetail()!.name | nombre: pokemonDetail()!.id }}</h2>
+          <div class="tipos">
+            @for (t of pokemonDetail()!.types; track $index) {
+              <a
+                class="type-badge type-badge--{{ t.type.name }}"
+                [routerLink]="['/tipo', t.type.name]"
+                >{{ t.type.name | tipo }}</a
+              >
+            }
+          </div>
+
+          @if (varieties().length > 0) {
+            <div class="formas" aria-label="Formas">
+              @for (v of varieties(); track v.name) {
+                <a
+                  class="forma"
+                  [attr.aria-current]="v.name === pokemonDetail()!.name ? 'true' : null"
+                  [routerLink]="['/pokemon', v.name]"
+                  >{{ v.label }}</a
+                >
+              }
+            </div>
+          }
+
+          <div class="acciones">
+            @if (pokemonDetail()!.sprites.other['official-artwork'].front_shiny) {
+              <button
+                class="btn-caja interruptor"
+                [attr.aria-pressed]="showShiny()"
+                (click)="showShiny.update((v) => !v)"
+              >
+                Variocolor <kbd>S</kbd>
+              </button>
+            }
+            <button class="btn-caja" (click)="playCry()">Oír grito <kbd>C</kbd></button>
+            <a class="btn-caja" routerLink="/comparar" [queryParams]="{ a: pokemonDetail()!.name }">
+              Comparar <kbd>X</kbd>
+            </a>
+            <button
+              class="btn-caja interruptor"
+              [attr.aria-pressed]="isFavorite()"
+              (click)="toggleFavorite()"
+            >
+              {{ isFavorite() ? 'Favorito' : 'Guardar' }} <kbd>F</kbd>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Páginas de la ficha -->
+      <section class="caja" aria-label="Datos del Pokémon">
+        <div class="caja-cab">
+          <button
+            class="flecha izq"
+            (click)="flipTab(-1)"
+            aria-label="Página anterior (Q)"
+          ></button>
+          <div class="caja-nombre">
+            {{ tabLabel() }}
+            <small>Pág. {{ tabIndex() + 1 }} de {{ tabs.length }}</small>
+          </div>
+          <button class="flecha" (click)="flipTab(1)" aria-label="Página siguiente (E)"></button>
+        </div>
+        <div class="paginas" role="tablist">
+          @for (tab of tabs; track tab.id) {
+            <button
+              role="tab"
+              [attr.aria-selected]="activeTab() === tab.id"
+              [class.activa]="activeTab() === tab.id"
+              (click)="setTab(tab.id)"
+            >
+              {{ tab.label }}
+            </button>
+          }
+        </div>
+
+        <div class="mural vista" role="tabpanel">
+          @if (activeTab() === 'stats') {
+            <div class="panel">
+              <h3>
+                Estadísticas base <span>Total {{ statTotal() }}</span>
+              </h3>
+              <div class="stats6">
+                @for (stat of pokemonDetail()!.stats; track $index) {
+                  <div
+                    class="st"
+                    [class.alto]="stat.base_stat >= 100"
+                    [class.bajo]="stat.base_stat < 50"
                   >
-                    {{ method.label }} ({{ moveCounts()[method.id] }})
-                  </button>
+                    <span>{{ statLabel(stat.stat.name) }}</span>
+                    <b>{{ stat.base_stat }}</b>
+                    <div class="barra"><i [style.width.%]="statPercent(stat.base_stat)"></i></div>
+                  </div>
                 }
+                <div class="st total">
+                  <span>Total</span>
+                  <b>{{ statTotal() }}</b>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Daño que recibe <span>según el tipo del ataque</span></h3>
+              <div class="ef-filas">
+                @for (m of matchups(); track m.label) {
+                  <div class="ef-fila">
+                    <span
+                      class="ef-x"
+                      [class.mal]="m.tone === 'weak'"
+                      [class.bien]="m.tone !== 'weak'"
+                      >{{ m.label.split('(')[1]?.replace(')', '') ?? m.label }}</span
+                    >
+                    <div class="tipos">
+                      <small class="ef-nombre">{{ m.label.split(' (')[0] }}</small>
+                      @for (type of m.types; track type) {
+                        <a
+                          class="type-badge type-badge--{{ type }}"
+                          [routerLink]="['/tipo', type]"
+                          >{{ type | tipo }}</a
+                        >
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (activeTab() === 'about') {
+            <div class="panel">
+              <h3>Sobre {{ pokemonDetail()!.name | nombre: pokemonDetail()!.id }}</h3>
+              @if (description()) {
+                <p class="descripcion">{{ description() }}</p>
+              } @else if (!species()) {
+                <p class="descripcion">Cargando descripción…</p>
+              }
+              <dl class="datos">
+                <div class="st">
+                  <dt>Altura</dt>
+                  <dd>{{ pokemonDetail()!.height / 10 }} m</dd>
+                </div>
+                <div class="st">
+                  <dt>Peso</dt>
+                  <dd>{{ pokemonDetail()!.weight / 10 }} kg</dd>
+                </div>
+                @if (gender()) {
+                  <div class="st">
+                    <dt>Género</dt>
+                    <dd>{{ gender() }}</dd>
+                  </div>
+                }
+                @if (species()) {
+                  <div class="st">
+                    <dt>Ratio de captura</dt>
+                    <dd>{{ species()!.capture_rate }} / 255</dd>
+                  </div>
+                }
+                @if (habitat()) {
+                  <div class="st">
+                    <dt>Hábitat</dt>
+                    <dd>{{ habitat() }}</dd>
+                  </div>
+                }
+                @if (eggGroups().length > 0) {
+                  <div class="st">
+                    <dt>Grupos huevo</dt>
+                    <dd>{{ eggGroups().join(', ') }}</dd>
+                  </div>
+                }
+                @if (pokemonDetail()!.base_experience) {
+                  <div class="st">
+                    <dt>Experiencia base</dt>
+                    <dd>{{ pokemonDetail()!.base_experience }}</dd>
+                  </div>
+                }
+              </dl>
+            </div>
+            <div class="panel">
+              <h3>Habilidades</h3>
+              <ul class="habilidades">
+                @for (a of abilities(); track $index) {
+                  <li class="st">
+                    <span class="habilidad__nombre">
+                      <a [routerLink]="['/habilidad', a.slug]">{{ a.name }}</a>
+                      @if (a.hidden) {
+                        <span class="oculta">Oculta</span>
+                      }
+                    </span>
+                    @if (a.description) {
+                      <span class="habilidad__texto">{{ a.description }}</span>
+                    }
+                  </li>
+                } @empty {
+                  <li class="descripcion">Cargando habilidades…</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (activeTab() === 'evolution') {
+            <div class="panel">
+              @if (pokeEvolution()) {
+                <app-pokemon-evolution [evolution]="pokeEvolution()!" [pokemonId]="dexNumber()" />
+              } @else {
+                <p class="descripcion">Cargando evolución…</p>
               }
             </div>
+          }
 
-            @if (movesLoading()) {
-              <p class="about-description">Cargando movimientos...</p>
-            } @else if (moveRows().length === 0) {
-              <p class="about-description">No aprende movimientos por este método.</p>
-            } @else {
-              <div class="moves-table-wrapper">
-                <table class="moves-table">
-                  <thead>
-                    <tr>
-                      @if (moveMethod() === 'level-up') {
-                        <th>Nv.</th>
-                      }
-                      <th>Movimiento</th>
-                      <th>Tipo</th>
-                      <th>Clase</th>
-                      <th>Pot.</th>
-                      <th>Prec.</th>
-                      <th>PP</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (move of moveRows(); track move.slug) {
+          @if (activeTab() === 'moves') {
+            <div class="panel">
+              <h3>
+                Movimientos <span>En {{ versionGroupLabel() }}</span>
+              </h3>
+              <div class="metodos" role="group" aria-label="Método de aprendizaje">
+                @for (method of moveMethods; track method.id) {
+                  @if (moveCounts()[method.id]) {
+                    <button
+                      class="btn-caja"
+                      [class.btn-caja--fuerte]="moveMethod() === method.id"
+                      [attr.aria-pressed]="moveMethod() === method.id"
+                      (click)="setMoveMethod(method.id)"
+                    >
+                      {{ method.label }} ({{ moveCounts()[method.id] }})
+                    </button>
+                  }
+                }
+              </div>
+              @if (movesLoading()) {
+                <p class="descripcion">Cargando movimientos…</p>
+              } @else if (moveRows().length === 0) {
+                <p class="descripcion">No aprende movimientos por este método.</p>
+              } @else {
+                <div class="scroll">
+                  <table class="mov">
+                    <thead>
                       <tr>
                         @if (moveMethod() === 'level-up') {
-                          <td>{{ move.level || '—' }}</td>
+                          <th>Nv.</th>
                         }
-                        <td class="moves-table__name">
-                          <a [routerLink]="['/movimiento', move.slug]">{{ move.name }}</a>
-                        </td>
-                        <td>
-                          <span class="type-badge type-badge--{{ move.type }}">{{
-                            move.type | tipo
-                          }}</span>
-                        </td>
-                        <td>
-                          {{
-                            move.damageClass === 'physical'
-                              ? 'Físico'
-                              : move.damageClass === 'special'
-                                ? 'Especial'
-                                : 'Estado'
-                          }}
-                        </td>
-                        <td>{{ move.power ?? '—' }}</td>
-                        <td>{{ move.accuracy ?? '—' }}</td>
-                        <td>{{ move.pp }}</td>
+                        <th>Movimiento</th>
+                        <th>Tipo</th>
+                        <th>Clase</th>
+                        <th>Pot.</th>
+                        <th>Prec.</th>
+                        <th>PP</th>
                       </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          </div>
-        }
-        @if (activeTab() === 'evolution') {
-          @if (pokeEvolution()) {
-            <app-pokemon-evolution [evolution]="pokeEvolution()!" [pokemonId]="dexNumber()" />
-          } @else {
-            <p class="about-description">Cargando evolución...</p>
+                    </thead>
+                    <tbody>
+                      @for (move of moveRows(); track move.slug) {
+                        <tr>
+                          @if (moveMethod() === 'level-up') {
+                            <td>{{ move.level || '—' }}</td>
+                          }
+                          <td class="mov__nombre">
+                            <a [routerLink]="['/movimiento', move.slug]">{{ move.name }}</a>
+                          </td>
+                          <td>
+                            <span class="type-badge type-badge--{{ move.type }}">{{
+                              move.type | tipo
+                            }}</span>
+                          </td>
+                          <td>
+                            {{
+                              move.damageClass === 'physical'
+                                ? 'Físico'
+                                : move.damageClass === 'special'
+                                  ? 'Especial'
+                                  : 'Estado'
+                            }}
+                          </td>
+                          <td>{{ move.power ?? '—' }}</td>
+                          <td>{{ move.accuracy ?? '—' }}</td>
+                          <td>{{ move.pp }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
           }
-        }
-      </div>
+        </div>
+      </section>
     </div>
   </div>
 }
