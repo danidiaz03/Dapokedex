@@ -79,6 +79,12 @@ export class PokemonList implements OnInit {
 
   /** Hueco seleccionado (cursor de mano) dentro de la caja visible. */
   public selectedIndex = signal(0);
+  /**
+   * La mano pixelada de la caja solo se dibuja al moverse con el teclado.
+   * Con el ratón ya está el puntero (que también es una mano), y mostrar las
+   * dos a la vez dejaba un cursor doble sobre el hueco.
+   */
+  public keyboardMode = signal(false);
   public selected = computed(() => this.filteredPokemons()[this.selectedIndex()] ?? null);
   public readonly boxIndexes = computed(() =>
     Array.from({ length: this.totalPages() }, (_, i) => i + 1),
@@ -346,6 +352,7 @@ export class PokemonList implements OnInit {
     const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     const count = this.filteredPokemons().length;
     const move = (delta: number) => {
+      this.keyboardMode.set(true);
       if (count === 0) return;
       const next = this.selectedIndex() + delta;
       // Al salirse por un lado se pasa a la caja anterior o siguiente.
@@ -372,9 +379,11 @@ export class PokemonList implements OnInit {
         move(GRID_COLUMNS);
         return true;
       case 'q':
+        this.keyboardMode.set(true);
         this.flipBox(-1);
         return true;
       case 'e':
+        this.keyboardMode.set(true);
         this.flipBox(1);
         return true;
       case 'Enter':
@@ -403,6 +412,12 @@ export class PokemonList implements OnInit {
   }
 
   select(index: number): void {
+    this.selectedIndex.set(index);
+  }
+
+  /** Al pasar el ratón por un hueco se selecciona y se deja la mano al puntero. */
+  hover(index: number): void {
+    this.keyboardMode.set(false);
     this.selectedIndex.set(index);
   }
 

@@ -167,10 +167,10 @@
               [attr.data-hueco]="i"
               [attr.aria-label]="'Ver ficha de ' + (pokemon.name | nombre: pokemon.id)"
               [routerLink]="['/pokemon', pokemon.name]"
-              (mouseenter)="select(i)"
+              (mouseenter)="hover(i)"
               (focus)="select(i)"
             >
-              @if (i === selectedIndex()) {
+              @if (i === selectedIndex() && keyboardMode()) {
                 <svg
                   class="mano"
                   viewBox="0 0 10 10"
