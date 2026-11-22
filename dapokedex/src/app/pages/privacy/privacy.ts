@@ -2,10 +2,7 @@ import { Component, inject } from '@angular/core';
 import { SeoService } from '../../services/seo.service';
 import { AnalyticsService } from '../../services/analytics.service';
 
-/**
- * Política de privacidad y cookies. Los datos del responsable van entre
- * corchetes: hay que rellenarlos antes de publicar.
- */
+/** Política de privacidad y cookies. */
 @Component({
   selector: 'app-privacy',
   templateUrl: './privacy.html',
