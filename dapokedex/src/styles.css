@@ -53,7 +53,7 @@ h3 {
   background: var(--hueco);
   color: var(--tinta);
   box-shadow: inset 0 -3px 0 var(--hueco-borde);
-  cursor: pointer;
+  cursor: var(--cursor-mano);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -273,7 +273,7 @@ select:focus-visible {
   box-shadow: 0 0 0 6px var(--marco);
 }
 [role='link'] {
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 
 /* Hueco para la barra de mandos fija (solo con ratón y pantalla grande). */
@@ -288,5 +288,23 @@ select:focus-visible {
   button kbd,
   a kbd {
     display: none;
+  }
+}
+
+/* Puntero del ratón: la mano pixelada del PC sobre todo lo que se puede pulsar. */
+:root {
+  --cursor-mano:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 10 10' shape-rendering='crispEdges'><path fill='%230F2524' d='M3 0h2v1H3zM2 1h1v4H2zM5 1h1v3H5zM6 3h2v1H6zM8 4h1v4H8zM1 4h1v1H1zM0 5h1v2H0zM1 7h1v1H1zM2 8h1v1H2zM3 9h4v1H3zM7 8h1v1H7z'/><path fill='%23FFFFFF' d='M3 1h2v4h1V4h2v1h0v3H7v1H3V8H2V7H1V5h1v1h1z'/><path fill='%23FF5A5F' d='M3 8h4v1H3z'/></svg>")
+      10 1,
+    pointer;
+}
+@media (hover: hover) {
+  a,
+  button,
+  [role='link'],
+  [role='tab'],
+  select,
+  label[for] {
+    cursor: var(--cursor-mano);
   }
 }

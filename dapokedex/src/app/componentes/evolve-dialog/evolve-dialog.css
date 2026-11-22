@@ -48,7 +48,7 @@
   background: var(--hueco);
   border-radius: 16px;
   padding: 10px;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
   font: 700 14px var(--px);
   transition:
     border-color 0.2s ease,
@@ -67,7 +67,7 @@
   background: none;
   color: var(--tinta-suave);
   font: 600 14px var(--px);
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .evolve-confirm {
   border: none;
@@ -76,7 +76,7 @@
   border-radius: 12px;
   padding: 12px 28px;
   font: 700 16px var(--px);
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .evolve-stage {
   position: relative;

@@ -16,7 +16,7 @@
   align-items: center;
   text-align: left;
   border: none;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
   background: var(--tinta);
   color: #fff;
   border-radius: 16px;
@@ -79,7 +79,7 @@
   background: rgba(26, 26, 46, 0.55);
   overflow: hidden;
   animation: fade-in 0.3s ease;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .level-up__card {
   display: flex;

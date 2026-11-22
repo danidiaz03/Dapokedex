@@ -95,7 +95,7 @@
   background: #f5f3ff;
   font: 700 16px/22px var(--px);
   color: var(--tinta);
-  cursor: pointer;
+  cursor: var(--cursor-mano);
   transition: all 0.2s ease;
 }
 .guess-option:hover:not(:disabled) {
@@ -122,7 +122,7 @@
   border: none;
   color: var(--fondo);
   font: 700 14px/20px var(--px);
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .guess-back {
   color: var(--fondo);

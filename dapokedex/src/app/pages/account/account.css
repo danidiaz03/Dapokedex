@@ -43,7 +43,7 @@
   border: none;
   border-radius: 12px;
   font: 700 14px/20px var(--px);
-  cursor: pointer;
+  cursor: var(--cursor-mano);
   transition: background 0.3s ease;
 }
 
@@ -74,7 +74,7 @@
   background: #ffffff;
   border-radius: 24px;
   padding: 24px;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
   transition: box-shadow 0.3s ease;
   text-align: center;
 }
@@ -95,7 +95,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
   color: var(--cursor-osc);
   opacity: 0;
   transition: opacity 0.3s ease;

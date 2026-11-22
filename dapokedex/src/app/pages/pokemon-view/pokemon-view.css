@@ -156,7 +156,7 @@
   display: grid;
   place-items: center;
   flex: none;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .flecha::before {
   content: '';
@@ -194,7 +194,7 @@
   border-radius: 7px;
   background: var(--marco-claro);
   color: var(--tinta);
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .paginas button.activa {
   background: var(--tinta);
