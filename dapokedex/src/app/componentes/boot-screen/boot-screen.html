@@ -1,0 +1,52 @@
+@if (visible()) {
+  <div
+    class="arranque"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Arranque de Dapokedex PC. Pulsa cualquier tecla para empezar"
+    (click)="close()"
+  >
+    <div class="arr-monitor">
+      <div class="arr-pantalla">
+        @if (phase() === 'indexando') {
+          <div class="arr-fase">
+            <div class="arr-marca">Dapokedex <span>PC</span></div>
+            <div class="arr-linea"></div>
+            <p class="arr-estado">
+              @if (box() === 0) {
+                Encendiendo…
+              } @else {
+                Indexando caja {{ box() }} de {{ generations.length }}: {{ boxName() }}…
+              }
+            </p>
+            <div class="arr-barra" aria-hidden="true">
+              @for (g of generations; track g.id; let i = $index) {
+                <i [class.on]="i < box()"></i>
+              }
+            </div>
+            <div class="arr-huecos" aria-hidden="true">
+              @for (src of sprites; track src; let i = $index) {
+                <span [class.on]="i < filled()"><img [src]="src" alt="" /></span>
+              }
+            </div>
+            <p class="arr-cuenta">
+              <b>{{ count() }}</b> Pokémon registrados
+            </p>
+          </div>
+        } @else {
+          <div class="arr-fase">
+            <div class="arr-marca grande">Dapokedex <span>PC</span></div>
+            <p class="arr-sub">{{ total }} Pokémon en {{ generations.length }} cajas</p>
+            <p class="arr-pulsa">Pulsa cualquier tecla o toca para empezar</p>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="arr-pie">
+      <span>Cualquier tecla o toque salta el arranque</span>
+      <button [attr.aria-pressed]="sound()" (click)="toggleSound($event)">
+        Sonido: {{ sound() ? 'sí' : 'no' }}
+      </button>
+    </div>
+  </div>
+}

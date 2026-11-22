@@ -1,0 +1,90 @@
+<div class="mandos" aria-hidden="true">
+  @if (keyboard.viewName()) {
+    <span class="mandos__vista">{{ keyboard.viewName() }}</span>
+  }
+  @for (hint of keyboard.pageHints(); track hint.label) {
+    <span>
+      @for (k of hint.keys; track $index) {
+        <kbd>{{ k }}</kbd>
+      }
+      {{ hint.label }}
+    </span>
+  }
+  <span><kbd>[</kbd><kbd>]</kbd> Sección</span>
+  <span><kbd>M</kbd> Modo</span>
+  <span><kbd>?</kbd> Controles</span>
+</div>
+
+@if (keyboard.helpOpen()) {
+  <div class="capa" (click)="keyboard.helpOpen.set(false)">
+    <div
+      #dialog
+      class="ayuda"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Controles de teclado"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="ayuda__cab">
+        <h2>Controles</h2>
+        <button class="btn-caja" (click)="keyboard.helpOpen.set(false)">
+          Cerrar <kbd>Esc</kbd>
+        </button>
+      </div>
+      <div class="ayuda__cuerpo">
+        @if (keyboard.pageHints().length) {
+          <section>
+            <h3>{{ keyboard.viewName() || 'Esta página' }}</h3>
+            <ul>
+              @for (hint of keyboard.pageHints(); track hint.label) {
+                <li>
+                  <span class="teclas">
+                    @for (k of hint.keys; track $index) {
+                      <kbd>{{ k }}</kbd>
+                    }
+                  </span>
+                  {{ hint.label }}
+                </li>
+              }
+            </ul>
+          </section>
+        }
+        <section>
+          <h3>En toda la web</h3>
+          <ul>
+            @for (hint of globalHints; track hint.label) {
+              <li>
+                <span class="teclas">
+                  @for (k of hint.keys; track $index) {
+                    <kbd>{{ k }}</kbd>
+                  }
+                </span>
+                {{ hint.label }}
+              </li>
+            }
+          </ul>
+          <button
+            class="btn-caja btn-caja--fuerte ayuda__arranque"
+            (click)="
+              keyboard.helpOpen.set(false); keyboard.bootRequests.set(keyboard.bootRequests() + 1)
+            "
+          >
+            Ver el arranque otra vez
+          </button>
+          <h3>Secciones</h3>
+          <ul>
+            @for (s of sections; track s.path; let i = $index) {
+              <li>
+                <span class="teclas"
+                  ><kbd>{{ i + 1 }}</kbd></span
+                >
+                {{ s.label }}
+              </li>
+            }
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+}

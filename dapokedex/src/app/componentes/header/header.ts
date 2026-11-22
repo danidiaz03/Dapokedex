@@ -1,8 +1,7 @@
-import { Component, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { filter, map } from 'rxjs';
+import { Component, computed, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { KeyboardService, SECTIONS } from '../../services/keyboard.service';
 
 @Component({
   selector: 'app-header',
@@ -11,18 +10,14 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './header.css',
 })
 export class Header {
-  private router = inject(Router);
   private auth = inject(AuthService);
+  keyboard = inject(KeyboardService);
 
+  readonly sections = SECTIONS;
   user = this.auth.currentUser;
   authReady = this.auth.authReady;
 
-  /** "Tipos" enlaza a /tipo/fire pero debe marcarse activo en cualquier tipo. */
-  inTypes = toSignal(
-    this.router.events.pipe(
-      filter((e) => e instanceof NavigationEnd),
-      map(() => this.router.url.startsWith('/tipo')),
-    ),
-    { initialValue: this.router.url.startsWith('/tipo') },
-  );
+  /** Sección activa del menú (Tipos se marca en cualquier tipo, no solo en Fuego). */
+  activeIndex = computed(() => this.keyboard.sectionIndex(this.keyboard.currentPath()));
+  inTypes = computed(() => this.keyboard.currentPath().startsWith('/tipo'));
 }
