@@ -1,0 +1,40 @@
+.cookies {
+  position: fixed;
+  left: 16px;
+  bottom: 68px;
+  z-index: 100003;
+  width: min(440px, calc(100vw - 32px));
+  background: var(--blanco);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 0 #0d3633, 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+.cookies__cab {
+  background: var(--tinta);
+  color: var(--marco);
+  padding: 10px 14px;
+  font: 400 16px/1 var(--px);
+}
+.cookies__cuerpo {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.cookies__cuerpo a {
+  color: var(--tinta);
+  font-weight: 700;
+}
+/* Mismo estilo para los dos botones: rechazar no puede ser más difícil que aceptar. */
+.cookies__acciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 992px) {
+  .cookies {
+    bottom: 84px;
+  }
+}

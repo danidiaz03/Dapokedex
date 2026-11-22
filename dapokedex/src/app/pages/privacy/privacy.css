@@ -1,0 +1,41 @@
+.zona {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 30px clamp(16px, 3vw, 36px);
+}
+.hoja {
+  background: var(--blanco);
+  border-radius: 14px;
+  padding: clamp(18px, 4vw, 32px);
+  box-shadow: 0 6px 0 #0d3633;
+  line-height: 1.6;
+  font-size: 16px;
+}
+h1 {
+  font: 400 30px/1.1 var(--px);
+  margin-bottom: 6px;
+}
+h2 {
+  font: 400 20px/1.2 var(--px);
+  margin: 26px 0 8px;
+}
+p + p,
+ul + p {
+  margin-top: 10px;
+}
+ul {
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+}
+a {
+  color: var(--tinta);
+  font-weight: 700;
+}
+.nota {
+  color: var(--tinta-suave);
+  font-size: 14px;
+}
+.btn-caja {
+  margin-left: 8px;
+}

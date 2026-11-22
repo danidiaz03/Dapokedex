@@ -1,0 +1,62 @@
+<main class="zona">
+  <article class="hoja">
+    <h1>Privacidad y cookies</h1>
+    <p class="nota">Última actualización: noviembre de 2026.</p>
+
+    <h2>Quién es el responsable</h2>
+    <p>
+      Dapokedex (dapokedex.com) es un proyecto personal de [NOMBRE Y APELLIDOS]. Para cualquier
+      cuestión sobre tus datos escribe a [CORREO DE CONTACTO].
+    </p>
+
+    <h2>Qué datos guardamos</h2>
+    <ul>
+      <li>
+        <b>Si navegas sin cuenta:</b> nada que te identifique. Tus favoritos y preferencias se guardan
+        en tu propio navegador (almacenamiento local).
+      </li>
+      <li>
+        <b>Si creas una cuenta:</b> tu correo y el nombre que elijas, además de tu progreso en el
+        juego (colección, puntos, rachas). Se guardan en Firebase (Google) para que puedas jugar
+        desde cualquier dispositivo y aparecer en el ranking.
+      </li>
+      <li>
+        <b>Protección contra abusos:</b> usamos reCAPTCHA v3 de Google (App Check) para comprobar que
+        las peticiones vienen de la web y no de un bot.
+      </li>
+    </ul>
+    <p>
+      La base legal es la ejecución del servicio que pides al registrarte. Puedes pedir que borremos tu cuenta
+      escribiendo a ese correo; también puedes ejercer tus derechos de
+      acceso, rectificación, oposición y portabilidad, y reclamar ante la
+      <a href="https://www.aepd.es" target="_blank" rel="noopener">AEPD</a>.
+    </p>
+
+    <h2>Cookies y analítica</h2>
+    <p>
+      Si lo aceptas, usamos Google Analytics 4 para contar visitas y ver qué páginas se usan más. Crea
+      las cookies <code>_ga</code> y <code>_ga_*</code> (duran hasta 2 años) y los datos se tratan en
+      servidores de Google, que pueden estar fuera de la UE. Si no aceptas, el código de Analytics no
+      se carga.
+    </p>
+    <p>
+      No usamos cookies de publicidad. Las cookies técnicas de Firebase (inicio de sesión) y
+      reCAPTCHA son necesarias para que la web funcione y no requieren consentimiento.
+    </p>
+    @if (analytics.enabled) {
+      <p>
+        Tu elección actual:
+        <b>{{ analytics.consent() === 'aceptado' ? 'analítica aceptada' : 'analítica rechazada' }}</b>.
+        <button class="btn-caja" type="button" (click)="analytics.reopen()">Cambiar</button>
+      </p>
+    }
+
+    <h2>Contenido de Pokémon</h2>
+    <p>
+      Dapokedex es una web de fans sin ánimo de suplantar a nadie y sin relación con Nintendo, Game
+      Freak, Creatures ni The Pokémon Company. Pokémon y los nombres de sus personajes son marcas de
+      sus dueños. Los datos e imágenes vienen de
+      <a href="https://pokeapi.co" target="_blank" rel="noopener">PokeAPI</a>.
+    </p>
+  </article>
+</main>

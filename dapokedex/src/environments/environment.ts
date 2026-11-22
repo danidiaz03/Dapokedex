@@ -9,4 +9,11 @@ export const environment = {
     appId: '1:518179552550:web:8e5b4c491ebf094df455e7',
   },
   recaptchaSiteKey: '6Lf9f1UtAAAAAMyurwUimhN0Bs531xMFR6r4QO3k',
+  /** Dirección pública de la web: se usa en las URL canónicas y al compartir. */
+  siteUrl: 'http://localhost:4200',
+  /**
+   * ID de medición de Google Analytics 4 (G-XXXXXXXXXX). Vacío = sin analítica.
+   * No va en un .env: Angular lo incluye en el build desde este archivo.
+   */
+  gaMeasurementId: '',
 };

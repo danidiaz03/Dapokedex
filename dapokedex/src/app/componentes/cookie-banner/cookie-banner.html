@@ -1,0 +1,16 @@
+@if (analytics.enabled && analytics.consent() === null) {
+  <section class="cookies" role="dialog" aria-live="polite" aria-label="Aviso de cookies">
+    <div class="cookies__cab">Cookies</div>
+    <div class="cookies__cuerpo">
+      <p>
+        Usamos Google Analytics para saber cuántas personas visitan Dapokedex y qué páginas usan
+        más. Solo se activa si aceptas. Más información en la
+        <a routerLink="/privacidad">política de privacidad y cookies</a>.
+      </p>
+      <div class="cookies__acciones">
+        <button class="btn-caja" (click)="analytics.reject()">Rechazar</button>
+        <button class="btn-caja" (click)="analytics.accept()">Aceptar</button>
+      </div>
+    </div>
+  </section>
+}

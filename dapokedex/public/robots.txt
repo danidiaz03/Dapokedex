@@ -1,0 +1,12 @@
+# Dapokedex: se indexan la Pokédex, los tipos, los movimientos y las habilidades.
+# Las páginas que requieren cuenta (juego, colección, ranking, cuenta y login)
+# no tienen contenido público y se excluyen.
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /account
+Disallow: /collection
+Disallow: /game
+Disallow: /ranking
+
+Sitemap: https://dapokedex.com/sitemap.xml

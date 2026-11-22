@@ -1,7 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Title } from '@angular/platform-browser';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { PokemonDetailPage, pokemonEvolutionChain, pokemonSpecies } from '../../interfaces/pokemon';
 import {
@@ -17,6 +16,8 @@ import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
 import { KeyboardService } from '../../services/keyboard.service';
+import { SeoService } from '../../services/seo.service';
+import { TYPE_NAMES_ES } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 import { STAT_LABELS } from '../../shared/labels';
 
@@ -123,7 +124,7 @@ export class PokemonView implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private service = inject(PokemonService);
-  private title = inject(Title);
+  private seo = inject(SeoService);
   private destroyRef = inject(DestroyRef);
 
   public pokemonName = signal('');
@@ -251,9 +252,20 @@ export class PokemonView implements OnInit {
 
   constructor() {
     // El título se actualiza también cuando llegan los nombres en español.
+    // Título, descripción y vista previa para buscadores y redes sociales.
+    // Se actualiza también cuando llegan el nombre en español y la descripción.
     effect(() => {
       const data = this.pokemonDetail();
-      if (data) this.title.setTitle(`${this.service.displayName(data.name, data.id)} · Dapokedex`);
+      if (!data) return;
+      const name = this.service.displayName(data.name, data.id);
+      const types = data.types.map((t) => TYPE_NAMES_ES[t.type.name] ?? t.type.name).join(' y ');
+      const intro = `${name}, Pokémon nº ${this.dexNumber()} de tipo ${types}.`;
+      this.seo.setPage({
+        title: `${name}: estadísticas, evoluciones y movimientos`,
+        description: `${intro} ${this.description()}`.trim(),
+        path: `/pokemon/${data.name}`,
+        image: data.sprites.other['official-artwork'].front_default ?? undefined,
+      });
     });
   }
 

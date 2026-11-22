@@ -5,6 +5,8 @@ import { authGuard, guestGuard } from './guards/auth-guard';
 // inicial: antes todo, incluida la batalla, se descargaba al abrir la web.
 // La Pokédex (listado, fichas, tipos y comparador) es pública para que se pueda
 // compartir; la cuenta solo hace falta para favoritos, colección y juego.
+// Las páginas públicas (listado, fichas, tipos, comparador, movimientos y
+// habilidades) ponen su título y descripción con SeoService.
 export const routes: Routes = [
   {
     path: 'login',
@@ -14,32 +16,30 @@ export const routes: Routes = [
   },
   {
     path: '',
-    title: 'Pokédex · Dapokedex',
     loadComponent: () => import('./pages/pokemon-list/pokemon-list').then((m) => m.PokemonList),
   },
   {
     path: 'pokemon/:name',
-    title: 'Pokémon · Dapokedex',
     loadComponent: () => import('./pages/pokemon-view/pokemon-view').then((m) => m.PokemonView),
   },
   {
     path: 'tipo/:name',
-    title: 'Tipo · Dapokedex',
     loadComponent: () => import('./pages/type/type-page').then((m) => m.TypePage),
   },
   {
     path: 'movimiento/:name',
-    title: 'Movimiento · Dapokedex',
     loadComponent: () => import('./pages/move/move-page').then((m) => m.MovePage),
   },
   {
     path: 'habilidad/:name',
-    title: 'Habilidad · Dapokedex',
     loadComponent: () => import('./pages/ability/ability-page').then((m) => m.AbilityPage),
   },
   {
+    path: 'privacidad',
+    loadComponent: () => import('./pages/privacy/privacy').then((m) => m.Privacy),
+  },
+  {
     path: 'comparar',
-    title: 'Comparar Pokémon · Dapokedex',
     loadComponent: () => import('./pages/compare/compare').then((m) => m.Compare),
   },
   {

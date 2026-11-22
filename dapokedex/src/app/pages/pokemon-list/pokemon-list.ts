@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { KeyboardService } from '../../services/keyboard.service';
+import { SeoService } from '../../services/seo.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -90,6 +91,7 @@ export class PokemonList implements OnInit {
     Array.from({ length: this.totalPages() }, (_, i) => i + 1),
   );
   private keyboard = inject(KeyboardService);
+  private seo = inject(SeoService);
   /** Lista completa que cumple los filtros, o null si no hay filtros activos. */
   private filteredBase = signal<PokemonResult[] | null>(null);
   private loadSub?: Subscription;
@@ -113,6 +115,12 @@ export class PokemonList implements OnInit {
   private pendingSelection: 'first' | 'last' = 'first';
 
   async ngOnInit(): Promise<void> {
+    this.seo.setPage({
+      title: 'Pokédex en español: los 1025 Pokémon',
+      description:
+        'Consulta los 1025 Pokémon en español: tipos, estadísticas, evoluciones, movimientos y habilidades, ordenados en cajas por generación.',
+      path: '/',
+    });
     const unregister = this.keyboard.register(
       (e) => this.onKey(e),
       [

@@ -1,7 +1,6 @@
 import { Component, computed, effect, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { Title } from '@angular/platform-browser';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { PokemonAbility } from '../../interfaces/pokemon';
 import {
@@ -13,6 +12,7 @@ import {
   pickLocalized,
 } from '../../services/pokemon';
 import { PokemonGrid } from '../../componentes/pokemon-grid/pokemon-grid';
+import { SeoService } from '../../services/seo.service';
 import { generationNumber } from '../../shared/labels';
 
 const ABILITY_URL = 'https://pokeapi.co/api/v2/ability';
@@ -25,7 +25,7 @@ const ABILITY_URL = 'https://pokeapi.co/api/v2/ability';
 })
 export class AbilityPage {
   private service = inject(PokemonService);
-  private title = inject(Title);
+  private seo = inject(SeoService);
 
   /** Parámetro :name de la ruta. */
   name = input.required<string>();
@@ -52,7 +52,13 @@ export class AbilityPage {
 
   constructor() {
     effect(() => {
-      if (this.ability()) this.title.setTitle(`${this.displayName()} · Dapokedex`);
+      const item = this.ability();
+      if (!item) return;
+      this.seo.setPage({
+        title: `${this.displayName()} (habilidad Pokémon)`,
+        description: this.description() || `Habilidad ${this.displayName()}: descripción y Pokémon que la tienen.`,
+        path: `/habilidad/${item.name}`,
+      });
     });
   }
 

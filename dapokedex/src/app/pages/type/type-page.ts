@@ -1,11 +1,11 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { Title } from '@angular/platform-browser';
 import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { PokemonType } from '../../interfaces/pokemon';
 import { FORMS_ID_START, PokemonService, getIdFromUrl } from '../../services/pokemon';
 import { ALL_TYPES, TYPE_NAMES_ES, TypeNamePipe } from '../../pipes/type-name.pipe';
+import { SeoService } from '../../services/seo.service';
 import { PokemonGrid } from '../../componentes/pokemon-grid/pokemon-grid';
 
 interface Relation {
@@ -22,7 +22,7 @@ interface Relation {
 })
 export class TypePage {
   private service = inject(PokemonService);
-  private title = inject(Title);
+  private seo = inject(SeoService);
 
   /** Parámetro :name de la ruta (withComponentInputBinding). */
   name = input.required<string>();
@@ -31,7 +31,14 @@ export class TypePage {
 
   private state = toSignal(
     toObservable(this.name).pipe(
-      tap((name) => this.title.setTitle(`Tipo ${TYPE_NAMES_ES[name] ?? name} · Dapokedex`)),
+      tap((name) => {
+        const type = TYPE_NAMES_ES[name] ?? name;
+        this.seo.setPage({
+          title: `Tipo ${type}: fortalezas, debilidades y Pokémon`,
+          description: `Contra qué tipos es eficaz el tipo ${type}, a cuáles resiste y la lista de todos los Pokémon de tipo ${type}.`,
+          path: `/tipo/${name}`,
+        });
+      }),
       switchMap((name) =>
         this.service.getTypeDetail(name).pipe(
           map((type) => ({ type, error: false })),

@@ -1,7 +1,6 @@
 import { Component, computed, effect, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { Title } from '@angular/platform-browser';
 import { catchError, from, map, of, switchMap } from 'rxjs';
 import { PokemonMove } from '../../interfaces/pokemon';
 import {
@@ -14,6 +13,7 @@ import {
 } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonGrid } from '../../componentes/pokemon-grid/pokemon-grid';
+import { SeoService } from '../../services/seo.service';
 import {
   AILMENT_LABELS,
   DAMAGE_CLASS_LABELS,
@@ -29,7 +29,7 @@ import {
 })
 export class MovePage {
   private service = inject(PokemonService);
-  private title = inject(Title);
+  private seo = inject(SeoService);
 
   /** Parámetro :name de la ruta. */
   name = input.required<string>();
@@ -56,7 +56,13 @@ export class MovePage {
 
   constructor() {
     effect(() => {
-      if (this.move()) this.title.setTitle(`${this.displayName()} · Dapokedex`);
+      const item = this.move();
+      if (!item) return;
+      this.seo.setPage({
+        title: `${this.displayName()} (movimiento Pokémon)`,
+        description: this.description() || `Movimiento ${this.displayName()}: descripción y Pokémon que lo aprenden.`,
+        path: `/movimiento/${item.name}`,
+      });
     });
   }
 

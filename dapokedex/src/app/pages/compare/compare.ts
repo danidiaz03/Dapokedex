@@ -5,6 +5,7 @@ import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { PokemonDetailPage, PokemonType } from '../../interfaces/pokemon';
 import { PokemonService } from '../../services/pokemon';
 import { TypeNamePipe } from '../../pipes/type-name.pipe';
+import { SeoService } from '../../services/seo.service';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 import { STAT_LABELS } from '../../shared/labels';
 
@@ -42,6 +43,15 @@ export function bestMultiplier(attackerTypes: string[], defender: PokemonType[])
 export class Compare {
   private service = inject(PokemonService);
   private router = inject(Router);
+
+  constructor() {
+    inject(SeoService).setPage({
+      title: 'Comparar Pokémon',
+      description:
+        'Compara dos Pokémon cara a cara: estadísticas base, tipos, altura, peso y ventaja de tipo.',
+      path: '/comparar',
+    });
+  }
 
   /** Query params ?a=...&b=... (withComponentInputBinding). */
   a = input<string>('');
