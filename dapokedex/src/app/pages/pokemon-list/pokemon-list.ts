@@ -1,4 +1,5 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { KeyboardService } from '../../services/keyboard.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -28,7 +29,9 @@ import { ALL_TYPES, TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 import { DailyPokemon } from '../../componentes/daily-pokemon/daily-pokemon';
 
-const PAGE_SIZE = 24;
+// Cada caja del PC tiene 30 huecos (6 x 5), como en los juegos.
+const PAGE_SIZE = 30;
+const GRID_COLUMNS = 6;
 // Máximo de resultados de búsqueda a cargar: buscar "a" coincidía con cientos
 // de Pokémon y se lanzaba una petición de detalle por cada uno.
 const MAX_SEARCH_RESULTS = 24;
@@ -64,7 +67,23 @@ export class PokemonList implements OnInit {
   public readonly generations = GENERATIONS;
   public typeFilter = signal('');
   public genFilter = signal<number | null>(null);
+  // Siempre hay una caja (generación) abierta; el único filtro opcional es el tipo.
   public hasFilters = computed(() => !!this.typeFilter() || this.genFilter() !== null);
+  public hasTypeFilter = computed(() => !!this.typeFilter());
+  public currentGen = computed(
+    () => GENERATIONS.find((g) => g.id === this.genFilter()) ?? GENERATIONS[0],
+  );
+  public boxName = computed(
+    () => this.currentGen().label.split('· ')[1] ?? this.currentGen().label,
+  );
+
+  /** Hueco seleccionado (cursor de mano) dentro de la caja visible. */
+  public selectedIndex = signal(0);
+  public selected = computed(() => this.filteredPokemons()[this.selectedIndex()] ?? null);
+  public readonly boxIndexes = computed(() =>
+    Array.from({ length: this.totalPages() }, (_, i) => i + 1),
+  );
+  private keyboard = inject(KeyboardService);
   /** Lista completa que cumple los filtros, o null si no hay filtros activos. */
   private filteredBase = signal<PokemonResult[] | null>(null);
   private loadSub?: Subscription;
@@ -85,8 +104,21 @@ export class PokemonList implements OnInit {
   );
 
   private search$ = new Subject<string>();
+  private pendingSelection: 'first' | 'last' = 'first';
 
   async ngOnInit(): Promise<void> {
+    const unregister = this.keyboard.register(
+      (e) => this.onKey(e),
+      [
+        { keys: ['←', '↑', '↓', '→'], label: 'Mover' },
+        { keys: ['A'], label: 'Abrir (Intro)' },
+        { keys: ['Q', 'E'], label: 'Caja' },
+        { keys: ['F'], label: 'Favorito' },
+        { keys: ['T'], label: 'Siguiente tipo' },
+      ],
+      'Cajas',
+    );
+    this.destroyRef.onDestroy(unregister);
     this.pokemonService.loadSpeciesNames();
     this.pokemonService.getAllPokemonNames().subscribe({
       next: (data) => this.allPokemons.set(data.results),
@@ -98,7 +130,7 @@ export class PokemonList implements OnInit {
       const gen = Number(params.get('gen'));
       const type = params.get('type') ?? '';
       this.typeFilter.set(ALL_TYPES.includes(type) ? type : '');
-      this.genFilter.set(GENERATIONS.some((g) => g.id === gen) ? gen : null);
+      this.genFilter.set(GENERATIONS.some((g) => g.id === gen) ? gen : 1);
       this.loadPage(page);
       if (this.searchTerm()) this.search$.next(this.searchTerm());
     });
@@ -135,6 +167,17 @@ export class PokemonList implements OnInit {
           map((list) => {
             this.filteredBase.set(list);
             this.totalCount.set(list.length);
+            // Al retroceder desde la caja siguiente se pide la "última": se ajusta aquí.
+            const lastPage = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+            if (page > lastPage) {
+              this.page.set(lastPage);
+              this.router.navigate([], {
+                queryParams: { page: lastPage === 1 ? null : lastPage },
+                queryParamsHandling: 'merge',
+                replaceUrl: true,
+              });
+              return list.slice((lastPage - 1) * PAGE_SIZE, lastPage * PAGE_SIZE);
+            }
             return list.slice(offset, offset + PAGE_SIZE);
           }),
         )
@@ -150,6 +193,10 @@ export class PokemonList implements OnInit {
     this.loadSub = pageResults$.pipe(switchMap((results) => this.toMiniatures(results))).subscribe({
       next: (miniatures) => {
         this.pokemons.set(miniatures);
+        this.selectedIndex.set(
+          this.pendingSelection === 'last' ? Math.max(0, miniatures.length - 1) : 0,
+        );
+        this.pendingSelection = 'first';
         this.isLoading.set(false);
       },
       error: () => {
@@ -205,7 +252,7 @@ export class PokemonList implements OnInit {
   }
 
   clearFilters(): void {
-    this.updateFilters({ type: null, gen: null });
+    this.updateFilters({ type: null });
   }
 
   private updateFilters(params: { type?: string | null; gen?: number | null }): void {
@@ -294,13 +341,107 @@ export class PokemonList implements OnInit {
     this.router.navigate(['/pokemon', name]);
   }
 
+  /** Mandos de las cajas: mover el cursor, pasar de caja y abrir fichas. */
+  private onKey(e: KeyboardEvent): boolean {
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const count = this.filteredPokemons().length;
+    const move = (delta: number) => {
+      if (count === 0) return;
+      const next = this.selectedIndex() + delta;
+      // Al salirse por un lado se pasa a la caja anterior o siguiente.
+      if (next < 0 && delta === -1) return this.flipBox(-1, 'last');
+      if (next >= count && delta === 1) return this.flipBox(1, 'first');
+      this.selectedIndex.set((next + count) % count);
+      this.focusSelected();
+    };
+    switch (key) {
+      case 'ArrowLeft':
+      case 'a':
+        move(-1);
+        return true;
+      case 'ArrowRight':
+      case 'd':
+        move(1);
+        return true;
+      case 'ArrowUp':
+      case 'w':
+        move(-GRID_COLUMNS);
+        return true;
+      case 'ArrowDown':
+      case 's':
+        move(GRID_COLUMNS);
+        return true;
+      case 'q':
+        this.flipBox(-1);
+        return true;
+      case 'e':
+        this.flipBox(1);
+        return true;
+      case 'Enter':
+      case ' ': {
+        const p = this.selected();
+        if (p) this.openPokemon(p.name);
+        return !!p;
+      }
+      case 'f': {
+        const p = this.selected();
+        if (p) this.toggleFavorite(e, p.id);
+        return !!p;
+      }
+      case 't': {
+        const i = ALL_TYPES.indexOf(this.typeFilter());
+        this.setTypeFilter(i === ALL_TYPES.length - 1 ? '' : ALL_TYPES[i + 1]);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Sprite pixelado para los huecos, como en el PC de los juegos. */
+  spriteUrl(id: number): string {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+  }
+
+  select(index: number): void {
+    this.selectedIndex.set(index);
+  }
+
+  private focusSelected(): void {
+    queueMicrotask(() =>
+      document.querySelector<HTMLElement>(`[data-hueco="${this.selectedIndex()}"]`)?.focus(),
+    );
+  }
+
+  /** Pasa a la caja anterior/siguiente; en el borde de una generación cambia de generación. */
+  flipBox(direction: 1 | -1, selection: 'first' | 'last' = 'first'): void {
+    if (this.searchTerm()) return;
+    const page = this.page();
+    const gen = this.currentGen().id;
+    this.pendingSelection = selection;
+    if (direction === 1 && page < this.totalPages()) return this.goToPage(page + 1);
+    if (direction === -1 && page > 1) return this.goToPage(page - 1);
+    const nextGen = gen + direction;
+    if (nextGen < 1 || nextGen > GENERATIONS.length) {
+      this.pendingSelection = 'first';
+      return;
+    }
+    this.router.navigate([], {
+      // 999 = "la última caja": loadPage la ajusta al número real.
+      queryParams: { gen: nextGen, page: direction === 1 ? null : 999 },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  goToGen(gen: number): void {
+    this.router.navigate([], { queryParams: { gen, page: null }, queryParamsHandling: 'merge' });
+  }
+
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.router.navigate([], {
       queryParams: { page: page === 1 ? null : page },
       queryParamsHandling: 'merge',
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   retry(): void {

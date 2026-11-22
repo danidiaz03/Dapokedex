@@ -1,187 +1,235 @@
-<div class="home-content c-container">
-  @if (!searchTerm() && !hasFilters() && page() === 1) {
-    <app-daily-pokemon />
-  }
-  <input
-    type="search"
-    name="listing-search"
-    id="listing-search"
-    placeholder="Buscar Pokémon por nombre o número..."
-    aria-label="Buscar Pokémon"
-    (input)="onSearch($any($event.target).value)"
-  />
-
-  <div class="listing-filters">
-    <select
-      aria-label="Filtrar por tipo"
-      [value]="typeFilter()"
-      (change)="setTypeFilter($any($event.target).value)"
-    >
-      <option value="">Todos los tipos</option>
-      @for (type of types; track type) {
-        <option [value]="type" [selected]="type === typeFilter()">{{ type | tipo }}</option>
-      }
-    </select>
-    <select aria-label="Filtrar por generación" (change)="setGenFilter($any($event.target).value)">
-      <option value="">Todas las generaciones</option>
-      @for (gen of generations; track gen.id) {
-        <option [value]="gen.id" [selected]="gen.id === genFilter()">{{ gen.label }}</option>
-      }
-    </select>
-    <button class="random-btn" type="button" (click)="openRandom()">🎲 Pokémon aleatorio</button>
-    @if (hasFilters()) {
-      <button class="clear-filters" (click)="clearFilters()">Quitar filtros</button>
-      @if (!isLoading() && !searchTerm()) {
-        <span class="listing-count">{{ totalCount() }} Pokémon</span>
-      }
-    }
+<div class="zona">
+  <div class="zona-cab">
+    <h1 class="titulo-zona">Tus cajas</h1>
+    <p class="texto-zona">
+      Cada generación vive en su propia caja. Muévete con las flechas, pasa de caja con Q y E, y
+      abre una ficha con Intro.
+    </p>
   </div>
 
-  @if (searchTerm()) {
-    <p class="listing-status">
-      @if (isSearching()) {
-        Buscando...
-      } @else if (searchMatches() === 0) {
-        No se ha encontrado ningún Pokémon con "{{ searchTerm() }}".
-      } @else if (searchMatches() > filteredPokemons().length) {
-        Mostrando {{ filteredPokemons().length }} de {{ searchMatches() }} resultados. Afina la
-        búsqueda para ver más.
-      } @else {
-        {{ searchMatches() }} {{ searchMatches() === 1 ? 'resultado' : 'resultados' }}
-      }
-    </p>
-  } @else if (hasError()) {
-    <div class="listing-status listing-status--error">
-      No se pudo cargar el listado.
-      <button class="retry-btn" (click)="retry()">Reintentar</button>
-    </div>
-  } @else if (hasFilters() && totalCount() === 0) {
-    <p class="listing-status">Ningún Pokémon cumple estos filtros.</p>
-  }
-
-  <div
-    class="pokemon-listing"
-    [class.pokemon-listing--loading]="isLoading() && !searchTerm()"
-    [attr.aria-busy]="showSkeletons()"
-  >
-    @if (showSkeletons()) {
-      @for (i of skeletons; track i) {
-        <div class="pokemon-miniature pokemon-miniature--skeleton" aria-hidden="true">
-          <div class="skeleton skeleton--title"></div>
-          <div class="pokemon-miniature-image-container skeleton skeleton--image"></div>
-          <div class="skeleton skeleton--badge"></div>
-        </div>
-      }
-    }
-    @for (pokemon of filteredPokemons(); track pokemon.id) {
-      <div
-        class="pokemon-miniature"
-        role="link"
-        tabindex="0"
-        [attr.aria-label]="'Ver ficha de ' + (pokemon.name | nombre: pokemon.id)"
-        [routerLink]="['/pokemon', pokemon.name]"
-        (keydown.enter)="openPokemon(pokemon.name)"
-      >
-        <div class="pokemon-miniature__header">
-          <span class="pokemon-miniature__name">
-            <span class="pokemon-miniature__id">#{{ pokemon.id }}</span>
-            {{ pokemon.name | nombre: pokemon.id }}
+  <div class="mesa">
+    <!-- Panel Resumen: el Pokémon bajo el cursor -->
+    <aside class="columna">
+      <section class="resumen" aria-live="polite">
+        <div class="resumen-cab">
+          Resumen
+          <span>
+            @if (selected()) {
+              Hueco {{ selectedIndex() + 1 }} de
+              {{ searchTerm() ? 'la búsqueda' : boxName() + ' ' + page() }}
+            }
           </span>
+        </div>
+        @if (selected(); as p) {
+          <div class="escaparate mural">
+            <img [src]="p.img" [alt]="p.name | nombre: p.id" width="475" height="475" />
+          </div>
+          <div class="resumen-cuerpo">
+            <span class="num">Nº {{ p.id }}</span>
+            <h2 class="nombre">{{ p.name | nombre: p.id }}</h2>
+            <div class="tipos">
+              @for (t of p.types; track t.type.name) {
+                <a
+                  class="type-badge type-badge--{{ t.type.name }}"
+                  [routerLink]="['/tipo', t.type.name]"
+                  >{{ t.type.name | tipo }}</a
+                >
+              }
+            </div>
+            <div class="acciones">
+              <button class="btn-caja btn-caja--fuerte" (click)="openPokemon(p.name)">
+                Ver ficha
+              </button>
+              <button class="btn-caja" (click)="openRandom()">Al azar</button>
+            </div>
+          </div>
+        } @else {
+          <div class="escaparate mural escaparate--vacio"></div>
+          <div class="resumen-cuerpo">
+            <p class="resumen-vacio">
+              {{ isLoading() || isSearching() ? 'Abriendo la caja…' : 'Elige un hueco.' }}
+            </p>
+          </div>
+        }
+      </section>
+
+      <app-daily-pokemon />
+    </aside>
+
+    <!-- La caja -->
+    <section class="caja" aria-label="Caja de Pokémon">
+      <div class="cajas-tabs" role="tablist" aria-label="Generaciones">
+        @for (gen of generations; track gen.id) {
           <button
-            class="favorite-btn"
-            [class.favorite-btn--active]="isFavorite(pokemon.id)"
-            (click)="toggleFavorite($event, pokemon.id)"
-            (keydown.enter)="$event.stopPropagation()"
-            [attr.aria-label]="
-              isFavorite(pokemon.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'
-            "
-            [attr.aria-pressed]="isFavorite(pokemon.id)"
+            role="tab"
+            [attr.aria-selected]="gen.id === currentGen().id"
+            [class.activa]="gen.id === currentGen().id"
+            (click)="goToGen(gen.id)"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path
-                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-              />
-            </svg>
+            {{ gen.label.split('· ')[1] }}
           </button>
+        }
+      </div>
+
+      <div class="caja-cab">
+        <button
+          class="flecha izq"
+          (click)="flipBox(-1)"
+          [disabled]="isLoading() || !!searchTerm() || (page() === 1 && currentGen().id === 1)"
+          aria-label="Caja anterior (Q)"
+        ></button>
+        <div class="caja-nombre">
+          @if (searchTerm()) {
+            Búsqueda
+            <small
+              >{{ searchMatches() }} {{ searchMatches() === 1 ? 'resultado' : 'resultados' }}</small
+            >
+          } @else {
+            {{ boxName() }} {{ page() }}
+            <small>
+              @if (filteredPokemons().length) {
+                Nº {{ filteredPokemons()[0].id }} al
+                {{ filteredPokemons()[filteredPokemons().length - 1].id }} ·
+                {{ totalCount() }} Pokémon{{
+                  hasTypeFilter() ? ' de tipo ' + (typeFilter() | tipo) : ''
+                }}
+              }
+            </small>
+          }
         </div>
-        <div class="pokemon-miniature-image-container">
-          <img
-            [src]="pokemon.img"
-            [alt]="pokemon.name | nombre: pokemon.id"
-            class="pokemon-miniature__image"
-            loading="lazy"
-            width="475"
-            height="475"
+        <button
+          class="flecha"
+          (click)="flipBox(1)"
+          [disabled]="
+            isLoading() ||
+            !!searchTerm() ||
+            (page() >= totalPages() && currentGen().id === generations.length)
+          "
+          aria-label="Caja siguiente (E)"
+        ></button>
+      </div>
+
+      <div class="mural mural--{{ (currentGen().id - 1) % 3 }}">
+        <div class="buscar">
+          <input
+            type="search"
+            name="listing-search"
+            data-search
+            placeholder="Buscar en todas las cajas (/)"
+            aria-label="Buscar Pokémon por nombre o número"
+            (input)="onSearch($any($event.target).value)"
           />
+          <button class="btn-caja btn-caja--fuerte" (click)="openRandom()">Al azar (R)</button>
         </div>
-        <div class="pokemon-miniature__types">
-          @for (t of pokemon.types; track $index) {
-            <span class="type-badge type-badge--{{ t.type.name }}">
-              {{ t.type.name | tipo }}
-            </span>
+
+        <p class="marcas-titulo">Marcar por tipo <span>(T para pasar de tipo)</span></p>
+        <div class="marcas" role="group" aria-label="Filtrar por tipo">
+          @for (type of types; track type) {
+            <button
+              [attr.aria-pressed]="typeFilter() === type"
+              (click)="setTypeFilter(typeFilter() === type ? '' : type)"
+            >
+              <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
+            </button>
+          }
+          @if (hasTypeFilter()) {
+            <button class="quitar" (click)="clearFilters()">Quitar</button>
+          }
+        </div>
+
+        @if (hasError() && !searchTerm()) {
+          <div class="aviso">
+            No se pudo abrir la caja.
+            <button class="btn-caja" (click)="retry()">Reintentar</button>
+          </div>
+        } @else if (searchTerm() && !isSearching() && searchMatches() === 0) {
+          <div class="aviso">No hay ningún Pokémon con "{{ searchTerm() }}".</div>
+        } @else if (!isLoading() && !searchTerm() && totalCount() === 0) {
+          <div class="aviso">Esta caja no tiene Pokémon de tipo {{ typeFilter() | tipo }}.</div>
+        }
+
+        <div class="huecos" [attr.aria-busy]="showSkeletons()">
+          @if (showSkeletons()) {
+            @for (i of skeletons; track i) {
+              <div class="hueco hueco--vacio" aria-hidden="true"></div>
+            }
+          }
+          @for (pokemon of filteredPokemons(); track pokemon.id; let i = $index) {
+            <div
+              class="hueco"
+              [class.sel]="i === selectedIndex()"
+              role="link"
+              tabindex="0"
+              [attr.data-hueco]="i"
+              [attr.aria-label]="'Ver ficha de ' + (pokemon.name | nombre: pokemon.id)"
+              [routerLink]="['/pokemon', pokemon.name]"
+              (mouseenter)="select(i)"
+              (focus)="select(i)"
+            >
+              @if (i === selectedIndex()) {
+                <svg
+                  class="mano"
+                  viewBox="0 0 10 10"
+                  shape-rendering="crispEdges"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="#0F2524"
+                    d="M3 0h2v1H3zM2 1h1v4H2zM5 1h1v3H5zM6 3h2v1H6zM8 4h1v4H8zM1 4h1v1H1zM0 5h1v2H0zM1 7h1v1H1zM2 8h1v1H2zM3 9h4v1H3zM7 8h1v1H7z"
+                  />
+                  <path fill="#FFFFFF" d="M3 1h2v4h1V4h2v1h0v3H7v1H3V8H2V7H1V5h1v1h1z" />
+                  <path fill="#FF5A5F" d="M3 8h4v1H3z" />
+                </svg>
+              }
+              <span class="n">{{ pokemon.id }}</span>
+              <button
+                class="corazon"
+                [class.on]="isFavorite(pokemon.id)"
+                (click)="toggleFavorite($event, pokemon.id)"
+                (keydown.enter)="$event.stopPropagation()"
+                [attr.aria-label]="
+                  isFavorite(pokemon.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'
+                "
+                [attr.aria-pressed]="isFavorite(pokemon.id)"
+              >
+                <svg viewBox="0 0 9 8" shape-rendering="crispEdges" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M1 0h2v1h1v1h1V1h1V0h2v1h1v3H8v1H7v1H6v1H5v1H4V7H3V6H2V5H1V4H0V1h1z"
+                  />
+                </svg>
+              </button>
+              <img
+                class="sprite"
+                [src]="spriteUrl(pokemon.id)"
+                [alt]="pokemon.name | nombre: pokemon.id"
+                loading="lazy"
+                width="96"
+                height="96"
+              />
+              <b>{{ pokemon.name | nombre: pokemon.id }}</b>
+              <div class="tipos">
+                @for (t of pokemon.types; track $index) {
+                  <span class="type-badge type-badge--{{ t.type.name }}">{{
+                    t.type.name | tipo
+                  }}</span>
+                }
+              </div>
+            </div>
           }
         </div>
       </div>
-    }
+
+      @if (!searchTerm()) {
+        <div class="caja-pie">
+          <span>Caja {{ page() }} de {{ totalPages() }}</span>
+          <div class="puntos-caja" aria-hidden="true">
+            @for (n of boxIndexes(); track n) {
+              <i [class.on]="n === page()"></i>
+            }
+          </div>
+        </div>
+      }
+    </section>
   </div>
-
-  @if (!searchTerm()) {
-    <div class="pagination">
-      <button
-        class="pagination-btn"
-        (click)="goToPage(page() - 1)"
-        [disabled]="page() <= 1 || isLoading()"
-      >
-        <div class="icon-container">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M3.825 9L9.425 14.6L8 16L0 8L8 0L9.425 1.4L3.825 7H16V9H3.825V9"
-              fill="currentColor"
-            />
-          </svg>
-        </div>
-        <span>ANTERIOR</span>
-      </button>
-
-      <span class="pagination-info">{{ page() }} / {{ totalPages() }}</span>
-
-      <button
-        class="pagination-btn"
-        (click)="goToPage(page() + 1)"
-        [disabled]="page() >= totalPages() || isLoading()"
-      >
-        <span>SIGUIENTE</span>
-        <div class="icon-container">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M12.175 9H0V7H12.175L6.575 1.4L8 0L16 8L8 16L6.575 14.6L12.175 9Z"
-              fill="currentColor"
-            />
-          </svg>
-        </div>
-      </button>
-    </div>
-  }
 </div>

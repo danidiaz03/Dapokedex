@@ -1,20 +1,27 @@
 <section class="daily" aria-label="Pokémon del día">
-  <img class="daily__img" [src]="img" [alt]="name()" width="120" height="120" />
-  <div class="daily__body">
-    <span class="daily__eyebrow">🌟 Pokémon del día</span>
-    <a class="daily__name" [routerLink]="['/pokemon', id]">{{ name() | nombre: id }}</a>
-    <div class="daily__types">
-      @for (t of types(); track t) {
-        <span class="type-badge type-badge--{{ t }}">{{ t | tipo }}</span>
-      }
+  <div class="daily__cab">
+    Pokémon del día
+    <span>Igual para todos hoy</span>
+  </div>
+  <div class="daily__cuerpo">
+    <div class="daily__escaparate mural">
+      <img class="daily__img" [src]="img" [alt]="name() | nombre: id" width="120" height="120" />
+    </div>
+    <div class="daily__body">
+      <span class="daily__num">Nº {{ id }}</span>
+      <a class="daily__name" [routerLink]="['/pokemon', id]">{{ name() | nombre: id }}</a>
+      <div class="daily__types">
+        @for (t of types(); track t) {
+          <span class="type-badge type-badge--{{ t }}">{{ t | tipo }}</span>
+        }
+      </div>
     </div>
   </div>
   <div class="daily__action">
     @if (claimed()) {
-      <span class="daily__done">✅ Capturado hoy</span>
-      <span class="daily__hint">Vuelve mañana a por otro</span>
+      <span class="daily__done">Capturado hoy · vuelve mañana</span>
     } @else {
-      <button class="daily__btn" (click)="claim()" [disabled]="claiming()">
+      <button class="btn-caja btn-caja--fuerte" (click)="claim()" [disabled]="claiming()">
         {{ user() ? '¡Capturar!' : 'Entra para capturarlo' }}
       </button>
       <span class="daily__hint">+{{ xp }} XP y a tu colección</span>
