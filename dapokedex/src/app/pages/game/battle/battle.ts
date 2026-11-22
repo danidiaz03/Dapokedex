@@ -186,6 +186,8 @@ export class Battle implements OnInit, OnDestroy {
   private started = false;
   private buildingTeam = false;
   private finished = false;
+  /** La partida ya había terminado al abrirla: se enseña sin volver a dar premios. */
+  private alreadyFinished = false;
   private stopWatch?: () => void;
   private clock?: ReturnType<typeof setInterval>;
   private queue: Promise<void> = Promise.resolve();
@@ -893,6 +895,7 @@ export class Battle implements OnInit, OnDestroy {
 
     if (!this.started) {
       this.started = true;
+      this.alreadyFinished = m.status === 'finished';
       this.loading.set(false);
       this.phase.set('battle');
       this.busy.set(true);
@@ -1033,6 +1036,7 @@ export class Battle implements OnInit, OnDestroy {
     this.playerWon.set(won);
     this.phase.set('result');
     this.busy.set(false);
+    if (this.alreadyFinished) return;
 
     const foes = this.enemyTeam();
     const rewards = await this.progressService
