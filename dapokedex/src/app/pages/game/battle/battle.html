@@ -6,40 +6,6 @@
   } @else if (loadError()) {
     <div class="loading-screen">
       <p>{{ loadError() }}</p>
-      @if (rewardXp() > 0 || highlightRewards().length) {
-        <div class="result-rewards">
-          <span class="result-rewards__xp">+{{ rewardXp() }} XP</span>
-          @for (line of highlightRewards(); track $index) {
-            <span class="result-rewards__item">{{ line }}</span>
-          }
-        </div>
-      }
-      @if (teamGrowth().length) {
-        <div class="team-growth">
-          <h2 class="team-growth__title">Tu equipo</h2>
-          @for (g of teamGrowth(); track g.id) {
-            <div
-              class="team-growth__row"
-              [class.team-growth__row--up]="g.levelAfter > g.levelBefore"
-            >
-              <img [src]="pokemonSprite(g.id)" [alt]="g.name" />
-              <span class="team-growth__name">{{ g.name | nombre: g.id }}</span>
-              <span class="team-growth__level">
-                Nv. {{ g.levelAfter }}
-                @if (g.levelAfter > g.levelBefore) {
-                  <strong>▲ +{{ g.levelAfter - g.levelBefore }}</strong>
-                }
-              </span>
-              <span class="team-growth__xp">+{{ g.gained }} XP</span>
-              @if (g.evolutions.length) {
-                <button class="team-growth__evolve" (click)="evolving.set(g)">
-                  ✨ ¡Evolucionar!
-                </button>
-              }
-            </div>
-          }
-        </div>
-      }
       <div class="result-actions">
         <button class="btn-secondary" (click)="goBack()">Volver al juego</button>
         <button class="btn-primary" (click)="newBattle()">Reintentar</button>
@@ -316,6 +282,32 @@
           <span class="result-rewards__xp">+{{ rewardXp() }} XP</span>
           @for (line of highlightRewards(); track $index) {
             <span class="result-rewards__item">{{ line }}</span>
+          }
+        </div>
+      }
+      @if (teamGrowth().length) {
+        <div class="team-growth">
+          <h2 class="team-growth__title">Tu equipo</h2>
+          @for (g of teamGrowth(); track g.id) {
+            <div
+              class="team-growth__row"
+              [class.team-growth__row--up]="g.levelAfter > g.levelBefore"
+            >
+              <img [src]="pokemonSprite(g.id)" [alt]="g.name" />
+              <span class="team-growth__name">{{ g.name | nombre: g.id }}</span>
+              <span class="team-growth__level">
+                Nv. {{ g.levelAfter }}
+                @if (g.levelAfter > g.levelBefore) {
+                  <strong>▲ +{{ g.levelAfter - g.levelBefore }}</strong>
+                }
+              </span>
+              <span class="team-growth__xp">+{{ g.gained }} XP</span>
+              @if (g.evolutions.length) {
+                <button class="team-growth__evolve" (click)="evolving.set(g)">
+                  ✨ ¡Evolucionar!
+                </button>
+              }
+            </div>
           }
         </div>
       }
