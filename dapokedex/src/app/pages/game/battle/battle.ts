@@ -51,6 +51,7 @@ import {
   WEATHER_ROCKS,
   WEATHER_TEXT,
 } from '../../../game/battle-data';
+import { Held, battleDrops, consumedItems } from '../../../game/bag';
 import {
   Reward,
   SHINY_CHANCE,
@@ -160,6 +161,8 @@ export class Battle implements OnInit, OnDestroy {
   evolving = signal<TeamGrowth | null>(null);
   /** Rivales derrotados por cada Pokémon del jugador en esta batalla. */
   private koBy = new Map<number, number>();
+  /** Objetos equipados a tu equipo al empezar (para descontar los gastados). */
+  private held: Held = {};
 
   private audioCtx: AudioContext | null = null;
   /** Cambia al salir o reiniciar: la reproducción en curso se detiene sola. */
@@ -257,6 +260,7 @@ export class Battle implements OnInit, OnDestroy {
     const userData = await this.firestoreService.getUserData(userId);
     const teamIds = userData.team;
     this.teamXp.set(userData.pokemonXp);
+    this.held = userData.held;
     if (teamIds.length === 0) {
       this.router.navigate(['/game']);
       return;
@@ -294,13 +298,21 @@ export class Battle implements OnInit, OnDestroy {
 
       const [player, enemy] = await Promise.all([
         // Los shinies capturados aparecen brillantes en tu equipo.
+        // Tus Pokémon llevan lo que les hayas equipado; los rivales, uno a su medida.
         Promise.all(
           playerData.map((d) =>
-            this.toCombatant(d, this.pokemonLevel(d.id), ownedShinies.includes(d.id)),
+            this.toCombatant(
+              d,
+              this.pokemonLevel(d.id),
+              ownedShinies.includes(d.id),
+              this.held[d.id] ?? null,
+            ),
           ),
         ),
         Promise.all(
-          enemyData.map((d) => this.toCombatant(d, enemyLevel(), Math.random() < SHINY_CHANCE)),
+          enemyData.map((d) =>
+            this.toCombatant(d, enemyLevel(), Math.random() < SHINY_CHANCE, 'random'),
+          ),
         ),
       ]);
 
@@ -400,6 +412,17 @@ export class Battle implements OnInit, OnDestroy {
   }
 
   /** Objeto equipado, elegido según el estilo del Pokémon. */
+  private async itemInfo(key: string): Promise<{ key: string; name: string; sprite: string }> {
+    const data = await firstValueFrom(
+      this.pokemonService.getItem(`https://pokeapi.co/api/v2/item/${key}`),
+    ).catch(() => null);
+    return {
+      key,
+      name: data?.names.find((n) => n.language.name === 'es')?.name ?? key.replace(/-/g, ' '),
+      sprite: data?.sprites.default ?? '',
+    };
+  }
+
   private async pickItem(
     types: string[],
     stat: (name: string) => number,
@@ -437,21 +460,15 @@ export class Battle implements OnInit, OnDestroy {
     }
     if (booster) options.push([booster, 2]);
     if (rock) options.push([rock, 3]);
-    const key = weighted(options.filter(([k]) => HELD_ITEMS.includes(k)));
-    const data = await firstValueFrom(
-      this.pokemonService.getItem(`https://pokeapi.co/api/v2/item/${key}`),
-    ).catch(() => null);
-    return {
-      key,
-      name: data?.names.find((n) => n.language.name === 'es')?.name ?? key.replace(/-/g, ' '),
-      sprite: data?.sprites.default ?? '',
-    };
+    return this.itemInfo(weighted(options.filter(([k]) => HELD_ITEMS.includes(k))));
   }
 
   private async toCombatant(
     data: PokemonDetailPage,
     level: number,
     shiny: boolean,
+    /** 'random' elige uno a su medida; una clave equipa ese; null, ninguno. */
+    itemChoice: string | null,
   ): Promise<Combatant> {
     const stat = (name: string) => data.stats.find((s) => s.stat.name === name)?.base_stat ?? 50;
     const types = data.types.map((t) => t.type.name);
@@ -459,7 +476,12 @@ export class Battle implements OnInit, OnDestroy {
       this.pickMoves(data, types),
       this.pickAbility(data),
     ]);
-    const item = await this.pickItem(types, stat, moves, ability.key);
+    const item =
+      itemChoice === 'random'
+        ? await this.pickItem(types, stat, moves, ability.key)
+        : itemChoice
+          ? await this.itemInfo(itemChoice)
+          : { key: null, name: '', sprite: '' };
     return createCombatant({
       id: data.id,
       // Nombre oficial en español para los mensajes del combate.
@@ -669,14 +691,30 @@ export class Battle implements OnInit, OnDestroy {
     this.phase.set('result');
     this.busy.set(false);
 
-    if (won) {
-      const userId = this.authService.currentUser()?.uid;
-      if (userId) {
-        const enemyIds = this.enemyTeam().map((p) => p.id);
-        const collection = await this.firestoreService.getCollection(userId);
-        this.newCaptures.set(enemyIds.filter((id) => !collection.includes(id)));
-        // Una sola escritura con todos los capturados en lugar de una por Pokémon.
-        await this.firestoreService.addToCollection(userId, ...enemyIds);
+    const userId = this.authService.currentUser()?.uid;
+    if (won && userId) {
+      const enemyIds = this.enemyTeam().map((p) => p.id);
+      const collection = await this.firestoreService.getCollection(userId);
+      this.newCaptures.set(enemyIds.filter((id) => !collection.includes(id)));
+      // Una sola escritura con todos los capturados en lugar de una por Pokémon.
+      await this.firestoreService.addToCollection(userId, ...enemyIds);
+    }
+
+    // Mochila: se descuentan las bayas y bandas gastadas y se recoge el botín.
+    let loot: Reward[] = [];
+    if (userId) {
+      const used = consumedItems(this.held, this.playerTeam());
+      const drops = battleDrops(
+        won,
+        this.enemyTeam().map((p) => p.item),
+      );
+      try {
+        await this.firestoreService.consumeItems(userId, used);
+        await this.firestoreService.addItems(userId, drops);
+        if (drops.length)
+          loot = await this.progressService.announceItems(drops, 'Botín del combate');
+      } catch (error) {
+        console.warn('No se pudo actualizar la mochila', error);
       }
     }
 
@@ -691,7 +729,7 @@ export class Battle implements OnInit, OnDestroy {
         shinies: won ? enemies.filter((p) => p.shiny).map((p) => p.id) : [],
       })
       .catch(() => [] as Reward[]);
-    this.rewards.set(rewards);
+    this.rewards.set([...rewards, ...loot]);
     this.rewardXp.set(xpFromRewards(rewards));
     await this.growTeam(won);
   }
@@ -753,6 +791,7 @@ export class Battle implements OnInit, OnDestroy {
       if (r.kind === 'achievement') return [`${r.icon} Logro: ${r.title}`];
       if (r.kind === 'challenge') return [`✅ Reto completado: ${r.title}`];
       if (r.kind === 'bonus') return [`🎁 ${r.text}`];
+      if (r.kind === 'item') return [`🎒 ${r.name} · ${r.reason}`];
       return [];
     });
   }

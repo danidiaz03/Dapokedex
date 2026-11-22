@@ -118,6 +118,10 @@
         }
       </div>
     </section>
+
+    @if (team().length > 0) {
+      <app-bag-panel [team]="team()" />
+    }
   }
 
   <a class="minigame-banner" routerLink="/game/guess">

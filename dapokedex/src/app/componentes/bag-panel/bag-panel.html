@@ -1,0 +1,78 @@
+<section class="caja mochila" aria-label="Mochila">
+  <div class="mochila__cab">
+    <div>
+      <h2 class="mochila__titulo">🎒 Mochila</h2>
+      <p class="mochila__sub">{{ totalItems() }} objetos · equipa uno a cada Pokémon del equipo</p>
+    </div>
+  </div>
+
+  <div class="mural mochila__mural">
+    <ul class="portadores">
+      @for (p of team(); track p.id) {
+        <li>
+          <button
+            class="portador"
+            [class.portador--activo]="selected() === p.id"
+            [attr.aria-pressed]="selected() === p.id"
+            (click)="toggle(p.id)"
+          >
+            <img [src]="sprite(p.id)" alt="" width="56" height="56" />
+            <span class="portador__nombre">{{ p.name | nombre: p.id }}</span>
+            @if (heldBy(p.id); as key) {
+              <span class="portador__objeto">
+                <img [src]="items.sprite(key)" alt="" width="24" height="24" />
+                {{ items.label(key) }}
+              </span>
+            } @else {
+              <span class="portador__objeto portador__objeto--vacio">Sin objeto</span>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+
+    @if (selectedPokemon(); as p) {
+      <div class="eleccion" aria-live="polite">
+        <div class="eleccion__cab">
+          <b>Objeto para {{ p.name | nombre: p.id }}</b>
+          @if (heldBy(p.id)) {
+            <button class="btn-caja" [disabled]="saving()" (click)="equip(null)">
+              Quitar objeto
+            </button>
+          }
+        </div>
+        @if (list().length === 0) {
+          <p class="eleccion__vacio">
+            Tu mochila está vacía. Gana combates para conseguir objetos.
+          </p>
+        } @else {
+          <div class="objetos">
+            @for (it of list(); track it.key) {
+              <button
+                class="objeto"
+                [class.objeto--puesto]="heldBy(p.id) === it.key"
+                [disabled]="saving() || !canEquip(it.key)"
+                (click)="equip(it.key)"
+              >
+                <img [src]="items.sprite(it.key)" alt="" width="32" height="32" />
+                <span class="objeto__texto">
+                  <b>{{ items.label(it.key) }}</b>
+                  <small>{{ it.description }}</small>
+                </span>
+                <span class="objeto__cantidad">{{ it.free }}/{{ it.total }}</span>
+              </button>
+            }
+          </div>
+        }
+        @if (error()) {
+          <p class="eleccion__error">{{ error() }}</p>
+        }
+      </div>
+    }
+
+    <p class="mochila__pista">
+      Consigues objetos al ganar combates (a veces el rival suelta el suyo), al completar retos
+      diarios, al subir de nivel y con los logros. Las bayas y la Banda Aguante se gastan al usarse.
+    </p>
+  </div>
+</section>

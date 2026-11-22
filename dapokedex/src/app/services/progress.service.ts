@@ -2,6 +2,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { FirestoreService } from './firestore.service';
 import { RewardFeedService } from './reward-feed.service';
+import { ItemService } from './item.service';
+import { achievementItem, challengeItem, levelItem } from '../game/bag';
 import {
   GameEvent,
   Reward,
@@ -25,6 +27,7 @@ export class ProgressService {
   private auth = inject(AuthService);
   private firestore = inject(FirestoreService);
   private feed = inject(RewardFeedService);
+  private items = inject(ItemService);
 
   readonly progress = signal<TrainerProgress | null>(null);
   readonly collectionSize = signal(0);
@@ -98,6 +101,7 @@ export class ProgressService {
       today: dayKey(),
       collectionSize,
     });
+    rewards.push(...(await this.itemRewards(userId, rewards)));
 
     if (rewards.length > 0 || event.type !== 'visit') {
       await this.firestore.saveProgress(userId, progress);
@@ -121,6 +125,50 @@ export class ProgressService {
         })
         .catch((error) => console.warn('No se pudo actualizar el ranking', error));
     }
+    return rewards;
+  }
+
+  /**
+   * Objetos que acompañan a las recompensas: subir de nivel, completar un
+   * reto diario o desbloquear un logro también llenan la mochila.
+   */
+  private async itemRewards(userId: string, rewards: Reward[]): Promise<Reward[]> {
+    const found: { key: string; reason: string }[] = [];
+    for (const r of rewards) {
+      if (r.kind === 'level') found.push({ key: levelItem(r.level), reason: `Nivel ${r.level}` });
+      if (r.kind === 'challenge') found.push({ key: challengeItem(), reason: r.title });
+      if (r.kind === 'achievement') found.push({ key: achievementItem(), reason: r.title });
+    }
+    if (found.length === 0) return [];
+    try {
+      await this.firestore.addItems(
+        userId,
+        found.map((f) => f.key),
+      );
+    } catch {
+      return [];
+    }
+    return Promise.all(
+      found.map(async (f) => ({
+        kind: 'item' as const,
+        key: f.key,
+        name: await this.items.name(f.key),
+        reason: f.reason,
+      })),
+    );
+  }
+
+  /** Avisa de objetos conseguidos fuera de los eventos de progreso (botín de combate). */
+  async announceItems(keys: string[], reason: string): Promise<Reward[]> {
+    const rewards = await Promise.all(
+      keys.map(async (key) => ({
+        kind: 'item' as const,
+        key,
+        name: await this.items.name(key),
+        reason,
+      })),
+    );
+    this.feed.show(rewards);
     return rewards;
   }
 

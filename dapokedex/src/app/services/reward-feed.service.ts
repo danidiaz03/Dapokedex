@@ -46,6 +46,9 @@ export class RewardFeedService {
         });
       }
       if (r.kind === 'bonus') this.push({ tone: 'bonus', icon: '🎁', title: r.text });
+      if (r.kind === 'item') {
+        this.push({ tone: 'bonus', icon: '🎒', title: `¡Conseguiste ${r.name}!`, text: r.reason });
+      }
       if (r.kind === 'challenge') {
         this.push({
           tone: 'challenge',

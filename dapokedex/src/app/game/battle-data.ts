@@ -225,7 +225,10 @@ export const STATUS_BERRIES: Record<string, string[]> = {
   'persim-berry': ['confusion'],
 };
 
-/** Objetos que pueden llevar los Pokémon en combate. */
+/**
+ * Objetos que pueden llevar los Pokémon en combate. Si añades uno, añádelo
+ * también a heldItems() en firestore.rules o no se podrá guardar en la mochila.
+ */
 export const HELD_ITEMS = [
   'leftovers',
   'black-sludge',

@@ -7,6 +7,7 @@ import { TypeNamePipe } from '../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 import { ProgressService } from '../../services/progress.service';
 import { DailyPokemon } from '../../componentes/daily-pokemon/daily-pokemon';
+import { BagPanel } from '../../componentes/bag-panel/bag-panel';
 import {
   ACHIEVEMENTS,
   dailyChallenges,
@@ -24,7 +25,7 @@ const STARTERS = [
 
 @Component({
   selector: 'app-game',
-  imports: [TypeNamePipe, RouterLink, PokemonNamePipe, DailyPokemon],
+  imports: [TypeNamePipe, RouterLink, PokemonNamePipe, DailyPokemon, BagPanel],
   templateUrl: './game.html',
   styleUrl: './game.css',
 })

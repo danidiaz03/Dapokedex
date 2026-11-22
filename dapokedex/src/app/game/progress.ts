@@ -41,7 +41,8 @@ export type Reward =
   | { kind: 'achievement'; id: string; title: string; icon: string }
   | { kind: 'challenge'; title: string; xp: number }
   | { kind: 'streak'; days: number; xp: number }
-  | { kind: 'bonus'; text: string };
+  | { kind: 'bonus'; text: string }
+  | { kind: 'item'; key: string; name: string; reason: string };
 
 // ---------------------------------------------------------------------------
 // Experiencia y niveles

@@ -7,9 +7,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Datos privados de cada usuario: favoritos, colección, equipo y progreso.
+    // Datos privados de cada usuario: favoritos, colección, equipo, progreso
+    // y mochila. Cada usuario solo lee y escribe su propio documento.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidBag();
     }
 
     // Ranking: cualquier usuario con sesión puede verlo y cada uno solo
@@ -37,6 +39,29 @@ service cloud.firestore {
 
     function progressXp(userId) {
       return get(/databases/$(database)/documents/users/$(userId)).data.progress.xp;
+    }
+
+    // La mochila solo admite objetos que existen en el juego y como mucho 6
+    // equipados (uno por Pokémon del equipo). No impide del todo las trampas:
+    // el cliente escribe sus propios datos, igual que la XP o la colección.
+    function isValidBag() {
+      let data = request.resource.data;
+      return (!('bag' in data) || (data.bag is map && data.bag.keys().hasOnly(heldItems())))
+        && (!('held' in data) || (data.held is map && data.held.size() <= 6));
+    }
+
+    function heldItems() {
+      return [
+        'leftovers', 'black-sludge', 'sitrus-berry', 'oran-berry', 'choice-band',
+        'choice-specs', 'choice-scarf', 'life-orb', 'focus-sash', 'expert-belt',
+        'muscle-band', 'wise-glasses', 'assault-vest', 'rocky-helmet', 'quick-claw',
+        'scope-lens', 'shell-bell', 'charcoal', 'mystic-water', 'magnet', 'miracle-seed',
+        'never-melt-ice', 'black-belt', 'poison-barb', 'soft-sand', 'sharp-beak',
+        'twisted-spoon', 'silver-powder', 'hard-stone', 'spell-tag', 'dragon-fang',
+        'black-glasses', 'metal-coat', 'silk-scarf', 'fairy-feather', 'lum-berry',
+        'cheri-berry', 'chesto-berry', 'pecha-berry', 'rawst-berry', 'aspear-berry',
+        'persim-berry', 'damp-rock', 'heat-rock', 'smooth-rock', 'icy-rock'
+      ];
     }
 
     function isOwner(userId) {

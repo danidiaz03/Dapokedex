@@ -19,6 +19,7 @@ import {
   deleteField,
 } from 'firebase/firestore';
 import { firebaseApp } from '../firebase';
+import { Bag, Held, STARTER_KIT, normalizeBag, normalizeHeld } from '../game/bag';
 
 // Firestore se inicializa aquí y no en firebase.ts para que solo se descargue
 // con las páginas que lo usan (todas cargadas en diferido).
@@ -33,6 +34,12 @@ export interface UserData {
   progress?: Record<string, unknown>;
   /** Experiencia de cada Pokémon de la colección, por id. */
   pokemonXp: Record<number, number>;
+  /** Objetos de la mochila y cuántos hay de cada uno. */
+  bag: Bag;
+  /** Objeto que lleva cada Pokémon, por id. */
+  held: Held;
+  /** Aún no tiene mochila: recibe el kit inicial al entrar al juego. */
+  bagMissing: boolean;
 }
 
 export const MAX_TEAM_SIZE = 6;
@@ -60,7 +67,12 @@ export class FirestoreService {
   async getUserData(userId: string): Promise<UserData> {
     const docSnap = await getDoc(this.getUserDoc(userId));
     const data = docSnap.exists() ? docSnap.data() : {};
+    const bagMissing = data['bag'] === undefined;
+    const bag = bagMissing ? { ...STARTER_KIT } : normalizeBag(data['bag']);
     return {
+      bag,
+      held: normalizeHeld(data['held'], bag),
+      bagMissing,
       favorites: data['favorites'] ?? [],
       starter: data['starter'] ?? null,
       collection: data['collection'] ?? [],
@@ -147,15 +159,56 @@ export class FirestoreService {
     const data = await this.getUserData(userId);
     const xp = data.pokemonXp[fromId] ?? 0;
     const team = data.team.map((id) => (id === fromId ? toId : id));
+    const item = data.held[fromId];
     await this.merge(userId, {
       team: [...new Set(team)],
       collection: arrayUnion(toId),
       pokemonXp: { [toId]: xp, [fromId]: deleteField() },
+      // El objeto equipado pasa a la evolución.
+      ...(item ? { held: { [toId]: item, [fromId]: deleteField() } } : {}),
     });
   }
 
   async removeFromTeam(userId: string, pokemonId: number): Promise<void> {
-    await this.merge(userId, { team: arrayRemove(pokemonId) });
+    // Al salir del equipo devuelve su objeto a la mochila.
+    await this.merge(userId, {
+      team: arrayRemove(pokemonId),
+      held: { [pokemonId]: deleteField() },
+    });
+  }
+
+  // --- Mochila ---------------------------------------------------------------
+
+  /** Guarda el kit inicial la primera vez que el jugador abre el juego. */
+  async giveStarterKit(userId: string): Promise<void> {
+    await this.merge(userId, { bag: { ...STARTER_KIT } });
+  }
+
+  /** Añade objetos a la mochila (increment para no pisar otras pestañas). */
+  async addItems(userId: string, keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    const counts: Record<string, number> = {};
+    for (const k of keys) counts[k] = (counts[k] ?? 0) + 1;
+    const bag: Record<string, unknown> = {};
+    for (const [k, n] of Object.entries(counts)) bag[k] = increment(n);
+    await this.merge(userId, { bag });
+  }
+
+  /** Equipa un objeto a un Pokémon o se lo quita (null). */
+  async equipItem(userId: string, pokemonId: number, key: string | null): Promise<void> {
+    await this.merge(userId, { held: { [pokemonId]: key ?? deleteField() } });
+  }
+
+  /** Quita de la mochila los objetos gastados en combate (bayas, Banda Aguante). */
+  async consumeItems(userId: string, used: { id: number; key: string }[]): Promise<void> {
+    if (used.length === 0) return;
+    const bag: Record<string, unknown> = {};
+    const held: Record<string, unknown> = {};
+    for (const { id, key } of used) {
+      bag[key] = increment(-1);
+      held[id] = deleteField();
+    }
+    await this.merge(userId, { bag, held });
   }
 
   // --- Ranking -------------------------------------------------------------
