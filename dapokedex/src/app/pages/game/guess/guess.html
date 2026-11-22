@@ -54,13 +54,13 @@
       }
 
       <div class="guess-options">
-        @for (option of options(); track option.id) {
+        @for (option of options(); track option.id; let i = $index) {
           <button
             class="guess-option guess-option--{{ optionState(option) }}"
             [disabled]="revealed || loading()"
             (click)="choose(option)"
           >
-            {{ option.name }}
+            <kbd class="guess-key">{{ i + 1 }}</kbd> {{ option.name }}
           </button>
         }
       </div>

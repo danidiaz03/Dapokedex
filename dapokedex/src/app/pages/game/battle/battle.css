@@ -11,7 +11,7 @@
   align-items: center;
   min-height: 100vh;
   font: 400 16px/24px var(--px);
-  color: var(--tinta-suave);
+  color: var(--hueco);
 }
 
 .preview-screen {
@@ -21,7 +21,7 @@
 
 .preview-title {
   font: 700 40px/48px var(--px);
-  color: var(--tinta);
+  color: var(--hueco);
   margin: 0 0 48px;
 }
 
@@ -35,7 +35,7 @@
 
 .preview-team-title {
   font: 700 20px/28px var(--px);
-  color: var(--tinta);
+  color: var(--hueco);
   margin: 0 0 16px;
 }
 
@@ -500,7 +500,7 @@
 
 .select-title {
   font: 700 14px/20px var(--px);
-  color: var(--tinta);
+  color: var(--hueco);
   margin: 0 0 12px;
 }
 
@@ -566,7 +566,7 @@
 
 .result-subtitle {
   font: 400 18px/28px var(--px);
-  color: var(--tinta-suave);
+  color: var(--hueco);
   margin: 0 0 32px;
 }
 
@@ -768,7 +768,9 @@
   border: none;
   border-radius: 999px;
   padding: 6px 14px;
-  background: linear-gradient(135deg, #3b82f6, #a855f7);
+  background: var(--marco);
+  color: var(--tinta);
+  box-shadow: inset 0 -3px 0 var(--marco-osc);
   color: #fff;
   font: 700 13px var(--px);
   cursor: pointer;

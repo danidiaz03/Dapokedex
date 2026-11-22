@@ -7,6 +7,7 @@ import { PokemonDetailPage, PokemonMove } from '../../../interfaces/pokemon';
 import { TypeNamePipe } from '../../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../../pipes/pokemon-name.pipe';
 import { ProgressService } from '../../../services/progress.service';
+import { KeyboardService } from '../../../services/keyboard.service';
 import { EvolutionService } from '../../../services/evolution.service';
 import { baseStatTotal, pickBalancedEnemies } from '../../../game/matchmaking';
 import { EvolveDialog } from '../../../componentes/evolve-dialog/evolve-dialog';
@@ -102,6 +103,8 @@ export class Battle implements OnInit, OnDestroy {
   private firestoreService = inject(FirestoreService);
   private pokemonService = inject(PokemonService);
   private router = inject(Router);
+  private keyboard = inject(KeyboardService);
+  private unregisterKeys?: () => void;
   private progressService = inject(ProgressService);
   private evolutionService = inject(EvolutionService);
 
@@ -147,6 +150,7 @@ export class Battle implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.unregisterKeys?.();
     this.timeouts.forEach(clearTimeout);
     this.intervals.forEach(clearInterval);
     this.audioCtx?.close().catch(() => {});
@@ -214,7 +218,52 @@ export class Battle implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
+    this.unregisterKeys = this.keyboard.register(
+      (e) => this.onKey(e),
+      [
+        { keys: ['A'], label: 'Empezar / nueva batalla (Intro)' },
+        { keys: ['1', '2', '3', '4'], label: 'Movimiento' },
+        { keys: ['1', '…', '6'], label: 'Elegir Pokémon' },
+      ],
+      'Batalla',
+    );
     await this.loadBattle();
+  }
+
+  /** Mandos del combate: los números eligen movimiento o Pokémon según la fase. */
+  private onKey(e: KeyboardEvent): boolean {
+    const phase = this.phase();
+    const n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (this.loading()) return false;
+      if (phase === 'preview') {
+        this.startBattle();
+        return true;
+      }
+      if (phase === 'result') {
+        this.newBattle();
+        return true;
+      }
+      return false;
+    }
+    if (n < 0) return false;
+    if (phase === 'battle') {
+      const pokemon = this.activePokemon();
+      if (!pokemon || !this.isPlayerTurn()) return true;
+      if (!this.hasUsableMoves(pokemon)) {
+        this.useStruggle();
+        return true;
+      }
+      const move = pokemon.moves[n];
+      if (move && move.pp > 0) this.useMove(move);
+      return true;
+    }
+    if (phase === 'select-pokemon') {
+      const pokemon = this.playerTeam()[n];
+      if (pokemon && !pokemon.fainted) this.selectNextPokemon(pokemon);
+      return true;
+    }
+    return false;
   }
 
   private async loadBattle() {

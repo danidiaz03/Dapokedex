@@ -14,12 +14,12 @@
 }
 .guess-title {
   font: 700 32px/40px var(--px);
-  color: var(--tinta);
+  color: var(--hueco);
   margin: 0 0 8px;
 }
 .guess-subtitle {
   font: 400 16px/24px var(--px);
-  color: var(--tinta-suave);
+  color: var(--texto-claro);
   margin: 0;
 }
 .guess-header select {

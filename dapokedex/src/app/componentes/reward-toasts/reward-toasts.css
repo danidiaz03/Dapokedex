@@ -41,7 +41,10 @@
   line-height: 22px;
 }
 .toast--xp {
-  background: linear-gradient(135deg, var(--tinta), #3730a3);
+  background: var(--tinta);
+  box-shadow:
+    0 4px 0 #000,
+    inset 0 0 0 3px var(--marco);
 }
 .toast--achievement {
   background: linear-gradient(135deg, #b45309, #f59e0b);
@@ -50,7 +53,7 @@
   background: linear-gradient(135deg, #15803d, #22c55e);
 }
 .toast--bonus {
-  background: linear-gradient(135deg, #be185d, #a855f7);
+  background: var(--cursor-osc);
 }
 .toast--streak {
   background: linear-gradient(135deg, var(--cursor-osc), #f97316);

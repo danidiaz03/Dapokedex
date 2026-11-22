@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ProgressService } from '../../../services/progress.service';
+import { KeyboardService } from '../../../services/keyboard.service';
 import {
   GENERATIONS,
   PokemonService,
@@ -39,6 +40,8 @@ const GENERATION_RANGES: Record<number, [number, number]> = {
 export class Guess implements OnInit, OnDestroy {
   private pokemonService = inject(PokemonService);
   private progressService = inject(ProgressService);
+  private keyboard = inject(KeyboardService);
+  private unregisterKeys?: () => void;
 
   readonly generations = GENERATIONS;
   generation = signal<number | null>(1);
@@ -57,10 +60,39 @@ export class Guess implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.newRound();
+    // Las opciones se eligen con 1-4 (tienen prioridad sobre las secciones).
+    this.unregisterKeys = this.keyboard.register(
+      (e) => this.onKey(e),
+      [
+        { keys: ['1', '2', '3', '4'], label: 'Elegir respuesta' },
+        { keys: ['C'], label: 'Pista: grito' },
+        { keys: ['N'], label: 'Saltar' },
+      ],
+      'Adivina el Pokémon',
+    );
   }
 
   ngOnDestroy() {
     clearTimeout(this.nextRoundTimer);
+    this.unregisterKeys?.();
+  }
+
+  private onKey(e: KeyboardEvent): boolean {
+    const key = e.key.toLowerCase();
+    if (/^[1-4]$/.test(key)) {
+      const option = this.options()[Number(key) - 1];
+      if (option && !this.loading()) this.choose(option);
+      return true;
+    }
+    if (key === 'c') {
+      this.playCry();
+      return true;
+    }
+    if (key === 'n' && !this.loading()) {
+      this.newRound();
+      return true;
+    }
+    return false;
   }
 
   get revealed(): boolean {

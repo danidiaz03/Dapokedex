@@ -60,7 +60,9 @@
         </div>
       </div>
 
-      <button class="btn-start" (click)="startBattle()">⚔️ ¡Comenzar batalla!</button>
+      <button class="btn-start" (click)="startBattle()">
+        ⚔️ ¡Comenzar batalla! <kbd>Intro</kbd>
+      </button>
     </div>
   } @else if (phase() === 'battle' || phase() === 'select-pokemon') {
     <div class="battle-arena">
@@ -182,14 +184,16 @@
       <div class="select-pokemon">
         <p class="select-title">Elige tu siguiente Pokémon:</p>
         <div class="select-grid">
-          @for (pokemon of playerTeam(); track pokemon.id) {
+          @for (pokemon of playerTeam(); track pokemon.id; let i = $index) {
             <div
               class="select-card"
               [class.fainted]="pokemon.fainted"
               (click)="selectNextPokemon(pokemon)"
             >
               <img [src]="pokemon.sprite" [alt]="pokemon.name" class="select-sprite" />
-              <p class="select-name">{{ pokemon.name | nombre: pokemon.id }}</p>
+              <p class="select-name">
+                <kbd>{{ i + 1 }}</kbd> {{ pokemon.name | nombre: pokemon.id }}
+              </p>
               <div class="hp-bar-bg">
                 <div
                   class="hp-bar-fill"
@@ -215,7 +219,7 @@
             </div>
           </button>
         }
-        @for (move of activePokemon()!.moves; track $index) {
+        @for (move of activePokemon()!.moves; track $index; let i = $index) {
           <button
             class="move-btn"
             [class.move-btn--empty]="move.pp === 0"
@@ -223,7 +227,9 @@
             (click)="useMove(move)"
           >
             <div class="move-header">
-              <p class="move-name">{{ move.name }}</p>
+              <p class="move-name">
+                <kbd>{{ i + 1 }}</kbd> {{ move.name }}
+              </p>
               <span class="damage-class damage-class--{{ move.damageClass }}">
                 {{
                   move.damageClass === 'physical'
