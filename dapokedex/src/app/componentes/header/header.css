@@ -11,12 +11,12 @@
   color: var(--hueco);
 }
 .marca {
-  font: 400 24px/1 var(--px);
-  color: var(--marco);
-  text-decoration: none;
+  display: flex;
+  align-items: center;
 }
-.marca span {
-  color: var(--hueco);
+.marca img {
+  height: 40px;
+  width: auto;
 }
 .nav {
   display: flex;

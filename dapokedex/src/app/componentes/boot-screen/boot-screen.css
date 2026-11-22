@@ -173,3 +173,14 @@
     padding: 22px 12px;
   }
 }
+.arr-logo {
+  width: min(440px, 100%);
+  height: auto;
+  margin: 0 auto;
+  animation: pop 0.5s steps(4);
+}
+@media (prefers-reduced-motion: reduce) {
+  .arr-logo {
+    animation: none;
+  }
+}
