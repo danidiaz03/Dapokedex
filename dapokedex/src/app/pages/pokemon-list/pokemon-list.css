@@ -17,7 +17,7 @@
 .mesa {
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-  gap: 22px;
+  gap: 24px;
   align-items: start;
 }
 .columna {
@@ -98,7 +98,7 @@
 }
 .cajas-tabs {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   overflow-x: auto;
   padding: 0 4px 8px;
   scrollbar-width: thin;
@@ -189,7 +189,7 @@
 .buscar {
   display: flex;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 .buscar input {
   flex: 1;
@@ -215,8 +215,8 @@
 .marcas {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 .marcas button {
   padding: 0;
@@ -255,7 +255,7 @@
 .huecos {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
 }
 .hueco {
   background: rgba(234, 244, 242, 0.94);
@@ -424,7 +424,7 @@
   }
   .huecos {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    gap: 8px;
   }
   .hueco img {
     width: 80px;

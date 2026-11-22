@@ -420,7 +420,7 @@
 .hub-grid {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
-  gap: 20px;
+  gap: 24px;
   margin-bottom: 24px;
 }
 .hub-panel {
@@ -552,7 +552,7 @@
 
 /* Equipo como caja del PC con 6 huecos */
 .equipo {
-  margin: 20px 0;
+  margin: 24px 0;
 }
 .caja {
   background: var(--marco);
@@ -587,7 +587,7 @@
 .equipo__huecos {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
 }
 .equipo__hueco {
   display: flex;
@@ -657,4 +657,16 @@
   .equipo__hueco--vacio {
     min-height: 120px;
   }
+}
+
+/* Separación vertical constante entre los bloques del juego. */
+app-daily-pokemon {
+  display: block;
+  margin: 24px 0;
+}
+.hub-grid {
+  margin-top: 24px;
+}
+.trainer-card {
+  margin-bottom: 24px;
 }
