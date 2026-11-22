@@ -14,6 +14,9 @@ export const HEARTBEAT_MS = 4 * 60 * 1000;
 
 export const MAX_TEAM_SHOWN = 6;
 
+/** Un reto a combate sin respuesta caduca a los 10 minutos. */
+export const CHALLENGE_TTL_MS = 10 * 60_000;
+
 /** Perfil público: lo único de un jugador que pueden ver los demás. */
 export interface PublicProfile {
   uid: string;

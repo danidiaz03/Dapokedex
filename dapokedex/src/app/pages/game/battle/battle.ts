@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnDestroy, OnInit, computed, inject, input, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { FirestoreService } from '../../../services/firestore.service';
@@ -59,6 +59,26 @@ import {
   maxEnemyId,
   xpFromRewards,
 } from '../../../game/progress';
+import {
+  OnlineBattleService,
+  Match,
+  Choice,
+  OutOfSyncError,
+} from '../../../services/online-battle.service';
+import {
+  Role,
+  applyEntry,
+  autoChoice,
+  begin,
+  initialState,
+  mirror,
+  mirrorEvent,
+  needOf,
+  otherRole,
+  outcome,
+  replay,
+  sideOf,
+} from '../../../game/online-battle';
 
 const SHINY_ARTWORK_URL =
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny';
@@ -74,7 +94,17 @@ interface TeamGrowth {
   evolutions: EvolutionOption[];
 }
 
-type BattlePhase = 'preview' | 'battle' | 'select-pokemon' | 'result';
+type BattlePhase =
+  | 'preview'
+  | 'battle'
+  | 'select-pokemon'
+  | 'result'
+  /** En línea: el anfitrión espera a que su amigo acepte. */
+  | 'online-wait'
+  /** En línea: el invitado decide si acepta el reto. */
+  | 'online-invite'
+  /** En línea: el reto se rechazó o se canceló. */
+  | 'online-closed';
 
 // Cuántos movimientos del Pokémon consultamos para elegir 4 que tengan sentido.
 const MOVE_SAMPLE_SIZE = 18;
@@ -119,6 +149,46 @@ export class Battle implements OnInit, OnDestroy {
   private unregisterKeys?: () => void;
   private progressService = inject(ProgressService);
   private evolutionService = inject(EvolutionService);
+  private online = inject(OnlineBattleService);
+  private route = inject(ActivatedRoute);
+
+  /** Id de la partida en línea (/combate/:id); sin él es contra la máquina. */
+  id = input<string>();
+  isOnline = computed(() => !!this.id());
+  match = signal<Match | null>(null);
+  role = signal<Role>('host');
+  rivalName = computed(() => {
+    const m = this.match();
+    if (!m) return 'el rival';
+    return this.role() === 'host' ? m.guestName : m.hostName;
+  });
+  /** Ya has decidido este turno y esperas al rival. */
+  waitingRival = signal(false);
+  now = signal(Date.now());
+  /** Segundos que quedan para decidir el turno. */
+  secondsLeft = computed(() => {
+    const m = this.match();
+    return m ? Math.max(0, Math.ceil((m.deadline - this.now()) / 1000)) : 0;
+  });
+  canClaim = computed(() => {
+    const m = this.match();
+    if (!m || !this.canon) return false;
+    this.now();
+    const mineDone = m.pending[this.role()] != null || needOf(this.canon, this.role()) === null;
+    return mineDone && this.online.canClaim(m, this.role(), this.now());
+  });
+  confirmForfeit = signal(false);
+  onlineEnd = signal<{ won: boolean; draw: boolean; reason: string } | null>(null);
+  /** Estado del combate con el anfitrión como 'player' (el que se juega de verdad). */
+  private canon: BattleState | null = null;
+  /** Pasos del registro ya reproducidos. */
+  private applied = 0;
+  private started = false;
+  private buildingTeam = false;
+  private finished = false;
+  private stopWatch?: () => void;
+  private clock?: ReturnType<typeof setInterval>;
+  private queue: Promise<void> = Promise.resolve();
 
   /** Estado completo del combate; todo lo demás se deriva de aquí. */
   state = signal<BattleState | null>(null);
@@ -176,6 +246,12 @@ export class Battle implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroyed = true;
     this.run++;
+    this.stopWatch?.();
+    clearInterval(this.clock);
+    // Si el anfitrión se va antes de que acepten, el reto se cancela.
+    const m = this.match();
+    if (m && m.status === 'pending' && this.role() === 'host')
+      this.online.cancel(m.id).catch(() => {});
     this.unregisterKeys?.();
     this.audioCtx?.close().catch(() => {});
   }
@@ -191,7 +267,8 @@ export class Battle implements OnInit, OnDestroy {
       ],
       'Batalla',
     );
-    await this.loadBattle();
+    if (this.isOnline()) await this.loadOnline();
+    else await this.loadBattle();
   }
 
   /* ------------------------------------------------------------------ */
@@ -563,6 +640,7 @@ export class Battle implements OnInit, OnDestroy {
     if (!s || !this.isPlayerTurn()) return;
     this.busy.set(true);
     this.switching.set(false);
+    if (this.isOnline()) return this.submitOnline(action);
     const run = this.run;
 
     await this.runTurn(action, run);
@@ -617,6 +695,7 @@ export class Battle implements OnInit, OnDestroy {
     if (!s || this.phase() !== 'select-pokemon' || !target || target.fainted) return;
     this.phase.set('battle');
     this.busy.set(true);
+    if (this.isOnline()) return this.submitOnline(index);
     const run = this.run;
     const next = switchIn(s, 'player', index);
     await this.play(next.events, run, next.state);
@@ -680,6 +759,314 @@ export class Battle implements OnInit, OnDestroy {
     }
     this.message.set(text);
     await wait(Math.min(1600, 650 + text.length * 14));
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* En línea                                                            */
+  /* ------------------------------------------------------------------ */
+
+  /** Tu equipo tal y como lo llevas: niveles, shinies y objetos equipados. */
+  private async buildMyTeam(userId: string): Promise<Combatant[]> {
+    const userData = await this.firestoreService.getUserData(userId);
+    this.teamXp.set(userData.pokemonXp);
+    this.held = userData.held;
+    if (userData.team.length === 0) throw new Error('Sin equipo');
+    const progress = await this.progressService.load().catch(() => null);
+    const shinies = progress?.shinies ?? [];
+    const data = await this.pokemonService.getPokemons(userData.team);
+    return Promise.all(
+      data.map((d) =>
+        this.toCombatant(
+          d,
+          this.pokemonLevel(d.id),
+          shinies.includes(d.id),
+          this.held[d.id] ?? null,
+        ),
+      ),
+    );
+  }
+
+  private async loadOnline() {
+    this.pokemonService.loadSpeciesNames();
+    const uid = (await this.authService.waitForUser())?.uid;
+    if (!uid) return;
+    this.clock = setInterval(() => this.now.set(Date.now()), 1000);
+    this.stopWatch = this.online.watch(
+      this.id()!,
+      (m) => this.onMatch(m, uid),
+      () => {
+        this.loadError.set('No tienes acceso a este combate o ya no existe.');
+        this.loading.set(false);
+      },
+    );
+  }
+
+  private onMatch(m: Match | null, uid: string) {
+    if (!m) {
+      this.loadError.set('Este combate no existe.');
+      this.loading.set(false);
+      return;
+    }
+    const role: Role = m.host === uid ? 'host' : 'guest';
+    this.role.set(role);
+    this.match.set(m);
+    const myTeam = role === 'host' ? m.hostTeam : m.guestTeam;
+
+    // El anfitrión prepara su equipo en cuanto entra (mientras el amigo acepta).
+    if (
+      role === 'host' &&
+      !myTeam &&
+      !this.buildingTeam &&
+      ['pending', 'active'].includes(m.status)
+    ) {
+      this.buildingTeam = true;
+      this.buildMyTeam(uid)
+        .then((team) => this.online.setTeam(m.id, 'host', team))
+        .catch(() =>
+          this.loadError.set('No se pudo preparar tu equipo. ¿Tienes Pokémon en el equipo?'),
+        );
+    }
+
+    if (m.status === 'pending') {
+      this.loading.set(false);
+      if (role === 'host') this.phase.set('online-wait');
+      else {
+        this.phase.set('online-invite');
+        if (this.route.snapshot.queryParamMap.get('aceptar') === '1') this.acceptChallenge();
+      }
+      return;
+    }
+    if (m.status === 'declined' || m.status === 'cancelled') {
+      this.loading.set(false);
+      this.phase.set('online-closed');
+      return;
+    }
+    if (!m.hostTeam || !m.guestTeam) {
+      // Aceptado, pero el anfitrión aún está preparando su equipo.
+      this.loading.set(false);
+      this.phase.set('online-wait');
+      return;
+    }
+    this.queue = this.queue.then(() => this.syncOnline()).catch((e) => console.warn(e));
+  }
+
+  async acceptChallenge() {
+    const m = this.match();
+    const uid = this.authService.currentUser()?.uid;
+    if (!m || !uid || this.buildingTeam) return;
+    this.buildingTeam = true;
+    this.loading.set(true);
+    try {
+      const team = await this.buildMyTeam(uid);
+      await this.online.accept(m.id, team);
+    } catch (e) {
+      console.warn(e);
+      this.buildingTeam = false;
+      this.loading.set(false);
+      this.loadError.set('No se pudo aceptar el reto. Necesitas al menos un Pokémon en tu equipo.');
+    }
+  }
+
+  async declineChallenge() {
+    const m = this.match();
+    if (m) await this.online.decline(m.id).catch(() => {});
+    this.router.navigate(['/amigos']);
+  }
+
+  async cancelChallenge() {
+    const m = this.match();
+    if (m) await this.online.cancel(m.id).catch(() => {});
+    this.router.navigate(['/amigos']);
+  }
+
+  /** Estado que se pinta: el invitado se ve abajo, como en una batalla normal. */
+  private display(state: BattleState): BattleState {
+    return this.role() === 'host' ? state : mirror(state);
+  }
+
+  /** Reproduce lo que falte del registro y decide qué toca hacer. */
+  private async syncOnline() {
+    const m = this.match();
+    if (!m || !m.hostTeam || !m.guestTeam || this.finished) return;
+    const view = sideOf(this.role());
+    const run = this.run;
+
+    if (!this.started) {
+      this.started = true;
+      this.loading.set(false);
+      this.phase.set('battle');
+      this.busy.set(true);
+      if (m.log.length > 0) {
+        // Se vuelve a una partida empezada: se reconstruye sin animaciones.
+        this.canon = replay(m.hostTeam, m.guestTeam, m.seed, m.log, view);
+        this.applied = m.log.length;
+        this.state.set(this.display(this.canon));
+      } else {
+        const start = initialState(m.hostTeam, m.guestTeam);
+        this.state.set(this.display(start));
+        const enemy = activeOf(this.state()!, 'enemy');
+        const player = activeOf(this.state()!, 'player');
+        this.playCry(enemy.id);
+        await this.say(`¡${this.rivalName()} saca a ${enemy.name}!`, run);
+        this.playCry(player.id);
+        await this.say(`¡Adelante, ${player.name}!`, run);
+        const entry = begin(start, m.seed, view);
+        this.canon = entry.state;
+        await this.play(
+          this.role() === 'host' ? entry.events : entry.events.map(mirrorEvent),
+          run,
+          this.display(entry.state),
+        );
+      }
+    }
+
+    while (this.applied < this.match()!.log.length) {
+      if (run !== this.run) return;
+      const latest = this.match()!;
+      const r = applyEntry(this.canon!, latest.log[this.applied], latest.seed, this.applied, view);
+      this.canon = r.state;
+      this.applied++;
+      this.waitingRival.set(false);
+      this.busy.set(true);
+      await this.play(
+        this.role() === 'host' ? r.events : r.events.map(mirrorEvent),
+        run,
+        this.display(r.state),
+      );
+    }
+    if (run !== this.run) return;
+    await this.afterOnlineStep();
+  }
+
+  private async afterOnlineStep() {
+    const m = this.match()!;
+    const role = this.role();
+    const result = outcome(this.canon!);
+    if (result) {
+      await this.online.finish(m.id, result, 'ko').catch(() => {});
+      return this.endOnline(result === role, result === 'draw', 'ko');
+    }
+    if (m.status === 'finished') {
+      return this.endOnline(m.winner === role, m.winner === 'draw', m.reason ?? 'ko');
+    }
+
+    const need = needOf(this.canon!, role);
+    const decided = m.pending[role] != null;
+    if (need === null || decided) {
+      this.busy.set(true);
+      this.waitingRival.set(true);
+      this.message.set(
+        need === null
+          ? `Esperando a que ${this.rivalName()} saque otro Pokémon…`
+          : `Esperando a que ${this.rivalName()} elija…`,
+      );
+      return;
+    }
+    const auto = autoChoice(this.canon!, role);
+    if (auto !== null) return this.submitOnline(auto);
+    this.waitingRival.set(false);
+    if (need === 'replace') {
+      this.phase.set('select-pokemon');
+      this.message.set('¿Qué Pokémon sacas ahora?');
+    } else {
+      this.phase.set('battle');
+    }
+    this.busy.set(false);
+  }
+
+  private async submitOnline(choice: Choice) {
+    const m = this.match();
+    if (!m || !this.canon) return;
+    this.busy.set(true);
+    this.waitingRival.set(true);
+    this.message.set(`Esperando a que ${this.rivalName()} elija…`);
+    try {
+      await this.online.submit(m.id, this.role(), choice, this.canon, this.applied);
+    } catch (e) {
+      // Si el registro avanzó mientras tanto, la siguiente instantánea lo arregla.
+      if (e instanceof OutOfSyncError) return;
+      console.warn(e);
+      this.waitingRival.set(false);
+      this.busy.set(false);
+      this.message.set('No se pudo enviar tu decisión. Inténtalo de nuevo.');
+    }
+  }
+
+  async forfeit() {
+    const m = this.match();
+    if (!m) return;
+    if (!this.confirmForfeit()) {
+      this.confirmForfeit.set(true);
+      setTimeout(() => this.confirmForfeit.set(false), 4000);
+      return;
+    }
+    await this.online.forfeit(m.id, this.role()).catch(() => {});
+  }
+
+  async claimVictory() {
+    const m = this.match();
+    if (m && this.canClaim())
+      await this.online.finish(m.id, this.role(), 'timeout').catch(() => {});
+  }
+
+  /** Fin del combate en línea: XP para los dos (más para quien gana), sin capturas. */
+  private async endOnline(won: boolean, draw: boolean, reason: string) {
+    if (this.finished) return;
+    this.finished = true;
+    this.run++;
+    clearInterval(this.clock);
+    const rival = this.rivalName();
+    const text = draw
+      ? 'Los dos equipos han caído a la vez.'
+      : reason === 'forfeit'
+        ? won
+          ? `${rival} se ha rendido.`
+          : 'Te has rendido.'
+        : reason === 'timeout'
+          ? won
+            ? `${rival} no ha respondido a tiempo.`
+            : 'Se te acabó el tiempo para decidir.'
+          : won
+            ? `Has derrotado al equipo de ${rival}.`
+            : `${rival} ha derrotado a tu equipo.`;
+    this.onlineEnd.set({ won, draw, reason: text });
+    this.playerWon.set(won);
+    this.phase.set('result');
+    this.busy.set(false);
+
+    const foes = this.enemyTeam();
+    const rewards = await this.progressService
+      .record({
+        type: 'battle',
+        won,
+        kos: foes.filter((p) => p.fainted).length,
+        capturedTypes: [],
+        shinies: [],
+      })
+      .catch(() => [] as Reward[]);
+    this.rewards.set(rewards);
+    this.rewardXp.set(xpFromRewards(rewards));
+    await this.growTeam(won);
+  }
+
+  /** Revancha: un reto nuevo al mismo amigo. */
+  async rematch() {
+    const m = this.match();
+    const uid = this.authService.currentUser()?.uid;
+    if (!m || !uid) return;
+    const friend =
+      this.role() === 'host'
+        ? { uid: m.guest, username: m.guestName }
+        : { uid: m.host, username: m.hostName };
+    try {
+      const id = await this.online.challenge(uid, friend);
+      // Se pasa por otra ruta para que la página se cree de nuevo con la partida nueva.
+      await this.router.navigateByUrl('/amigos', { skipLocationChange: true });
+      this.router.navigate(['/combate', id]);
+    } catch (e) {
+      console.warn(e);
+      this.message.set('No se pudo crear la revancha.');
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -798,6 +1185,7 @@ export class Battle implements OnInit, OnDestroy {
 
   /** Reinicia la batalla con el mismo equipo y un rival nuevo. */
   async newBattle() {
+    if (this.isOnline()) return this.rematch();
     this.run++;
     this.state.set(null);
     this.message.set('');
@@ -815,7 +1203,7 @@ export class Battle implements OnInit, OnDestroy {
   }
 
   goBack() {
-    this.router.navigate(['/game']);
+    this.router.navigate([this.isOnline() ? '/amigos' : '/game']);
   }
 
   /* ------------------------------------------------------------------ */

@@ -23,9 +23,10 @@ import {
 } from 'firebase/firestore';
 import { firebaseApp } from '../firebase';
 import { FirestoreService } from './firestore.service';
-import { SocialState } from './social-state';
+import { ChallengeInfo, SocialState } from './social-state';
 import { levelFromXp, normalizeProgress, trainerTitle } from '../game/progress';
 import {
+  CHALLENGE_TTL_MS,
   FriendRequest,
   HEARTBEAT_MS,
   MAX_TEAM_SHOWN,
@@ -130,6 +131,44 @@ export class SocialService {
         ),
       ),
     );
+
+    // Retos recibidos (caducan a los 10 minutos) y combates en curso.
+    const fresh = (createdAt: number) => Date.now() - createdAt < CHALLENGE_TTL_MS;
+    const battles = collection(db, 'battles');
+    this.listeners.push(
+      onSnapshot(
+        query(battles, where('guest', '==', uid), where('status', '==', 'pending')),
+        (s) =>
+          this.state.challenges.set(
+            s.docs
+              .map((d) => ({
+                id: d.id,
+                opponent: d.get('hostName') ?? '',
+                createdAt: millis(d.get('createdAt')) || Date.now(),
+              }))
+              .filter((c) => fresh(c.createdAt))
+              .sort((a, b) => b.createdAt - a.createdAt),
+          ),
+        () => this.state.challenges.set([]),
+      ),
+    );
+    const active: Record<'host' | 'guest', ChallengeInfo[]> = { host: [], guest: [] };
+    for (const role of ['host', 'guest'] as const) {
+      this.listeners.push(
+        onSnapshot(
+          query(battles, where(role, '==', uid), where('status', '==', 'active')),
+          (s) => {
+            active[role] = s.docs.map((d) => ({
+              id: d.id,
+              opponent: d.get(role === 'host' ? 'guestName' : 'hostName') ?? '',
+              createdAt: millis(d.get('createdAt')),
+            }));
+            this.state.activeBattles.set([...active.host, ...active.guest]);
+          },
+          () => {},
+        ),
+      );
+    }
 
     if (this.state.username()) this.schedulePublish(0);
     this.heartbeat = setInterval(() => {

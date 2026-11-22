@@ -72,6 +72,9 @@
             <a class="btn-caja" routerLink="/amigos">Tus amigos</a>
           }
           @case ('friend') {
+            <button class="btn-caja btn-caja--accion" (click)="challenge()" [disabled]="busy()">
+              ⚔️ Retar a combate
+            </button>
             <span class="etiqueta">Sois amigos</span>
             <button
               class="btn-caja"

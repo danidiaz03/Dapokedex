@@ -412,10 +412,17 @@ function hasSecondary(move: BattleMove): boolean {
   );
 }
 
+/**
+ * Desde qué lado se cuentan los mensajes. En los combates en línea los dos
+ * jugadores resuelven el mismo turno, pero cada uno lo lee como "su" lado.
+ * Se fija al empezar cada función pública; todo el motor es síncrono.
+ */
+let viewer: SideKey = 'player';
+
 /** Nombre con "el rival" delante para distinguir a quién le pasa cada cosa. */
 function who(s: BattleState, side: SideKey): string {
   const p = activeOf(s, side);
-  return side === 'enemy' ? `el ${p.name} rival` : p.name;
+  return side !== viewer ? `el ${p.name} rival` : p.name;
 }
 
 /* ------------------------------------------------------------------ */
@@ -458,7 +465,9 @@ export function resolveTurn(
   playerAction: Action,
   enemyAction: Action,
   rng: Rng = Math.random,
+  view: SideKey = 'player',
 ): { state: BattleState; events: BattleEvent[] } {
+  viewer = view;
   const ctx: TurnCtx = {
     state: clone(state),
     events: [],
@@ -524,11 +533,16 @@ function validAction(s: BattleState, side: SideKey, action: Action): Action {
 }
 
 /** Efectos de entrada de los dos primeros Pokémon (Intimidación, Llovizna…). */
-export function beginBattle(state: BattleState): { state: BattleState; events: BattleEvent[] } {
+export function beginBattle(
+  state: BattleState,
+  rng: Rng = Math.random,
+  view: SideKey = 'player',
+): { state: BattleState; events: BattleEvent[] } {
+  viewer = view;
   const ctx: TurnCtx = {
     state: clone(state),
     events: [],
-    rng: Math.random,
+    rng,
     acted: new Set(),
     flinched: new Set(),
   };
@@ -547,11 +561,14 @@ export function switchIn(
   state: BattleState,
   side: SideKey,
   index: number,
+  rng: Rng = Math.random,
+  view: SideKey = 'player',
 ): { state: BattleState; events: BattleEvent[] } {
+  viewer = view;
   const ctx: TurnCtx = {
     state: clone(state),
     events: [],
-    rng: Math.random,
+    rng,
     acted: new Set(),
     flinched: new Set(),
   };
@@ -578,12 +595,12 @@ function doSwitch(ctx: TurnCtx, side: SideKey, index: number) {
     }
     emit(
       ctx,
-      side === 'player' ? `¡Vuelve, ${leaving.name}!` : `El rival retira a ${leaving.name}.`,
+      side === viewer ? `¡Vuelve, ${leaving.name}!` : `El rival retira a ${leaving.name}.`,
       { side, anim: 'switch' },
     );
   }
   s.active = index;
-  emit(ctx, side === 'player' ? `¡Adelante, ${target.name}!` : `¡El rival saca a ${target.name}!`, {
+  emit(ctx, side === viewer ? `¡Adelante, ${target.name}!` : `¡El rival saca a ${target.name}!`, {
     side,
     anim: 'switch',
   });
@@ -1100,7 +1117,7 @@ function faintCheck(ctx: TurnCtx, side: SideKey, by?: SideKey): boolean {
   emit(ctx, `¡${who(ctx.state, side)} se debilitó!`, {
     side,
     anim: 'faint',
-    koBy: by === 'player' && side === 'enemy' ? activeOf(ctx.state, 'player').id : undefined,
+    koBy: by === viewer && side !== viewer ? activeOf(ctx.state, viewer).id : undefined,
   });
   return true;
 }

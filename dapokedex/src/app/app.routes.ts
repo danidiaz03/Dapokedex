@@ -85,6 +85,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/trainer/trainer').then((m) => m.Trainer),
   },
   {
+    path: 'combate/:id',
+    title: 'Combate en línea · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/game/battle/battle').then((m) => m.Battle),
+  },
+  {
     path: 'collection',
     title: 'Mi colección · Dapokedex',
     canActivate: [authGuard],

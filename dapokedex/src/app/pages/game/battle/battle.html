@@ -7,8 +7,54 @@
     <div class="aviso-centro">
       <p>{{ loadError() }}</p>
       <div class="botonera">
-        <button class="btn-caja" (click)="goBack()">Volver al juego</button>
-        <button class="btn-caja btn-caja--accion" (click)="newBattle()">Reintentar</button>
+        <button class="btn-caja" (click)="goBack()">
+          {{ isOnline() ? 'Volver a Amigos' : 'Volver al juego' }}
+        </button>
+        @if (!isOnline()) {
+          <button class="btn-caja btn-caja--accion" (click)="newBattle()">Reintentar</button>
+        }
+      </div>
+    </div>
+  } @else if (phase() === 'online-wait') {
+    <div class="aviso-centro">
+      <p class="parpadeo">
+        @if (match()?.status === 'pending') {
+          Esperando a que {{ rivalName() }} acepte el reto…
+        } @else {
+          {{ rivalName() }} ha aceptado. Preparando los equipos…
+        }
+      </p>
+      <p class="texto-zona">Si nadie responde en unos minutos, el reto caduca.</p>
+      @if (match()?.status === 'pending') {
+        <div class="botonera">
+          <button class="btn-caja" (click)="cancelChallenge()">Cancelar reto</button>
+        </div>
+      }
+    </div>
+  } @else if (phase() === 'online-invite') {
+    <div class="aviso-centro">
+      <h1 class="titulo-zona">⚔️ {{ rivalName() }} te reta a un combate</h1>
+      <p class="texto-zona">
+        Lucharás con tu equipo y los objetos que lleve. Los dos ganáis experiencia; quien gana, más.
+      </p>
+      <div class="botonera">
+        <button class="btn-caja" (click)="declineChallenge()">Rechazar</button>
+        <button class="btn-caja btn-caja--accion" (click)="acceptChallenge()">
+          ¡Aceptar el reto!
+        </button>
+      </div>
+    </div>
+  } @else if (phase() === 'online-closed') {
+    <div class="aviso-centro">
+      <p>
+        {{
+          match()?.status === 'declined'
+            ? rivalName() + ' ha rechazado el reto.'
+            : 'El reto se ha cancelado.'
+        }}
+      </p>
+      <div class="botonera">
+        <button class="btn-caja" (click)="goBack()">Volver a Amigos</button>
       </div>
     </div>
   } @else if (phase() === 'preview') {
@@ -131,7 +177,7 @@
               ></i>
             }
           </div>
-          <span class="etiqueta etiqueta--rival">Rival</span>
+          <span class="etiqueta etiqueta--rival">{{ isOnline() ? rivalName() : 'Rival' }}</span>
         </div>
       </div>
 
@@ -183,10 +229,26 @@
           ¿Qué hará {{ activePokemon()!.name | nombre: activePokemon()!.id }}?
         </p>
       }
-      @if (busy()) {
+      @if (busy() && !waitingRival()) {
         <i class="dialogo__flecha" aria-hidden="true"></i>
       }
     </div>
+
+    @if (isOnline()) {
+      <div class="en-linea">
+        <span class="en-linea__reloj" [class.en-linea__reloj--poco]="secondsLeft() <= 15">
+          ⏱ {{ secondsLeft() }} s
+        </span>
+        @if (canClaim()) {
+          <button class="btn-caja btn-caja--fuerte" (click)="claimVictory()">
+            {{ rivalName() }} no responde: reclamar victoria
+          </button>
+        }
+        <button class="btn-caja" [class.btn-caja--accion]="confirmForfeit()" (click)="forfeit()">
+          {{ confirmForfeit() ? '¿Seguro? Pulsa otra vez' : 'Rendirse' }}
+        </button>
+      </div>
+    }
 
     @if (phase() === 'select-pokemon' || switching()) {
       <section class="caja mandos" aria-label="Elegir Pokémon">
@@ -364,7 +426,12 @@
     <!-- ===== Resultado ===== -->
     <section class="caja resultado" [class.caja--rival]="!playerWon()">
       <div class="resultado__cab">
-        @if (playerWon()) {
+        @if (onlineEnd(); as end) {
+          <h1 class="resultado__titulo">
+            {{ end.draw ? '¡Empate!' : end.won ? '¡Victoria!' : '¡Derrota!' }}
+          </h1>
+          <p>{{ end.reason }}</p>
+        } @else if (playerWon()) {
           <h1 class="resultado__titulo">¡Victoria!</h1>
           <p>
             Los Pokémon rivales se han unido a tu colección.
@@ -388,7 +455,7 @@
         </div>
       }
 
-      @if (playerWon()) {
+      @if (playerWon() && !isOnline()) {
         <div class="mural huecos">
           @for (pokemon of enemyTeam(); track pokemon.id) {
             <div class="hueco">
@@ -433,9 +500,11 @@
       }
 
       <div class="botonera">
-        <button class="btn-caja" (click)="goBack()">Volver al juego</button>
+        <button class="btn-caja" (click)="goBack()">
+          {{ isOnline() ? 'Volver a Amigos' : 'Volver al juego' }}
+        </button>
         <button class="btn-caja btn-caja--accion" (click)="newBattle()">
-          ⚔️ Nueva batalla con el mismo equipo
+          {{ isOnline() ? '⚔️ Revancha' : '⚔️ Nueva batalla con el mismo equipo' }}
         </button>
       </div>
     </section>

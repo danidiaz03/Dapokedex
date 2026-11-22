@@ -149,12 +149,27 @@
   background: var(--hueco);
   min-width: 0;
 }
-.fila--enlace {
+.fila__enlace {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   text-decoration: none;
   color: inherit;
 }
-.fila--enlace:hover {
-  filter: brightness(1.03);
+.fila__enlace:hover .fila__nombre {
+  text-decoration: underline;
+}
+.fila__retar {
+  flex: none;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+.panel--retos {
+  box-shadow:
+    inset 0 -4px 0 var(--hueco-borde),
+    0 0 0 3px var(--marco);
 }
 .fila__nombre {
   flex: 1;
@@ -229,7 +244,8 @@
   .fila {
     flex-wrap: wrap;
   }
-  .fila__botones {
+  .fila__botones,
+  .fila__retar {
     margin-left: auto;
   }
 }

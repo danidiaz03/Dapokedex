@@ -75,6 +75,54 @@
       <p class="aviso" role="status">{{ message() }}</p>
     }
 
+    <!-- Retos a combate y combates en curso -->
+    @if (state.challenges().length > 0 || state.activeBattles().length > 0) {
+      <section class="panel panel--retos">
+        <h2 class="panel__titulo">
+          Combates
+          @if (state.challenges().length > 0) {
+            <span class="contador">{{ state.challenges().length }}</span>
+          }
+        </h2>
+        <ul class="lista">
+          @for (c of state.challenges(); track c.id) {
+            <li class="fila">
+              <span class="fila__nombre">
+                ⚔️ {{ c.opponent }} te reta
+                <span class="fila__detalle">Reto a combate en línea</span>
+              </span>
+              <div class="fila__botones">
+                <a
+                  class="btn-caja btn-caja--accion"
+                  [routerLink]="['/combate', c.id]"
+                  [queryParams]="{ aceptar: 1 }"
+                  >Aceptar</a
+                >
+                <button
+                  class="btn-caja"
+                  (click)="declineChallenge(c.id)"
+                  [disabled]="busy() === c.id"
+                >
+                  Rechazar
+                </button>
+              </div>
+            </li>
+          }
+          @for (b of state.activeBattles(); track b.id) {
+            <li class="fila">
+              <span class="fila__nombre">
+                Contra {{ b.opponent }}
+                <span class="fila__detalle">Combate en curso</span>
+              </span>
+              <div class="fila__botones">
+                <a class="btn-caja btn-caja--fuerte" [routerLink]="['/combate', b.id]">Continuar</a>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
     <!-- Solicitudes recibidas -->
     @if (state.incoming().length > 0) {
       <section class="panel">
@@ -186,8 +234,8 @@
       } @else {
         <ul class="lista">
           @for (f of sortedFriends(); track f.uid) {
-            <li>
-              <a class="fila fila--enlace" [routerLink]="['/entrenador', f.username]">
+            <li class="fila">
+              <a class="fila__enlace" [routerLink]="['/entrenador', f.username]">
                 <app-trainer-avatar [team]="f.team" [online]="online(f)" />
                 <span class="fila__nombre">
                   {{ f.username }}
@@ -199,6 +247,14 @@
                   seen(f)
                 }}</span>
               </a>
+              <button
+                class="btn-caja btn-caja--accion fila__retar"
+                (click)="challenge(f)"
+                [disabled]="busy() === f.uid"
+                [attr.aria-label]="'Retar a ' + f.username + ' a un combate'"
+              >
+                ⚔️ Retar
+              </button>
             </li>
           }
         </ul>

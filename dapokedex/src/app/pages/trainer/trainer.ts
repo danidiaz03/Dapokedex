@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, signal, effect } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { OnlineBattleService } from '../../services/online-battle.service';
 import { AuthService } from '../../services/auth.service';
 import { SocialService } from '../../services/social.service';
 import { SocialState } from '../../services/social-state';
@@ -28,6 +29,8 @@ export class Trainer {
   private auth = inject(AuthService);
   private social = inject(SocialService);
   private pokemon = inject(PokemonService);
+  private battles = inject(OnlineBattleService);
+  private router = inject(Router);
   state = inject(SocialState);
 
   /** Viene de la ruta gracias a withComponentInputBinding. */
@@ -109,6 +112,16 @@ export class Trainer {
       () => this.social.sendRequest(p),
       reverse ? `Ahora eres amigo de ${p.username}.` : 'Solicitud enviada.',
     );
+  }
+
+  challenge() {
+    const p = this.profile();
+    const uid = this.uid();
+    if (!p || !uid) return;
+    this.run(async () => {
+      const id = await this.battles.challenge(uid, p);
+      this.router.navigate(['/combate', id]);
+    }, '');
   }
 
   cancel() {

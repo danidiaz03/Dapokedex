@@ -84,6 +84,63 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid in resource.data.users;
     }
 
+    // Combates en línea entre amigos. Solo los dos jugadores ven la partida.
+    // Cada uno pone su equipo una vez y el registro de turnos solo crece; el
+    // resultado lo calcula cada navegador, así que entre amigos se confía en
+    // él (para impedir trampas haría falta resolverlo en Cloud Functions).
+    match /battles/{id} {
+      allow read: if request.auth != null
+        && (request.auth.uid == resource.data.host || request.auth.uid == resource.data.guest);
+      allow create: if request.auth != null && isValidChallenge();
+      allow update: if request.auth != null
+        && (request.auth.uid == resource.data.host || request.auth.uid == resource.data.guest)
+        && isValidBattleUpdate();
+    }
+
+    function isValidChallenge() {
+      let data = request.resource.data;
+      let me = request.auth.uid;
+      return data.keys().hasOnly(['host', 'guest', 'hostName', 'guestName', 'status', 'seed',
+          'hostTeam', 'guestTeam', 'log', 'pending', 'deadline', 'winner', 'reason',
+          'createdAt', 'updatedAt'])
+        && data.host == me
+        && data.guest is string && data.guest != me
+        && data.hostName is string && data.hostName.size() <= 16
+        && data.guestName is string && data.guestName.size() <= 16
+        && data.status == 'pending'
+        && data.seed is int
+        && data.hostTeam == null && data.guestTeam == null
+        && data.log is list && data.log.size() == 0
+        && data.deadline is int
+        && data.createdAt == request.time
+        && exists(/databases/$(database)/documents/friendships/$(pairId(me, data.guest)));
+    }
+
+    function isValidBattleUpdate() {
+      let before = resource.data;
+      let after = request.resource.data;
+      let me = request.auth.uid;
+      let changed = after.diff(before).affectedKeys();
+      return changed.hasOnly(['hostTeam', 'guestTeam', 'status', 'log', 'pending', 'deadline',
+          'winner', 'reason', 'updatedAt'])
+        // Cada uno pone solo su equipo, una única vez y de hasta 6 Pokémon.
+        && (!changed.hasAny(['hostTeam'])
+          || (me == before.host && before.hostTeam == null && after.hostTeam.size() <= 6))
+        && (!changed.hasAny(['guestTeam'])
+          || (me == before.guest && before.guestTeam == null && after.guestTeam.size() <= 6))
+        // El registro de turnos nunca se reescribe hacia atrás.
+        && after.log.size() >= before.log.size() && after.log.size() <= 600
+        && isValidStatusChange(before.status, after.status, me == before.host, me == before.guest)
+        && (after.winner == null || after.winner in ['host', 'guest', 'draw']);
+    }
+
+    function isValidStatusChange(before, after, isHost, isGuest) {
+      return (before == after && before in ['pending', 'active'])
+        || (before == 'pending' && after in ['active', 'declined'] && isGuest)
+        || (before == 'pending' && after == 'cancelled' && isHost)
+        || (before == 'active' && after == 'finished');
+    }
+
     function profilePath(userId) {
       return /databases/$(database)/documents/profiles/$(userId);
     }

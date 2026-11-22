@@ -8,11 +8,21 @@ import { BootScreen } from './componentes/boot-screen/boot-screen';
 import { SeoService } from './services/seo.service';
 import { AnalyticsService } from './services/analytics.service';
 import { CookieBanner } from './componentes/cookie-banner/cookie-banner';
+import { ChallengeBanner } from './componentes/challenge-banner/challenge-banner';
 import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Header, Footer, RewardToasts, ConsoleControls, BootScreen, CookieBanner],
+  imports: [
+    RouterOutlet,
+    Header,
+    Footer,
+    RewardToasts,
+    ConsoleControls,
+    BootScreen,
+    CookieBanner,
+    ChallengeBanner,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

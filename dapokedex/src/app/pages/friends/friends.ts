@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { OnlineBattleService } from '../../services/online-battle.service';
 import { AuthService } from '../../services/auth.service';
 import { SocialService, UsernameTakenError } from '../../services/social.service';
 import { SocialState } from '../../services/social-state';
@@ -30,6 +31,8 @@ const REFRESH_MS = 60_000;
 export class Friends implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private social = inject(SocialService);
+  private battles = inject(OnlineBattleService);
+  private router = inject(Router);
   state = inject(SocialState);
 
   uid = signal<string | null>(null);
@@ -206,6 +209,24 @@ export class Friends implements OnInit, OnDestroy {
 
   incomingFrom(p: PublicProfile): FriendRequest | undefined {
     return this.state.incoming().find((r) => r.from === p.uid);
+  }
+
+  /** Reta a un amigo y abre la pantalla de espera del combate. */
+  challenge(f: PublicProfile) {
+    const uid = this.uid();
+    if (!uid) return;
+    this.run(
+      f.uid,
+      async () => {
+        const id = await this.battles.challenge(uid, f);
+        this.router.navigate(['/combate', id]);
+      },
+      '',
+    );
+  }
+
+  declineChallenge(id: string) {
+    this.run(id, () => this.battles.decline(id), 'Reto rechazado.');
   }
 
   async copyLink() {

@@ -967,3 +967,21 @@
     font-size: 34px;
   }
 }
+
+/* Combate en línea: reloj del turno y botones de rendirse o reclamar. */
+.en-linea {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.en-linea__reloj {
+  font: 400 15px/1 var(--px);
+  color: var(--texto-claro);
+  margin-right: auto;
+}
+.en-linea__reloj--poco {
+  color: var(--marco);
+}
