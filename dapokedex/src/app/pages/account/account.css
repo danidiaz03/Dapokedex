@@ -53,14 +53,14 @@
 
 .section-title {
   font: 700 24px/32px var(--px);
-  color: var(--tinta);
+  color: var(--hueco);
   margin: 0 0 24px;
 }
 
 .loading-text,
 .empty-text {
   font: 400 16px/24px var(--px);
-  color: var(--tinta-suave);
+  color: var(--texto-claro);
 }
 
 .favorites-grid {

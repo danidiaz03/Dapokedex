@@ -282,3 +282,11 @@ select:focus-visible {
     padding-bottom: 52px;
   }
 }
+
+/* En pantallas táctiles no hay teclado: se ocultan las pistas de teclas. */
+@media (hover: none), (max-width: 992px) {
+  button kbd,
+  a kbd {
+    display: none;
+  }
+}

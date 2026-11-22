@@ -54,7 +54,7 @@
 }
 .type-section-title {
   font: 700 24px/32px var(--px);
-  color: var(--tinta);
+  color: var(--hueco);
 }
 .matchup {
   display: flex;

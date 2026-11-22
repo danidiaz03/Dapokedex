@@ -6,11 +6,11 @@
 }
 .compare-title {
   font: 700 36px/44px var(--px);
-  color: var(--tinta);
+  color: var(--hueco);
 }
 .compare-subtitle {
   font: 400 16px/24px var(--texto);
-  color: var(--tinta-suave);
+  color: var(--texto-claro);
   margin-top: -16px;
 }
 .compare-pickers {

@@ -14,11 +14,11 @@
 }
 .ranking__title {
   font: 700 36px/44px var(--px);
-  color: var(--tinta);
+  color: var(--hueco);
 }
 .ranking__subtitle {
   font: 400 15px/22px var(--texto);
-  color: var(--tinta-suave);
+  color: var(--texto-claro);
 }
 .ranking__countdown {
   font: 600 13px/18px var(--px);
@@ -41,8 +41,9 @@
   cursor: pointer;
 }
 .ranking__tab--active {
-  background: var(--cursor-osc);
-  color: #fff;
+  background: var(--marco);
+  color: var(--tinta);
+  box-shadow: inset 0 -3px 0 var(--marco-osc);
 }
 .ranking__status,
 .ranking__hint {
