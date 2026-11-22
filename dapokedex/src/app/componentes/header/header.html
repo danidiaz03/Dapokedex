@@ -27,6 +27,18 @@
     @if (authReady() && !user()) {
       <a class="sistema__boton sistema__boton--fuerte" routerLink="/login">Entrar</a>
     } @else {
+      <a
+        class="sistema__boton sistema__boton--amigos"
+        routerLink="/amigos"
+        [attr.aria-label]="
+          pending() > 0 ? 'Amigos, ' + pending() + ' solicitudes pendientes' : 'Amigos'
+        "
+      >
+        Amigos
+        @if (pending() > 0) {
+          <span class="sistema__aviso" aria-hidden="true">{{ pending() }}</span>
+        }
+      </a>
       <a class="sistema__boton" routerLink="/account" aria-label="Mi cuenta">Cuenta</a>
     }
   </div>

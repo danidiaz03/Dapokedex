@@ -1,0 +1,235 @@
+.amigos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin: 40px auto 48px;
+}
+.amigos__cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.amigos__conectados {
+  color: var(--marco);
+}
+
+.panel {
+  background: var(--blanco);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: inset 0 -4px 0 var(--hueco-borde);
+}
+.panel__titulo {
+  font: 400 20px/1.2 var(--px);
+  color: var(--tinta);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel__texto {
+  font: 400 15px/1.45 var(--texto);
+  color: var(--tinta-suave);
+}
+
+.contador {
+  font: 400 13px/1 var(--px);
+  background: var(--cursor-osc);
+  color: var(--blanco);
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.campo {
+  width: 100%;
+  min-width: 0;
+  border: 2px solid var(--hueco-borde);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: 400 17px/1.3 var(--px);
+  color: var(--tinta);
+  background: var(--hueco);
+  outline: none;
+}
+.campo:focus {
+  border-color: var(--tinta);
+}
+
+.nombre {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nombre__etiqueta {
+  font: 700 14px var(--texto);
+  color: var(--tinta);
+}
+.nombre__fila {
+  display: flex;
+  gap: 8px;
+}
+.nombre__fila .campo {
+  flex: 1;
+}
+.nombre__ayuda {
+  font: 400 13px/1.4 var(--texto);
+  color: var(--tinta-suave);
+}
+.nombre__ayuda--error {
+  color: var(--cursor-osc);
+  font-weight: 700;
+}
+
+.tarjeta {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.tarjeta__datos {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.tarjeta__etiqueta {
+  font: 400 14px var(--texto);
+  color: var(--tinta-suave);
+}
+.tarjeta__nombre {
+  font: 400 24px/1.1 var(--px);
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+.tarjeta__acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.enlace {
+  background: none;
+  border: none;
+  padding: 0;
+  font: 700 14px var(--texto);
+  color: var(--cursor-osc);
+  cursor: var(--cursor-mano);
+  text-decoration: underline;
+}
+.enlace--bloque {
+  align-self: flex-start;
+}
+
+.aviso {
+  background: var(--marco-claro);
+  color: var(--tinta);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: 400 15px var(--texto);
+}
+
+.lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--hueco);
+  min-width: 0;
+}
+.fila--enlace {
+  text-decoration: none;
+  color: inherit;
+}
+.fila--enlace:hover {
+  filter: brightness(1.03);
+}
+.fila__nombre {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font: 400 17px/1.2 var(--px);
+  color: var(--tinta);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.fila__detalle {
+  font: 400 13px/1.3 var(--texto);
+  color: var(--tinta-suave);
+}
+.fila__botones {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+.fila__botones .btn-caja {
+  padding: 9px 12px;
+  font-size: 14px;
+}
+.fila__estado {
+  font: 400 13px var(--texto);
+  color: var(--tinta-suave);
+  flex: none;
+}
+.fila__estado--online {
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.etiqueta {
+  font: 400 13px var(--px);
+  color: var(--tinta-suave);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--blanco);
+}
+.etiqueta--ok {
+  color: var(--ok);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .amigos {
+    margin-top: 24px;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .nombre__fila {
+    flex-wrap: wrap;
+  }
+  .nombre__fila .campo {
+    flex-basis: 100%;
+  }
+  .tarjeta__acciones,
+  .tarjeta__acciones .btn-caja {
+    flex: 1;
+  }
+  .fila {
+    flex-wrap: wrap;
+  }
+  .fila__botones {
+    margin-left: auto;
+  }
+}

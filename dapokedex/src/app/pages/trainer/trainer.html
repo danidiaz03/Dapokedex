@@ -1,0 +1,109 @@
+<div class="c-container entrenador">
+  <a class="volver" routerLink="/amigos">← Amigos</a>
+
+  @if (loading()) {
+    <p class="texto-zona">Cargando perfil...</p>
+  } @else if (!profile()) {
+    <section class="ficha ficha--vacia">
+      <h1 class="ficha__nombre">No encontramos a ese entrenador</h1>
+      <p class="ficha__texto">
+        Puede que haya cambiado de nombre. Búscalo desde tu lista de amigos.
+      </p>
+      <a class="btn-caja btn-caja--fuerte" routerLink="/amigos">Buscar entrenadores</a>
+    </section>
+  } @else {
+    @let p = profile()!;
+    <section class="ficha">
+      <div class="ficha__cab">Tarjeta de entrenador</div>
+      <div class="ficha__cuerpo">
+        <app-trainer-avatar [team]="p.team" [online]="online()" [size]="88" />
+        <div class="ficha__datos">
+          <h1 class="ficha__nombre">{{ p.username }}</h1>
+          @if (p.title) {
+            <p class="ficha__titulo">{{ p.title }}</p>
+          }
+          <p class="ficha__estado" [class.ficha__estado--online]="online()">{{ seen() }}</p>
+        </div>
+      </div>
+
+      <dl class="cifras">
+        <div class="cifra">
+          <dt>Nivel</dt>
+          <dd>{{ level().level }}</dd>
+        </div>
+        <div class="cifra">
+          <dt>Experiencia</dt>
+          <dd>{{ p.xp }} XP</dd>
+        </div>
+        <div class="cifra">
+          <dt>Colección</dt>
+          <dd>{{ p.collectionCount }}</dd>
+        </div>
+        <div class="cifra">
+          <dt>Logros</dt>
+          <dd>{{ p.achievements }}</dd>
+        </div>
+      </dl>
+
+      <div class="equipo">
+        <h2 class="equipo__titulo">Equipo</h2>
+        @if (p.team.length === 0) {
+          <p class="ficha__texto">Todavía no tiene equipo.</p>
+        } @else {
+          <ul class="equipo__lista">
+            @for (id of p.team; track id) {
+              <li class="equipo__hueco">
+                <img [src]="sprite(id)" [alt]="'Pokémon ' + id | nombre: id" loading="lazy" />
+                <span>{{ 'Pokémon ' + id | nombre: id }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      @if (message()) {
+        <p class="aviso" role="status">{{ message() }}</p>
+      }
+
+      <div class="acciones">
+        @switch (relation()) {
+          @case ('self') {
+            <p class="ficha__texto">Así ven tu perfil los demás.</p>
+            <a class="btn-caja" routerLink="/amigos">Tus amigos</a>
+          }
+          @case ('friend') {
+            <span class="etiqueta">Sois amigos</span>
+            <button
+              class="btn-caja"
+              [class.btn-caja--accion]="confirmRemove()"
+              (click)="remove()"
+              [disabled]="busy()"
+            >
+              {{ confirmRemove() ? '¿Seguro? Pulsa otra vez' : 'Eliminar amigo' }}
+            </button>
+          }
+          @case ('outgoing') {
+            <span class="etiqueta">Solicitud enviada</span>
+            <button class="btn-caja" (click)="cancel()" [disabled]="busy()">Cancelar</button>
+          }
+          @case ('incoming') {
+            <button class="btn-caja btn-caja--accion" (click)="add()" [disabled]="busy()">
+              Aceptar su solicitud
+            </button>
+          }
+          @default {
+            @if (state.username()) {
+              <button class="btn-caja btn-caja--accion" (click)="add()" [disabled]="busy()">
+                Agregar como amigo
+              </button>
+            } @else {
+              <p class="ficha__texto">
+                Para agregar amigos, <a routerLink="/amigos">elige tu nombre de entrenador</a>.
+              </p>
+            }
+          }
+        }
+      </div>
+    </section>
+  }
+</div>

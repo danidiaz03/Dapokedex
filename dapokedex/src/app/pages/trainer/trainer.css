@@ -1,0 +1,176 @@
+.entrenador {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 32px auto 48px;
+}
+.volver {
+  font: 400 15px var(--px);
+  color: var(--texto-claro);
+  text-decoration: none;
+  align-self: flex-start;
+}
+.volver:hover {
+  color: var(--blanco);
+}
+
+.ficha {
+  background: var(--blanco);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 20px;
+  box-shadow: inset 0 -4px 0 var(--hueco-borde);
+}
+.ficha--vacia {
+  padding: 24px;
+  align-items: flex-start;
+}
+.ficha__cab {
+  background: var(--marco);
+  box-shadow: inset 0 -3px 0 var(--marco-osc);
+  font: 400 14px var(--px);
+  color: var(--tinta);
+  padding: 10px 20px;
+}
+.ficha__cuerpo {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 20px;
+  min-width: 0;
+}
+.ficha__datos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.ficha__nombre {
+  font: 400 28px/1.1 var(--px);
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+.ficha__titulo {
+  font: 700 15px var(--texto);
+  color: #b45309;
+}
+.ficha__estado {
+  font: 400 14px var(--texto);
+  color: var(--tinta-suave);
+}
+.ficha__estado--online {
+  color: var(--ok);
+  font-weight: 700;
+}
+.ficha__texto {
+  font: 400 15px/1.45 var(--texto);
+  color: var(--tinta-suave);
+}
+.ficha__texto a {
+  color: var(--cursor-osc);
+  font-weight: 700;
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0 20px;
+}
+.cifra {
+  background: var(--hueco);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+.cifra dt {
+  font: 400 12px var(--texto);
+  color: var(--tinta-suave);
+}
+.cifra dd {
+  font: 400 20px/1.3 var(--px);
+  color: var(--tinta);
+}
+
+.equipo {
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.equipo__titulo {
+  font: 400 18px var(--px);
+  color: var(--tinta);
+}
+.equipo__lista {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+.equipo__hueco {
+  background: var(--hueco);
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+  border-radius: 10px;
+  padding: 4px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.equipo__hueco img {
+  width: 100%;
+  max-width: 80px;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+}
+.equipo__hueco span {
+  font: 400 12px var(--texto);
+  color: var(--tinta);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.aviso {
+  margin: 0 20px;
+  background: var(--marco-claro);
+  color: var(--tinta);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: 400 15px var(--texto);
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 20px;
+}
+.etiqueta {
+  font: 400 14px var(--px);
+  color: var(--ok);
+}
+
+@media (max-width: 600px) {
+  .entrenador {
+    margin-top: 20px;
+  }
+  .ficha__cuerpo {
+    gap: 14px;
+  }
+  .ficha__nombre {
+    font-size: 24px;
+  }
+  .cifras {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .equipo__lista {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

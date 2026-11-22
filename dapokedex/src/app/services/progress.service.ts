@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { FirestoreService } from './firestore.service';
 import { RewardFeedService } from './reward-feed.service';
 import { ItemService } from './item.service';
+import { SocialState } from './social-state';
 import { achievementItem, challengeItem, levelItem } from '../game/bag';
 import {
   GameEvent,
@@ -28,6 +29,7 @@ export class ProgressService {
   private firestore = inject(FirestoreService);
   private feed = inject(RewardFeedService);
   private items = inject(ItemService);
+  private social = inject(SocialState);
 
   readonly progress = signal<TrainerProgress | null>(null);
   readonly collectionSize = signal(0);
@@ -177,6 +179,8 @@ export class ProgressService {
    * el email, para no exponer datos personales.
    */
   trainerName(): string {
+    const username = this.social.username();
+    if (username) return username;
     const user = this.auth.currentUser();
     const first = user?.displayName?.trim().split(/\s+/)[0];
     return first || `Entrenador ${user?.uid.slice(0, 4).toUpperCase() ?? ''}`.trim();

@@ -30,6 +30,15 @@
     >
       Histórico
     </button>
+    <button
+      role="tab"
+      class="ranking__tab"
+      [class.ranking__tab--active]="board() === 'friends'"
+      [attr.aria-selected]="board() === 'friends'"
+      (click)="setBoard('friends')"
+    >
+      Amigos
+    </button>
   </div>
 
   @if (loading()) {
@@ -38,6 +47,15 @@
     <div class="ranking__status">
       No se pudo cargar el ranking.
       <button class="ranking__retry" (click)="load()">Reintentar</button>
+    </div>
+  } @else if (board() === 'friends' && (socialState.username() === null || entries().length <= 1)) {
+    <div class="ranking__empty">
+      @if (socialState.username() === null) {
+        <p>Elige tu nombre de entrenador para competir con tus amigos.</p>
+      } @else {
+        <p>Aún no tienes amigos con los que compararte.</p>
+      }
+      <a class="ranking__cta" routerLink="/amigos">Ir a Amigos</a>
     </div>
   } @else if (entries().length === 0) {
     <div class="ranking__empty">
@@ -70,7 +88,9 @@
       }
     </ol>
 
-    @if (myRank(); as me) {
+    @if (board() === 'friends') {
+      <a class="ranking__hint ranking__hint--link" routerLink="/amigos">Gestionar amigos</a>
+    } @else if (myRank(); as me) {
       @if (!inTop()) {
         <div class="ranking__row ranking__row--me ranking__row--mine">
           <span class="ranking__pos">#{{ me.rank }}</span>

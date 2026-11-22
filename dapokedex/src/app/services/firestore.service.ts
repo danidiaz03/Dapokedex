@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import {
   getFirestore,
   doc,
@@ -59,6 +59,9 @@ export type LeaderboardId = `week-${string}` | 'alltime';
   providedIn: 'root',
 })
 export class FirestoreService {
+  /** Sube cada vez que se guardan datos del jugador (para refrescar su perfil público). */
+  readonly changes = signal(0);
+
   private getUserDoc(userId: string) {
     return doc(db, 'users', userId);
   }
@@ -84,8 +87,9 @@ export class FirestoreService {
 
   // setDoc con merge crea el documento si no existe y si existe solo toca los
   // campos indicados, así nos ahorramos la lectura previa en cada escritura.
-  private merge(userId: string, data: Record<string, unknown>) {
-    return setDoc(this.getUserDoc(userId), data, { merge: true });
+  private async merge(userId: string, data: Record<string, unknown>) {
+    await setDoc(this.getUserDoc(userId), data, { merge: true });
+    this.changes.update((n) => n + 1);
   }
 
   async getFavorites(userId: string): Promise<number[]> {
@@ -142,6 +146,7 @@ export class FirestoreService {
    */
   async saveProgress(userId: string, progress: object): Promise<void> {
     await setDoc(this.getUserDoc(userId), { progress }, { mergeFields: ['progress'] });
+    this.changes.update((n) => n + 1);
   }
 
   /** Suma experiencia a varios Pokémon a la vez (increment evita pisar datos). */

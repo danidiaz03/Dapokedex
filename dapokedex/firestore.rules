@@ -37,8 +37,107 @@ service cloud.firestore {
         && request.resource.data.xp <= progressXp(userId);
     }
 
+    // --- Amigos -------------------------------------------------------------
+    // Nadie lee el documento privado de otro: solo su perfil público, que el
+    // propio jugador publica al elegir un nombre de usuario.
+
+    // Nombre de usuario → uid. El id del documento es el nombre, así que dos
+    // jugadores no pueden tener el mismo. Cada uno solo puede reservar el que
+    // pone en su perfil y solo puede soltar el suyo.
+    match /usernames/{name} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && name.matches('^[a-z0-9_]{3,16}$')
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid
+        && getAfter(profilePath(request.auth.uid)).data.username == name;
+      allow delete: if request.auth != null
+        && resource.data.uid == request.auth.uid
+        && (!existsAfter(profilePath(request.auth.uid))
+          || getAfter(profilePath(request.auth.uid)).data.username != name);
+    }
+
+    // Perfil público: nombre, título, nivel, equipo y cuántos Pokémon y
+    // logros tiene. Lo lee cualquiera con sesión; solo lo escribe su dueño.
+    match /profiles/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if isOwner(userId) && isValidProfile(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Solicitud de amistad pendiente. El id es "deQuién_aQuién"; la ven y la
+    // pueden borrar (cancelar o rechazar) los dos implicados.
+    match /friendRequests/{id} {
+      allow read: if request.auth != null
+        && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+      allow create: if request.auth != null && isValidRequest(id);
+      allow delete: if request.auth != null
+        && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+    }
+
+    // Amistad aceptada: un documento por pareja con los dos uid ordenados.
+    // Solo se crea si el otro te había enviado una solicitud, y cualquiera de
+    // los dos puede borrarla.
+    match /friendships/{id} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.users;
+      allow create: if request.auth != null && isValidFriendship(id);
+      allow delete: if request.auth != null && request.auth.uid in resource.data.users;
+    }
+
+    function profilePath(userId) {
+      return /databases/$(database)/documents/profiles/$(userId);
+    }
+
+    function isValidProfile(userId) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['username', 'title', 'level', 'xp', 'team',
+          'collectionCount', 'achievements', 'lastSeen'])
+        && data.username is string && data.username.matches('^[a-z0-9_]{3,16}$')
+        && getAfter(/databases/$(database)/documents/usernames/$(data.username)).data.uid == userId
+        && data.title is string && data.title.size() <= 40
+        && data.level is int && data.level >= 1 && data.level <= 100
+        && data.xp is int && data.xp >= 0 && data.xp <= progressXp(userId)
+        && data.team is list && data.team.size() <= 6
+        && data.collectionCount is int && data.collectionCount >= 0 && data.collectionCount <= 2000
+        && data.achievements is int && data.achievements >= 0 && data.achievements <= 200
+        && data.lastSeen == request.time;
+    }
+
+    function isValidRequest(id) {
+      let data = request.resource.data;
+      let me = request.auth.uid;
+      return data.keys().hasOnly(['from', 'to', 'fromName', 'toName', 'createdAt'])
+        && data.from == me
+        && data.to is string && data.to != me
+        && id == me + '_' + data.to
+        && data.fromName is string && data.fromName.size() <= 16
+        && data.toName is string && data.toName.size() <= 16
+        && data.createdAt == request.time
+        && exists(profilePath(me))
+        && exists(profilePath(data.to))
+        && !exists(/databases/$(database)/documents/friendships/$(pairId(me, data.to)));
+    }
+
+    function isValidFriendship(id) {
+      let data = request.resource.data;
+      let me = request.auth.uid;
+      let other = data.users[0] == me ? data.users[1] : data.users[0];
+      return data.keys().hasOnly(['users', 'since'])
+        && data.users is list && data.users.size() == 2
+        && me in data.users
+        && data.users[0] < data.users[1]
+        && id == data.users[0] + '_' + data.users[1]
+        && data.since == request.time
+        && exists(/databases/$(database)/documents/friendRequests/$(other + '_' + me));
+    }
+
+    function pairId(a, b) {
+      return a < b ? a + '_' + b : b + '_' + a;
+    }
+
     function progressXp(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.progress.xp;
+      return get(/databases/$(database)/documents/users/$(userId)).data
+        .get('progress', {}).get('xp', 0);
     }
 
     // La mochila solo admite objetos que existen en el juego y como mucho 6

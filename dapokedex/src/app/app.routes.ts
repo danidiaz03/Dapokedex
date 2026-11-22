@@ -73,6 +73,18 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/ranking/ranking').then((m) => m.Ranking),
   },
   {
+    path: 'amigos',
+    title: 'Amigos · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/friends/friends').then((m) => m.Friends),
+  },
+  {
+    path: 'entrenador/:username',
+    title: 'Entrenador · Dapokedex',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/trainer/trainer').then((m) => m.Trainer),
+  },
+  {
     path: 'collection',
     title: 'Mi colección · Dapokedex',
     canActivate: [authGuard],

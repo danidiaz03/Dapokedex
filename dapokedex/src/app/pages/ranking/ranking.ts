@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import {
   FirestoreService,
@@ -7,8 +7,10 @@ import {
   LeaderboardId,
 } from '../../services/firestore.service';
 import { nextWeekStart, weekKey } from '../../game/progress';
+import { SocialService } from '../../services/social.service';
+import { SocialState } from '../../services/social-state';
 
-type Board = 'week' | 'alltime';
+type Board = 'week' | 'alltime' | 'friends';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -21,6 +23,9 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 export class Ranking implements OnInit, OnDestroy {
   private firestore = inject(FirestoreService);
   private auth = inject(AuthService);
+  private social = inject(SocialService);
+  private route = inject(ActivatedRoute);
+  socialState = inject(SocialState);
 
   board = signal<Board>('week');
   entries = signal<LeaderboardEntry[]>([]);
@@ -45,6 +50,7 @@ export class Ranking implements OnInit, OnDestroy {
 
   async ngOnInit() {
     this.userId.set((await this.auth.waitForUser())?.uid ?? null);
+    if (this.route.snapshot.queryParamMap.get('tabla') === 'amigos') this.board.set('friends');
     this.timer = setInterval(() => this.now.set(Date.now()), 60000);
     await this.load();
   }
@@ -64,6 +70,7 @@ export class Ranking implements OnInit, OnDestroy {
   }
 
   async load() {
+    if (this.board() === 'friends') return this.loadFriends();
     const id: LeaderboardId = this.board() === 'week' ? `week-${weekKey()}` : 'alltime';
     this.loading.set(true);
     this.error.set(false);
@@ -79,6 +86,30 @@ export class Ranking implements OnInit, OnDestroy {
       this.myRank.set(rank);
     } catch (e) {
       console.warn('No se pudo cargar el ranking', e);
+      this.error.set(true);
+    }
+    this.loading.set(false);
+  }
+
+  /** Clasificación entre amigos: tú y tus amigos ordenados por XP total. */
+  private async loadFriends() {
+    const uid = this.userId();
+    this.loading.set(true);
+    this.error.set(false);
+    this.myRank.set(null);
+    try {
+      if (!uid) throw new Error('Sin sesión');
+      await this.social.start(uid);
+      const ids = await this.social.getFriendIds(uid);
+      const profiles = await this.social.getProfiles([uid, ...ids]);
+      if (this.board() !== 'friends') return;
+      this.entries.set(
+        profiles
+          .map((p) => ({ uid: p.uid, name: p.username, title: p.title, xp: p.xp, level: p.level }))
+          .sort((a, b) => b.xp - a.xp),
+      );
+    } catch (e) {
+      console.warn('No se pudo cargar la clasificación de amigos', e);
       this.error.set(true);
     }
     this.loading.set(false);

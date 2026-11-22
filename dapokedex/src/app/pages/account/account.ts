@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { SocialState } from '../../services/social-state';
 import { AuthService } from '../../services/auth.service';
 import { FirestoreService } from '../../services/firestore.service';
 import { PokemonService } from '../../services/pokemon';
@@ -8,7 +9,7 @@ import { PokemonNamePipe } from '../../pipes/pokemon-name.pipe';
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [PokemonNamePipe],
+  imports: [PokemonNamePipe, RouterLink],
   templateUrl: './account.html',
   styleUrl: './account.css',
 })
@@ -19,6 +20,7 @@ export class Account implements OnInit {
   private router = inject(Router);
 
   user = this.authService.currentUser;
+  pending = inject(SocialState).pendingCount;
   favorites = signal<any[]>([]);
   loading = signal(true);
 

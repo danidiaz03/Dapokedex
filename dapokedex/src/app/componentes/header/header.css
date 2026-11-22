@@ -77,6 +77,16 @@
   color: var(--tinta);
   box-shadow: inset 0 -3px 0 var(--marco-osc);
 }
+.sistema__boton--amigos {
+  position: relative;
+}
+.sistema__aviso {
+  font: 400 11px/1 var(--px);
+  background: var(--cursor);
+  color: var(--blanco);
+  border-radius: 999px;
+  padding: 3px 6px 2px;
+}
 .sistema__boton kbd {
   font-size: 11px;
   min-width: 18px;
@@ -89,7 +99,7 @@
 
 @media (max-width: 992px) {
   .nav,
-  .sistema__boton:not(.sistema__boton--fuerte) {
+  .sistema__boton:not(.sistema__boton--fuerte, .sistema__boton--amigos) {
     display: none;
   }
   .sistema__derecha {

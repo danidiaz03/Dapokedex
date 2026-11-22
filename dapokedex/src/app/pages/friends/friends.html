@@ -1,0 +1,233 @@
+<div class="c-container amigos">
+  <header class="amigos__cabecera">
+    <h1 class="titulo-zona">Amigos</h1>
+    @if (state.username()) {
+      <p class="texto-zona">
+        {{ friends().length }} {{ friends().length === 1 ? 'amigo' : 'amigos' }}
+        @if (onlineCount() > 0) {
+          · <span class="amigos__conectados">{{ onlineCount() }} en línea</span>
+        }
+      </p>
+    }
+  </header>
+
+  @if (state.username() === undefined) {
+    <p class="texto-zona">Cargando...</p>
+  } @else if (state.username() === null || editingName()) {
+    <!-- Elegir nombre de usuario: hace falta para que te encuentren -->
+    <section class="panel">
+      <h2 class="panel__titulo">
+        {{ state.username() ? 'Cambiar tu nombre' : 'Elige tu nombre de entrenador' }}
+      </h2>
+      <p class="panel__texto">
+        Es como te buscarán tus amigos. Los demás solo verán este nombre, tu título, tu nivel, tu
+        equipo y cuántos Pokémon y logros tienes. Tu email y tu mochila siguen siendo privados.
+      </p>
+      <form class="nombre" (ngSubmit)="saveName()">
+        <label class="nombre__etiqueta" for="username">Nombre de usuario</label>
+        <div class="nombre__fila">
+          <input
+            id="username"
+            name="username"
+            class="campo"
+            [ngModel]="nameDraft()"
+            (ngModelChange)="onNameInput($event)"
+            maxlength="16"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+          />
+          <button
+            class="btn-caja btn-caja--accion"
+            type="submit"
+            [disabled]="!draftValid() || savingName()"
+          >
+            {{ savingName() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          @if (state.username()) {
+            <button class="btn-caja" type="button" (click)="editingName.set(false)">
+              Cancelar
+            </button>
+          }
+        </div>
+        <p class="nombre__ayuda" [class.nombre__ayuda--error]="nameError()">
+          {{ nameError() || 'De 3 a 16 letras minúsculas, números o _.' }}
+        </p>
+      </form>
+    </section>
+  } @else {
+    <!-- Tu tarjeta y enlace para que te agreguen -->
+    <section class="panel tarjeta">
+      <div class="tarjeta__datos">
+        <span class="tarjeta__etiqueta">Tu nombre</span>
+        <strong class="tarjeta__nombre">{{ state.username() }}</strong>
+        <button class="enlace" type="button" (click)="startEditing()">Cambiar</button>
+      </div>
+      <div class="tarjeta__acciones">
+        <button class="btn-caja btn-caja--fuerte" type="button" (click)="share()">
+          {{ copied() ? '¡Enlace copiado!' : 'Invitar a un amigo' }}
+        </button>
+        <a class="btn-caja" [routerLink]="['/entrenador', state.username()]">Ver mi perfil</a>
+      </div>
+    </section>
+
+    @if (message()) {
+      <p class="aviso" role="status">{{ message() }}</p>
+    }
+
+    <!-- Solicitudes recibidas -->
+    @if (state.incoming().length > 0) {
+      <section class="panel">
+        <h2 class="panel__titulo">
+          Solicitudes recibidas <span class="contador">{{ state.incoming().length }}</span>
+        </h2>
+        <ul class="lista">
+          @for (r of state.incoming(); track r.id) {
+            <li class="fila">
+              <a class="fila__nombre" [routerLink]="['/entrenador', r.fromName]">{{
+                r.fromName
+              }}</a>
+              <div class="fila__botones">
+                <button
+                  class="btn-caja btn-caja--accion"
+                  (click)="accept(r)"
+                  [disabled]="busy() === r.id"
+                >
+                  Aceptar
+                </button>
+                <button class="btn-caja" (click)="dismiss(r, true)" [disabled]="busy() === r.id">
+                  Rechazar
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <!-- Buscar entrenadores -->
+    <section class="panel">
+      <h2 class="panel__titulo">Buscar entrenadores</h2>
+      <label class="sr-only" for="buscar">Nombre de usuario</label>
+      <input
+        id="buscar"
+        class="campo"
+        type="search"
+        placeholder="Escribe su nombre de usuario"
+        [ngModel]="searchText()"
+        (ngModelChange)="onSearch($event)"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+      />
+      @if (searching()) {
+        <p class="panel__texto">Buscando...</p>
+      } @else if (searched() && results().length === 0) {
+        <p class="panel__texto">No hay ningún entrenador con ese nombre.</p>
+      }
+      @if (results().length > 0) {
+        <ul class="lista">
+          @for (p of results(); track p.uid) {
+            <li class="fila">
+              <app-trainer-avatar [team]="p.team" [size]="40" />
+              <a class="fila__nombre" [routerLink]="['/entrenador', p.username]">
+                {{ p.username }}
+                <span class="fila__detalle"
+                  >Nv. {{ p.level }}{{ p.title ? ' · ' + p.title : '' }}</span
+                >
+              </a>
+              <div class="fila__botones">
+                @switch (relation(p)) {
+                  @case ('self') {
+                    <span class="etiqueta">Tú</span>
+                  }
+                  @case ('friend') {
+                    <span class="etiqueta etiqueta--ok">Amigos</span>
+                  }
+                  @case ('outgoing') {
+                    <span class="etiqueta">Pendiente</span>
+                  }
+                  @case ('incoming') {
+                    <button
+                      class="btn-caja btn-caja--accion"
+                      (click)="add(p)"
+                      [disabled]="busy() === p.uid"
+                    >
+                      Aceptar
+                    </button>
+                  }
+                  @default {
+                    <button
+                      class="btn-caja btn-caja--accion"
+                      (click)="add(p)"
+                      [disabled]="busy() === p.uid"
+                    >
+                      Agregar
+                    </button>
+                  }
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Lista de amigos -->
+    <section class="panel">
+      <h2 class="panel__titulo">Tus amigos</h2>
+      @if (loadingFriends()) {
+        <p class="panel__texto">Cargando...</p>
+      } @else if (friends().length === 0) {
+        <p class="panel__texto">
+          Aún no tienes amigos. Búscalos por su nombre o envíales tu enlace con «Invitar a un
+          amigo».
+        </p>
+      } @else {
+        <ul class="lista">
+          @for (f of sortedFriends(); track f.uid) {
+            <li>
+              <a class="fila fila--enlace" [routerLink]="['/entrenador', f.username]">
+                <app-trainer-avatar [team]="f.team" [online]="online(f)" />
+                <span class="fila__nombre">
+                  {{ f.username }}
+                  <span class="fila__detalle">
+                    Nv. {{ f.level }}{{ f.title ? ' · ' + f.title : '' }}
+                  </span>
+                </span>
+                <span class="fila__estado" [class.fila__estado--online]="online(f)">{{
+                  seen(f)
+                }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+        <a class="enlace enlace--bloque" routerLink="/ranking" [queryParams]="{ tabla: 'amigos' }">
+          Ver la clasificación entre amigos
+        </a>
+      }
+    </section>
+
+    <!-- Solicitudes enviadas -->
+    @if (state.outgoing().length > 0) {
+      <section class="panel">
+        <h2 class="panel__titulo">Solicitudes enviadas</h2>
+        <ul class="lista">
+          @for (r of state.outgoing(); track r.id) {
+            <li class="fila">
+              <a class="fila__nombre" [routerLink]="['/entrenador', r.toName]">
+                {{ r.toName }}
+                <span class="fila__detalle">Esperando respuesta</span>
+              </a>
+              <div class="fila__botones">
+                <button class="btn-caja" (click)="dismiss(r, false)" [disabled]="busy() === r.id">
+                  Cancelar
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>

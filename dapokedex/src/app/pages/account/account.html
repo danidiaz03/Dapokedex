@@ -10,6 +10,12 @@
         <p class="user-name">{{ user()?.displayName || 'Entrenador' }}</p>
         <p class="user-email">{{ user()?.email }}</p>
       </div>
+      <a class="btn-caja btn-caja--fuerte btn-amigos" routerLink="/amigos">
+        Amigos
+        @if (pending() > 0) {
+          <span class="btn-amigos__aviso">{{ pending() }}</span>
+        }
+      </a>
       <button class="btn-caja btn-logout" (click)="logout()">Cerrar sesión</button>
     </div>
   </div>
