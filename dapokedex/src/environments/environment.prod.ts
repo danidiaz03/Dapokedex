@@ -15,5 +15,5 @@ export const environment = {
    * ID de medición de Google Analytics 4 (G-XXXXXXXXXX). Vacío = sin analítica.
    * No va en un .env: Angular lo incluye en el build desde este archivo.
    */
-  gaMeasurementId: '',
+  gaMeasurementId: 'G-DXY3ENM67Z',
 };
