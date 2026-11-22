@@ -143,8 +143,8 @@
   margin-top: 4px;
 }
 .evo-types .type-badge {
-  font-size: 10px;
-  padding: 1px 8px;
+  font-size: 11px;
+  padding: 3px 7px 2px;
 }
 /* En las ramas (Eevee) las tarjetas son estrechas: el requisito va debajo. */
 .evolution-stage--branched .evolution {

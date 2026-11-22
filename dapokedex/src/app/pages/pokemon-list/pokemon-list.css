@@ -227,12 +227,13 @@
 }
 .marcas button .type-badge {
   font-size: 13px;
-  padding: 6px 8px 5px;
+  padding: 6px 10px 5px;
 }
 /* Si hay un tipo marcado, el resto se apaga. */
 .marcas:has(button[aria-pressed='true']) button[aria-pressed='false'] .type-badge {
-  background: rgba(255, 255, 255, 0.75);
-  color: var(--tinta-suave);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--tinta);
+  border-color: transparent;
   box-shadow: none;
 }
 .marcas .quitar {
@@ -301,11 +302,11 @@
 }
 .hueco .tipos {
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
 }
 .hueco .type-badge {
   font-size: 11px;
-  padding: 4px 5px 3px;
+  padding: 3px 7px 2px;
 }
 .hueco.sel {
   outline: 4px solid var(--cursor);
@@ -438,8 +439,8 @@
     font-size: 13px;
   }
   .hueco .type-badge {
-    font-size: 10px;
-    padding: 3px 4px 2px;
+    font-size: 11px;
+    padding: 3px 5px 2px;
   }
   .mural {
     padding: 8px;

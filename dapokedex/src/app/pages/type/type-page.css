@@ -28,15 +28,11 @@
 }
 .type-picker .type-badge {
   text-decoration: none;
-  opacity: 0.55;
-  transition: opacity 0.2s ease;
-}
-.type-picker .type-badge:hover,
-.type-picker__item--active {
-  opacity: 1 !important;
+  font-size: 13px;
+  padding: 6px 10px 5px;
 }
 .type-picker__item--active {
-  outline: 2px solid var(--tinta);
+  outline: 3px solid var(--marco);
   outline-offset: 2px;
 }
 .type-status {

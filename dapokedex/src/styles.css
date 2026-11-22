@@ -104,97 +104,122 @@ kbd {
   flex-wrap: wrap;
   gap: 8px;
 }
+/*
+ * Etiquetas de tipo: color oficial del tipo con texto blanco o casi negro
+ * según cuál contraste más (todas superan 5.5:1). Se usa la fuente de texto
+ * en negrita: la pixelada a 11-13 px se leía mal.
+ */
 .type-badge {
   display: inline-block;
-  border-radius: 3px;
-  padding: 5px 7px 4px;
-  font: 400 12px/1 var(--px);
+  border-radius: 4px;
+  padding: 5px 9px 4px;
+  font: 700 12px/1.1 var(--texto);
+  letter-spacing: 0.01em;
   white-space: nowrap;
-  /* Borde inferior oscuro: los tipos claros (Eléctrico, Hielo...) no se pierden sobre el gris. */
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--borde-tipo, rgba(0, 0, 0, 0.25));
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18);
 }
 a.type-badge {
   text-decoration: none;
   transition: filter 0.2s ease;
 }
 a.type-badge:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
 }
 .type-badge--normal {
   background: #a8a77a;
-  color: #1d1d12;
+  color: #141414;
+  --borde-tipo: #767555;
 }
 .type-badge--fire {
   background: #ee8130;
-  color: #2a1100;
+  color: #141414;
+  --borde-tipo: #a75a22;
 }
 .type-badge--water {
   background: #6390f0;
-  color: #0b1a3d;
+  color: #141414;
+  --borde-tipo: #4565a8;
 }
 .type-badge--grass {
   background: #7ac74c;
-  color: #13280a;
+  color: #141414;
+  --borde-tipo: #558b35;
 }
 .type-badge--electric {
   background: #f7d02c;
-  color: #2e2600;
+  color: #141414;
+  --borde-tipo: #ad921f;
 }
 .type-badge--ice {
   background: #96d9d6;
-  color: #0e2e2d;
+  color: #141414;
+  --borde-tipo: #699896;
 }
 .type-badge--fighting {
   background: #c22e28;
-  color: #fff;
+  color: #ffffff;
+  --borde-tipo: #88201c;
 }
 .type-badge--poison {
   background: #a33ea1;
-  color: #fff;
+  color: #ffffff;
+  --borde-tipo: #722b71;
 }
 .type-badge--ground {
   background: #e2bf65;
-  color: #2e2306;
+  color: #141414;
+  --borde-tipo: #9e8647;
 }
 .type-badge--flying {
   background: #a98ff3;
-  color: #1a1240;
+  color: #141414;
+  --borde-tipo: #7664aa;
 }
 .type-badge--psychic {
   background: #f95587;
-  color: #33061a;
+  color: #141414;
+  --borde-tipo: #ae3b5e;
 }
 .type-badge--bug {
   background: #a6b91a;
-  color: #1f2400;
+  color: #141414;
+  --borde-tipo: #748212;
 }
 .type-badge--rock {
   background: #b6a136;
-  color: #231e03;
+  color: #141414;
+  --borde-tipo: #7f7126;
 }
 .type-badge--ghost {
   background: #735797;
-  color: #fff;
+  color: #ffffff;
+  --borde-tipo: #503d6a;
 }
 .type-badge--dragon {
   background: #6f35fc;
-  color: #fff;
+  color: #ffffff;
+  --borde-tipo: #4e25b0;
 }
 .type-badge--dark {
   background: #705746;
-  color: #fff;
+  color: #ffffff;
+  --borde-tipo: #4e3d31;
 }
 .type-badge--steel {
   background: #b7b7ce;
-  color: #1b1b2b;
+  color: #141414;
+  --borde-tipo: #808090;
 }
 .type-badge--fairy {
   background: #d685ad;
-  color: #330f21;
+  color: #141414;
+  --borde-tipo: #965d79;
 }
 .type-badge--stellar {
   background: #40b5a5;
-  color: #06231f;
+  color: #141414;
+  --borde-tipo: #2d7f73;
 }
 .c-bg-grass {
   --type-color: #78c850;
