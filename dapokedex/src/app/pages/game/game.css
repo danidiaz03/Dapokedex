@@ -66,12 +66,14 @@
 }
 
 .starter-card {
+  font: inherit;
+  color: inherit;
   background: #ffffff;
   border-radius: 24px;
   padding: 32px;
   width: 200px;
   cursor: var(--cursor-mano);
-  border: 2px solid transparent;
+  border: 4px solid transparent;
   transition:
     border 0.3s ease,
     box-shadow 0.3s ease;
@@ -83,8 +85,9 @@
 }
 
 .starter-card--selected {
-  border: 2px solid var(--cursor-osc);
-  box-shadow: 0px 0px 10px 0px #b91c1c55;
+  border-color: var(--cursor);
+  box-shadow: 0 6px 0 var(--marco-osc);
+  background: var(--marco-claro);
 }
 
 .starter-image-container {
@@ -311,10 +314,11 @@
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  margin-bottom: 32px;
+  margin: 24px 0;
   border-radius: 16px;
-  background: linear-gradient(90deg, var(--tinta), #3b3b6d);
-  color: #fff;
+  background: var(--marco);
+  color: var(--tinta);
+  box-shadow: 0 6px 0 var(--marco-osc);
   text-decoration: none;
   font: 400 15px/22px var(--px);
 }
@@ -327,8 +331,11 @@
 }
 .minigame-banner__cta {
   margin-left: auto;
-  font-weight: 700;
   white-space: nowrap;
+  background: var(--tinta);
+  color: var(--marco);
+  padding: 9px 14px;
+  border-radius: 8px;
 }
 
 /* Panel del entrenador */
@@ -541,4 +548,113 @@
 }
 .trainer-card__ranking:hover {
   text-decoration: underline;
+}
+
+/* Equipo como caja del PC con 6 huecos */
+.equipo {
+  margin: 20px 0;
+}
+.caja {
+  background: var(--marco);
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 6px 0 var(--marco-osc);
+}
+.equipo__cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 8px 12px;
+}
+.equipo__titulo {
+  font: 400 24px/1 var(--px);
+}
+.equipo__sub {
+  font-size: 14px;
+  margin-top: 4px;
+}
+.equipo__acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.equipo .mural {
+  border-radius: 10px;
+  padding: 12px;
+}
+.equipo__huecos {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.equipo__hueco {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 6px 10px;
+  border-radius: 10px;
+  background: rgba(234, 244, 242, 0.94);
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+  color: var(--tinta);
+  text-decoration: none;
+  text-align: center;
+}
+.equipo__hueco:hover {
+  background: var(--blanco);
+}
+.equipo__hueco img {
+  width: 96px;
+  height: 96px;
+  max-width: 100%;
+  object-fit: contain;
+}
+.equipo__hueco b {
+  font: 400 14px/1.1 var(--px);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.equipo__hueco .tipos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+}
+.equipo__hueco .type-badge {
+  font-size: 11px;
+  padding: 4px 5px 3px;
+}
+.equipo__hueco--vacio {
+  background: rgba(234, 244, 242, 0.35);
+  box-shadow: none;
+  min-height: 150px;
+}
+.equipo__vacio {
+  background: var(--blanco);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+@media (max-width: 900px) {
+  .equipo__huecos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .equipo__hueco img {
+    width: 72px;
+    height: 72px;
+  }
+  .equipo__hueco--vacio {
+    min-height: 120px;
+  }
 }

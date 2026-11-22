@@ -70,6 +70,10 @@ export class Game implements OnInit {
   loading = signal(true);
   selectedStarter = signal<number | null>(null);
   team = signal<any[]>([]);
+  /** Huecos libres del equipo (hasta 6), para mostrarlos vacíos. */
+  emptySlots = computed(() =>
+    Array.from({ length: Math.max(0, 6 - this.team().length) }, (_, i) => i),
+  );
 
   getSpriteUrl(id: number): string {
     return getArtworkUrl(id);
