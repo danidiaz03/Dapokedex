@@ -786,6 +786,87 @@
   }
 }
 
+/* ---- Habilidad, objeto y tiempo ---- */
+.campo-centro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.tiempo {
+  font: 400 13px/1 var(--px);
+  border-radius: 6px;
+  padding: 5px 8px 4px;
+  background: var(--tinta);
+  color: var(--blanco);
+}
+.tiempo--rain {
+  background: #2f6fb5;
+}
+.tiempo--sun {
+  background: #e58a1f;
+}
+.tiempo--sand {
+  background: #a8874a;
+}
+.tiempo--hail,
+.tiempo--snow {
+  background: #6aa9c9;
+  color: var(--tinta);
+}
+.equipo-pk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 13px;
+  color: var(--tinta-suave);
+}
+.equipo-pk:empty {
+  display: none;
+}
+.habilidad {
+  font-weight: 700;
+  color: var(--tinta);
+}
+.habilidad::before {
+  content: 'Hab. ';
+  font-weight: 400;
+  color: var(--tinta-suave);
+}
+.objeto,
+.hueco__objeto {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.objeto img,
+.hueco__objeto img {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+.hueco__objeto {
+  font-size: 12px;
+  color: var(--tinta-suave);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hueco .hueco__objeto img {
+  width: 22px;
+  height: 22px;
+}
+.bloqueo {
+  font-size: 13px;
+  color: var(--tinta);
+  background: var(--marco-claro);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
 /* ---- Tablet y móvil ---- */
 @media (max-width: 860px) {
   .enfrentamiento {

@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { FirestoreService } from '../../../services/firestore.service';
 import { PokemonService, getArtworkUrl, playPokemonCry } from '../../../services/pokemon';
@@ -29,6 +30,9 @@ import {
   SideKey,
   StatKey,
   activeOf,
+  allowedMoves,
+  beginBattle,
+  weatherOf,
   chooseEnemyAction,
   chooseEnemyReplacement,
   createCombatant,
@@ -39,6 +43,14 @@ import {
   switchIn,
   toBattleMove,
 } from '../../../game/battle-engine';
+import {
+  HELD_ITEMS,
+  SIMULATED_ABILITIES,
+  TYPE_BOOST_ITEMS,
+  WEATHER_ABILITIES,
+  WEATHER_ROCKS,
+  WEATHER_TEXT,
+} from '../../../game/battle-data';
 import {
   Reward,
   SHINY_CHANCE,
@@ -79,6 +91,17 @@ const STAGE_SHORT: Partial<Record<StatKey, string>> = {
 };
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Elige al azar según los pesos. */
+function weighted<T>(options: [T, number][]): T {
+  const total = options.reduce((a, [, w]) => a + w, 0);
+  let r = Math.random() * total;
+  for (const [value, w] of options) {
+    r -= w;
+    if (r <= 0) return value;
+  }
+  return options[options.length - 1][0];
+}
 
 @Component({
   selector: 'app-battle',
@@ -207,7 +230,7 @@ export class Battle implements OnInit, OnDestroy {
         this.useStruggle();
         return true;
       }
-      if (pokemon.moves[n]?.pp > 0) this.useMove(n);
+      if (allowedMoves(pokemon).includes(n)) this.useMove(n);
       return true;
     }
     if (phase === 'select-pokemon') {
@@ -285,6 +308,7 @@ export class Battle implements OnInit, OnDestroy {
         player: { team: player, active: 0 },
         enemy: { team: enemy, active: 0 },
         turn: 0,
+        weather: null,
       });
     } catch {
       this.loadError.set(
@@ -357,6 +381,73 @@ export class Battle implements OnInit, OnDestroy {
     return chosen.slice(0, 4);
   }
 
+  /**
+   * Habilidad del Pokémon: una de las suyas, con preferencia por las que tienen
+   * efecto en combate; la oculta sale de vez en cuando.
+   */
+  private async pickAbility(data: PokemonDetailPage): Promise<{ key: string; name: string }> {
+    const normal = data.abilities.filter((a) => !a.is_hidden);
+    const hidden = data.abilities.filter((a) => a.is_hidden);
+    const pool = hidden.length && Math.random() < 0.2 ? hidden : normal.length ? normal : hidden;
+    if (!pool.length) return { key: '', name: '' };
+    const useful = pool.filter((a) => SIMULATED_ABILITIES.has(a.ability.name));
+    const list = useful.length && Math.random() < 0.75 ? useful : pool;
+    const chosen = list[Math.floor(Math.random() * list.length)].ability;
+    const name = await firstValueFrom(this.pokemonService.getAbility(chosen.url))
+      .then((d) => d.names.find((n) => n.language.name === 'es')?.name)
+      .catch(() => undefined);
+    return { key: chosen.name, name: name ?? chosen.name.replace(/-/g, ' ') };
+  }
+
+  /** Objeto equipado, elegido según el estilo del Pokémon. */
+  private async pickItem(
+    types: string[],
+    stat: (name: string) => number,
+    moves: BattleMove[],
+    ability: string,
+  ): Promise<{ key: string; name: string; sprite: string }> {
+    const hasStatus = moves.some((m) => m.damageClass === 'status');
+    const physical = stat('attack') >= stat('special-attack');
+    const stabType = moves.find((m) => m.damageClass !== 'status' && types.includes(m.type))?.type;
+    const booster = Object.entries(TYPE_BOOST_ITEMS).find(([, t]) => t === stabType)?.[0];
+    const weather =
+      WEATHER_ABILITIES[ability] ?? moves.map((m) => m.weather).find((w) => w) ?? null;
+    const rock = Object.entries(WEATHER_ROCKS).find(([, w]) => w === weather)?.[0];
+
+    const options: [string, number][] = [
+      [types.includes('poison') ? 'black-sludge' : 'leftovers', 3],
+      ['sitrus-berry', 3],
+      ['life-orb', 2],
+      ['expert-belt', 1],
+      ['lum-berry', 1],
+      ['focus-sash', stat('defense') + stat('special-defense') < 130 ? 2 : 0.5],
+      ['quick-claw', 0.5],
+      ['scope-lens', 0.5],
+      ['shell-bell', 0.5],
+      ['oran-berry', 0.5],
+      [physical ? 'muscle-band' : 'wise-glasses', 0.5],
+      ['rocky-helmet', stat('defense') >= 100 ? 1.5 : 0.3],
+    ];
+    if (!hasStatus) {
+      options.push(
+        [physical ? 'choice-band' : 'choice-specs', 1.5],
+        ['choice-scarf', 1],
+        ['assault-vest', 1],
+      );
+    }
+    if (booster) options.push([booster, 2]);
+    if (rock) options.push([rock, 3]);
+    const key = weighted(options.filter(([k]) => HELD_ITEMS.includes(k)));
+    const data = await firstValueFrom(
+      this.pokemonService.getItem(`https://pokeapi.co/api/v2/item/${key}`),
+    ).catch(() => null);
+    return {
+      key,
+      name: data?.names.find((n) => n.language.name === 'es')?.name ?? key.replace(/-/g, ' '),
+      sprite: data?.sprites.default ?? '',
+    };
+  }
+
   private async toCombatant(
     data: PokemonDetailPage,
     level: number,
@@ -364,6 +455,11 @@ export class Battle implements OnInit, OnDestroy {
   ): Promise<Combatant> {
     const stat = (name: string) => data.stats.find((s) => s.stat.name === name)?.base_stat ?? 50;
     const types = data.types.map((t) => t.type.name);
+    const [moves, ability] = await Promise.all([
+      this.pickMoves(data, types),
+      this.pickAbility(data),
+    ]);
+    const item = await this.pickItem(types, stat, moves, ability.key);
     return createCombatant({
       id: data.id,
       // Nombre oficial en español para los mensajes del combate.
@@ -380,7 +476,12 @@ export class Battle implements OnInit, OnDestroy {
         specialDefense: stat('special-defense'),
         speed: stat('speed'),
       },
-      moves: await this.pickMoves(data, types),
+      moves,
+      ability: ability.key,
+      abilityName: ability.name,
+      item: item.key,
+      itemName: item.name,
+      itemSprite: item.sprite,
     });
   }
 
@@ -406,6 +507,10 @@ export class Battle implements OnInit, OnDestroy {
     );
     this.playCry(player.id);
     await this.say(`¡Adelante, ${player.name}!`, run);
+    if (run !== this.run) return;
+    // Habilidades de entrada: Intimidación, Llovizna, Sequía…
+    const entry = beginBattle(this.state()!);
+    await this.play(entry.events, run, entry.state);
     if (run !== this.run) return;
     this.busy.set(false);
   }
@@ -680,6 +785,26 @@ export class Battle implements OnInit, OnDestroy {
 
   hasUsableMoves(p: Combatant): boolean {
     return hasUsableMoves(p);
+  }
+
+  canUseMove(p: Combatant, index: number): boolean {
+    return allowedMoves(p).includes(index);
+  }
+
+  /** Tiempo actual para la cabecera del campo, p. ej. "☔ Lluvia · 3". */
+  weatherChip(): { icon: string; name: string; turns: number; kind: string } | null {
+    const s = this.state();
+    const kind = s ? weatherOf(s) : null;
+    if (!s || !kind) return null;
+    return { ...WEATHER_TEXT[kind], turns: s.weather!.turns, kind };
+  }
+
+  /** Por qué hay movimientos bloqueados (objeto Elección o Chaleco Asalto). */
+  lockNote(p: Combatant): string {
+    if (p.choiceLock !== null) return `Atado a ${p.moves[p.choiceLock]?.name} por ${p.itemName}`;
+    if (p.item === 'assault-vest' && p.moves.some((m) => m.damageClass === 'status'))
+      return `${p.itemName}: no puede usar movimientos de estado`;
+    return '';
   }
 
   /** Cambios de características activos, p. ej. "Ata +2". */

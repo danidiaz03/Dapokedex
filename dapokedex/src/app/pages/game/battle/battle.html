@@ -35,6 +35,14 @@
               }
               <img [src]="pokemon.sprite" [alt]="pokemon.name" />
               <b>{{ pokemon.name | nombre: pokemon.id }}</b>
+              @if (pokemon.item) {
+                <span class="hueco__objeto" [title]="pokemon.itemName">
+                  @if (pokemon.itemSprite) {
+                    <img [src]="pokemon.itemSprite" alt="" />
+                  }
+                  {{ pokemon.itemName }}
+                </span>
+              }
               <div class="tipos">
                 @for (type of pokemon.types; track $index) {
                   <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
@@ -61,6 +69,14 @@
               }
               <img [src]="pokemon.sprite" [alt]="pokemon.name" />
               <b>{{ pokemon.name | nombre: pokemon.id }}</b>
+              @if (pokemon.item) {
+                <span class="hueco__objeto" [title]="pokemon.itemName">
+                  @if (pokemon.itemSprite) {
+                    <img [src]="pokemon.itemSprite" alt="" />
+                  }
+                  {{ pokemon.itemName }}
+                </span>
+              }
               <div class="tipos">
                 @for (type of pokemon.types; track $index) {
                   <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
@@ -95,7 +111,14 @@
             }
           </div>
         </div>
-        <span class="turno-num">Turno {{ state()!.turn + 1 }}</span>
+        <div class="campo-centro">
+          <span class="turno-num">Turno {{ state()!.turn + 1 }}</span>
+          @if (weatherChip(); as w) {
+            <span class="tiempo tiempo--{{ w.kind }}" [title]="w.name">
+              {{ w.icon }} {{ w.name }} · {{ w.turns }}
+            </span>
+          }
+        </div>
         <div class="marcador marcador--rival">
           <div class="bolas">
             @for (pokemon of enemyTeam(); track pokemon.id) {
@@ -210,6 +233,9 @@
       <section class="caja mandos" aria-label="Movimientos">
         <div class="caja-cab">
           <h2>Movimientos</h2>
+          @if (lockNote(activePokemon()!); as note) {
+            <span class="bloqueo">🔒 {{ note }}</span>
+          }
           <button
             class="btn-caja cambiar"
             [disabled]="!isPlayerTurn() || !canSwitch()"
@@ -228,8 +254,8 @@
           @for (move of activePokemon()!.moves; track $index; let i = $index) {
             <button
               class="mov c-bg-{{ move.type }}"
-              [class.mov--agotado]="move.pp === 0"
-              [disabled]="!isPlayerTurn() || move.pp === 0"
+              [class.mov--agotado]="!canUseMove(activePokemon()!, i)"
+              [disabled]="!isPlayerTurn() || !canUseMove(activePokemon()!, i)"
               (click)="useMove(i)"
             >
               <span class="mov__nombre"
@@ -278,6 +304,19 @@
             }
             @if (p.confusion > 0) {
               <span class="estado estado--con">Confuso</span>
+            }
+          </div>
+          <div class="equipo-pk">
+            @if (p.abilityName) {
+              <span class="habilidad" title="Habilidad">{{ p.abilityName }}</span>
+            }
+            @if (p.item) {
+              <span class="objeto" [title]="p.itemName">
+                @if (p.itemSprite) {
+                  <img [src]="p.itemSprite" alt="" />
+                }
+                {{ p.itemName }}
+              </span>
             }
           </div>
           <div class="ps">

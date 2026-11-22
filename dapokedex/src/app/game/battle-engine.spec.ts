@@ -1,5 +1,7 @@
 import {
   BattleMove,
+  allowedMoves,
+  beginBattle,
   BattleState,
   Combatant,
   STRUGGLE,
@@ -63,7 +65,12 @@ function mon(partial: Partial<Combatant> & { base?: Partial<Record<string, numbe
 }
 
 function battle(player: Combatant[], enemy: Combatant[]): BattleState {
-  return { player: { team: player, active: 0 }, enemy: { team: enemy, active: 0 }, turn: 0 };
+  return {
+    player: { team: player, active: 0 },
+    enemy: { team: enemy, active: 0 },
+    turn: 0,
+    weather: null,
+  };
 }
 
 describe('textos', () => {
@@ -422,5 +429,260 @@ describe('conversión desde PokeAPI', () => {
       damage_class: { name: 'physical' },
     });
     expect(isSupportedMove(sismico, 'damage')).toBe(false);
+  });
+});
+
+describe('tiempo atmosférico', () => {
+  const danzaLluvia = move({
+    key: 'rain-dance',
+    name: 'Danza Lluvia',
+    damageClass: 'status',
+    power: 0,
+    accuracy: null,
+    type: 'water',
+    weather: 'rain',
+  });
+
+  it('Danza Lluvia trae lluvia 5 turnos y potencia el Agua', () => {
+    const user = mon({ id: 1, moves: [danzaLluvia], base: { speed: 200 } });
+    const { state, events } = resolveTurn(
+      battle([user], [mon({ id: 2, moves: [move({ power: 1 })] })]),
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    expect(state.weather).toEqual({ kind: 'rain', turns: 4 });
+    expect(events.some((e) => e.text === '¡Empezó a llover!')).toBe(true);
+
+    const surf = move({ type: 'water', power: 90, damageClass: 'special' });
+    const atk = mon({ types: ['water'] });
+    const seco = damage(atk, mon(), surf, 1, false, fixed(0.5));
+    expect(damage(atk, mon(), surf, 1, false, fixed(0.5), 'rain')).toBe(Math.floor(seco * 1.5));
+  });
+
+  it('la tormenta de arena daña a quien no es Roca, Tierra ni Acero', () => {
+    const s = battle(
+      [mon({ id: 1, types: ['fire'], moves: [move({ power: 1 })] })],
+      [mon({ id: 2, types: ['rock'], moves: [move({ power: 1 })] })],
+    );
+    s.weather = { kind: 'sand', turns: 5 };
+    const { state } = resolveTurn(
+      s,
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    const fuego = state.player.team[0];
+    const roca = state.enemy.team[0];
+    expect(fuego.maxHp - fuego.hp).toBeGreaterThanOrEqual(Math.floor(fuego.maxHp / 16));
+    expect(roca.maxHp - roca.hp).toBeLessThan(Math.floor(roca.maxHp / 16));
+  });
+
+  it('Llovizna pone lluvia al entrar y Nado Rápido dobla la velocidad', () => {
+    const kyogre = mon({ id: 1, ability: 'drizzle', abilityName: 'Llovizna' });
+    const { state } = beginBattle(battle([kyogre], [mon({ id: 2 })]));
+    expect(state.weather?.kind).toBe('rain');
+    const nadador = mon({ ability: 'swift-swim', base: { speed: 80 } });
+    expect(effectiveSpeed(nadador, 'rain')).toBe(effectiveSpeed(nadador) * 2);
+  });
+});
+
+describe('habilidades', () => {
+  it('Intimidación baja el Ataque del rival al entrar', () => {
+    const { state, events } = beginBattle(
+      battle(
+        [mon({ id: 1, ability: 'intimidate', abilityName: 'Intimidación' })],
+        [mon({ id: 2 })],
+      ),
+    );
+    expect(state.enemy.team[0].stages.attack).toBe(-1);
+    expect(events[0].text).toBe('¡Intimidación de Prueba!');
+  });
+
+  it('Levitación anula los ataques de Tierra', () => {
+    const terremoto = move({ type: 'ground', power: 100 });
+    const { state } = resolveTurn(
+      battle(
+        [mon({ id: 1, moves: [terremoto], base: { speed: 200 } })],
+        [
+          mon({
+            id: 2,
+            ability: 'levitate',
+            abilityName: 'Levitación',
+            moves: [move({ power: 1 })],
+          }),
+        ],
+      ),
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    expect(state.enemy.team[0].hp).toBe(state.enemy.team[0].maxHp);
+  });
+
+  it('Absorbe Agua cura en vez de recibir daño', () => {
+    const surf = move({ type: 'water', power: 90 });
+    const s = battle(
+      [mon({ id: 1, moves: [surf], base: { speed: 200 } })],
+      [
+        mon({
+          id: 2,
+          ability: 'water-absorb',
+          abilityName: 'Absorbe Agua',
+          moves: [move({ power: 1 })],
+        }),
+      ],
+    );
+    s.enemy.team[0].hp = 50;
+    const { state } = resolveTurn(
+      s,
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    expect(state.enemy.team[0].hp).toBeGreaterThan(50);
+  });
+
+  it('Robustez aguanta con 1 PS un golpe que debilitaría', () => {
+    const golpe = move({ power: 250 });
+    const { state } = resolveTurn(
+      battle(
+        [mon({ id: 1, moves: [golpe], base: { speed: 200 } })],
+        [
+          mon({
+            id: 2,
+            level: 5,
+            ability: 'sturdy',
+            abilityName: 'Robustez',
+            moves: [move({ power: 1 })],
+          }),
+        ],
+      ),
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    expect(state.enemy.team[0].hp).toBe(1);
+  });
+
+  it('Potencia dobla el daño físico y Cuerpo Puro evita bajadas', () => {
+    const atk = mon();
+    const fuerte = mon({ ability: 'huge-power' });
+    const golpe = move({ power: 80 });
+    expect(damage(fuerte, mon(), golpe, 1, false, fixed(0.5))).toBeGreaterThan(
+      damage(atk, mon(), golpe, 1, false, fixed(0.5)) * 1.8,
+    );
+    const { state } = beginBattle(
+      battle(
+        [mon({ id: 1, ability: 'intimidate', abilityName: 'Intimidación' })],
+        [mon({ id: 2, ability: 'clear-body', abilityName: 'Cuerpo Puro' })],
+      ),
+    );
+    expect(state.enemy.team[0].stages.attack).toBe(0);
+  });
+});
+
+describe('objetos', () => {
+  it('Restos recupera 1/16 de los PS al final del turno', () => {
+    const s = battle(
+      [mon({ id: 1, item: 'leftovers', itemName: 'Restos', moves: [move({ power: 1 })] })],
+      [mon({ id: 2, moves: [move({ power: 1 })] })],
+    );
+    s.player.team[0].hp = 50;
+    const { state, events } = resolveTurn(
+      s,
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    expect(events.some((e) => e.text.includes('Restos'))).toBe(true);
+    expect(state.player.team[0].hp).toBeGreaterThanOrEqual(
+      50 - 2 + Math.floor(s.player.team[0].maxHp / 16) - 1,
+    );
+  });
+
+  it('Banda Aguante salva de un golpe con los PS al máximo y se gasta', () => {
+    const { state } = resolveTurn(
+      battle(
+        [mon({ id: 1, moves: [move({ power: 250 })], base: { speed: 200 } })],
+        [
+          mon({
+            id: 2,
+            level: 5,
+            item: 'focus-sash',
+            itemName: 'Banda Aguante',
+            moves: [move({ power: 1 })],
+          }),
+        ],
+      ),
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    expect(state.enemy.team[0].hp).toBe(1);
+    expect(state.enemy.team[0].item).toBeNull();
+  });
+
+  it('Baya Zidra cura al bajar de la mitad', () => {
+    const s = battle(
+      [mon({ id: 1, moves: [move({ power: 60 })], base: { speed: 200 } })],
+      [mon({ id: 2, item: 'sitrus-berry', itemName: 'Baya Zidra', moves: [move({ power: 1 })] })],
+    );
+    s.enemy.team[0].hp = Math.floor(s.enemy.team[0].maxHp * 0.55);
+    const { state, events } = resolveTurn(
+      s,
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    expect(events.some((e) => e.text.includes('Baya Zidra'))).toBe(true);
+    expect(state.enemy.team[0].item).toBeNull();
+  });
+
+  it('Cinta Elección ata al primer movimiento usado', () => {
+    const user = mon({
+      id: 1,
+      item: 'choice-band',
+      itemName: 'Cinta Elección',
+      moves: [move({ name: 'Uno' }), move({ name: 'Dos' })],
+      base: { hp: 255 },
+    });
+    let s = battle([user], [mon({ id: 2, moves: [move({ power: 1 })], base: { hp: 255 } })]);
+    s = resolveTurn(s, { kind: 'move', index: 0 }, { kind: 'move', index: 0 }, fixed(0.5)).state;
+    expect(allowedMoves(s.player.team[0])).toEqual([0]);
+    const { events } = resolveTurn(
+      s,
+      { kind: 'move', index: 1 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    expect(events.some((e) => e.text.includes('usó Uno'))).toBe(true);
+    expect(events.some((e) => e.text.includes('usó Dos'))).toBe(false);
+  });
+
+  it('Vidasfera pega más fuerte pero quita un 10 % de PS', () => {
+    const golpe = move({ power: 80 });
+    expect(damage(mon({ item: 'life-orb' }), mon(), golpe, 1, false, fixed(0.5))).toBeGreaterThan(
+      damage(mon(), mon(), golpe, 1, false, fixed(0.5)),
+    );
+    const { state } = resolveTurn(
+      battle(
+        [
+          mon({
+            id: 1,
+            item: 'life-orb',
+            itemName: 'Vidasfera',
+            moves: [golpe],
+            base: { speed: 200 },
+          }),
+        ],
+        [mon({ id: 2, moves: [move({ power: 1 })], base: { hp: 255 } })],
+      ),
+      { kind: 'move', index: 0 },
+      { kind: 'move', index: 0 },
+      fixed(0.5),
+    );
+    const p = state.player.team[0];
+    expect(p.maxHp - p.hp).toBeGreaterThanOrEqual(Math.floor(p.maxHp / 10));
   });
 });

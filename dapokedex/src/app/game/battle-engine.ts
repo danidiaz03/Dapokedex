@@ -9,6 +9,24 @@
  * `rng` para poder probarlo.
  */
 
+import {
+  ABSORB_ABILITIES,
+  CLEAR_BODY,
+  CONTACT_STATUS_ABILITIES,
+  INTIMIDATE_BLOCK,
+  PINCH_ABILITIES,
+  SPEED_WEATHER,
+  STATUS_BERRIES,
+  STATUS_BLOCKING_ABILITIES,
+  TYPE_BOOST_ITEMS,
+  WEATHER_ABILITIES,
+  WEATHER_MOVES,
+  WEATHER_ROCKS,
+  WEATHER_TEXT,
+  Weather,
+} from './battle-data';
+
+export type { Weather } from './battle-data';
 export type Rng = () => number;
 export type SideKey = 'player' | 'enemy';
 export type StatKey =
@@ -54,6 +72,8 @@ export interface BattleMove {
   selfKo: boolean;
   /** El usuario pierde el turno siguiente para recuperarse (Hiperrayo…). */
   recharge: boolean;
+  /** Tiempo que provoca (Danza Lluvia, Día Soleado…). */
+  weather: Weather | null;
 }
 
 export interface BaseStats {
@@ -86,6 +106,17 @@ export interface Combatant {
   confusion: number;
   /** Pierde el próximo turno por haber usado un movimiento de recarga. */
   recharging: boolean;
+  /** Habilidad (clave de PokeAPI) y su nombre en español. */
+  ability: string;
+  abilityName: string;
+  /** Objeto equipado; null si no lleva o ya lo ha gastado. */
+  item: string | null;
+  itemName: string;
+  itemSprite: string;
+  /** Movimiento al que le ata un objeto Elección. */
+  choiceLock: number | null;
+  /** Absorbe Fuego activado: sus ataques de Fuego pegan más. */
+  flashFire: boolean;
   stages: Record<StatKey, number>;
 }
 
@@ -98,6 +129,7 @@ export interface BattleState {
   player: BattleSide;
   enemy: BattleSide;
   turn: number;
+  weather?: { kind: Weather; turns: number } | null;
 }
 
 export type Action =
@@ -217,6 +249,11 @@ export function createCombatant(input: {
   shiny: boolean;
   base: BaseStats;
   moves: BattleMove[];
+  ability?: string;
+  abilityName?: string;
+  item?: string | null;
+  itemName?: string;
+  itemSprite?: string;
 }): Combatant {
   const { base, level } = input;
   const maxHp = calcHp(base.hp, level);
@@ -243,6 +280,13 @@ export function createCombatant(input: {
     toxicCounter: 0,
     confusion: 0,
     recharging: false,
+    ability: input.ability ?? '',
+    abilityName: input.abilityName ?? '',
+    item: input.item ?? null,
+    itemName: input.itemName ?? '',
+    itemSprite: input.itemSprite ?? '',
+    choiceLock: null,
+    flashFire: false,
     stages: { ...EMPTY_STAGES },
   };
 }
@@ -257,8 +301,10 @@ export function accuracyMultiplier(stage: number): number {
   return stage >= 0 ? (3 + stage) / 3 : 3 / (3 - stage);
 }
 
-export function effectiveSpeed(p: Combatant): number {
-  const speed = p.stats.speed * stageMultiplier(p.stages.speed);
+export function effectiveSpeed(p: Combatant, weather: Weather | null = null): number {
+  let speed = p.stats.speed * stageMultiplier(p.stages.speed);
+  if (weather && SPEED_WEATHER[p.ability]?.includes(weather)) speed *= 2;
+  if (p.item === 'choice-scarf') speed *= 1.5;
   return Math.floor(p.status === 'par' ? speed / 2 : speed);
 }
 
@@ -319,6 +365,7 @@ export const STRUGGLE: BattleMove = {
   ohko: false,
   selfKo: false,
   recharge: false,
+  weather: null,
 };
 
 /* ------------------------------------------------------------------ */
@@ -333,8 +380,36 @@ export function hasAlive(s: BattleState, side: SideKey): boolean {
   return s[side].team.some((p) => !p.fainted);
 }
 
+/**
+ * Movimientos que se pueden elegir: con PP, sin los de estado si lleva Chaleco
+ * Asalto y solo el bloqueado si lleva un objeto Elección.
+ */
+export function allowedMoves(p: Combatant): number[] {
+  if (p.choiceLock !== null && p.moves[p.choiceLock]) {
+    return p.moves[p.choiceLock].pp > 0 ? [p.choiceLock] : [];
+  }
+  return p.moves
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => m.pp > 0 && !(p.item === 'assault-vest' && m.damageClass === 'status'))
+    .map(({ i }) => i);
+}
+
 export function hasUsableMoves(p: Combatant): boolean {
-  return p.moves.some((m) => m.pp > 0);
+  return allowedMoves(p).length > 0;
+}
+
+export function weatherOf(s: BattleState): Weather | null {
+  return s.weather?.kind ?? null;
+}
+
+/** Si el movimiento tiene un efecto secundario (lo que potencia Potencia Bruta). */
+function hasSecondary(move: BattleMove): boolean {
+  return (
+    move.damageClass !== 'status' &&
+    (move.ailmentChance > 0 ||
+      move.flinchChance > 0 ||
+      (move.statChance > 0 && move.effectTarget === 'opponent'))
+  );
 }
 
 /** Nombre con "el rival" delante para distinguir a quién le pasa cada cosa. */
@@ -392,23 +467,39 @@ export function resolveTurn(
     flinched: new Set(),
   };
   ctx.state.turn += 1;
+  const weather = weatherOf(ctx.state);
 
   const actions: [SideKey, Action][] = [
-    ['player', playerAction],
-    ['enemy', enemyAction],
+    ['player', validAction(ctx.state, 'player', playerAction)],
+    ['enemy', validAction(ctx.state, 'enemy', enemyAction)],
   ];
+  // Garra Rápida: a veces deja actuar primero dentro de la misma prioridad.
+  const quick = new Set<SideKey>();
+  for (const [side] of actions) {
+    if (activeOf(ctx.state, side).item === 'quick-claw' && rng() < 0.2) quick.add(side);
+  }
   actions.sort(([sa, a], [sb, b]) => {
     const pa = actionPriority(ctx.state, sa, a);
     const pb = actionPriority(ctx.state, sb, b);
     if (pa !== pb) return pb - pa;
-    const va = effectiveSpeed(activeOf(ctx.state, sa));
-    const vb = effectiveSpeed(activeOf(ctx.state, sb));
+    const qa = quick.has(sa) ? 1 : 0;
+    const qb = quick.has(sb) ? 1 : 0;
+    if (qa !== qb) return qb - qa;
+    const va = effectiveSpeed(activeOf(ctx.state, sa), weather);
+    const vb = effectiveSpeed(activeOf(ctx.state, sb), weather);
     if (va !== vb) return vb - va;
     return rng() < 0.5 ? -1 : 1;
   });
 
   for (const [side, action] of actions) {
     if (activeOf(ctx.state, side).fainted) continue;
+    if (quick.has(side) && action.kind !== 'switch') {
+      emit(
+        ctx,
+        `¡${activeOf(ctx.state, side).itemName} de ${who(ctx.state, side)} le permite actuar primero!`,
+        { side },
+      );
+    }
     if (action.kind === 'switch') {
       doSwitch(ctx, side, action.index);
     } else {
@@ -421,6 +512,33 @@ export function resolveTurn(
   }
 
   endOfTurn(ctx);
+  return { state: ctx.state, events: ctx.events };
+}
+
+/** Corrige una acción imposible (bloqueo de Elección, sin PP…). */
+function validAction(s: BattleState, side: SideKey, action: Action): Action {
+  if (action.kind !== 'move') return action;
+  const allowed = allowedMoves(activeOf(s, side));
+  if (allowed.includes(action.index)) return action;
+  return allowed.length ? { kind: 'move', index: allowed[0] } : { kind: 'struggle' };
+}
+
+/** Efectos de entrada de los dos primeros Pokémon (Intimidación, Llovizna…). */
+export function beginBattle(state: BattleState): { state: BattleState; events: BattleEvent[] } {
+  const ctx: TurnCtx = {
+    state: clone(state),
+    events: [],
+    rng: Math.random,
+    acted: new Set(),
+    flinched: new Set(),
+  };
+  const weather = weatherOf(ctx.state);
+  const order = (['player', 'enemy'] as SideKey[]).sort(
+    (a, b) =>
+      effectiveSpeed(activeOf(ctx.state, b), weather) -
+      effectiveSpeed(activeOf(ctx.state, a), weather),
+  );
+  for (const side of order) onEntry(ctx, side);
   return { state: ctx.state, events: ctx.events };
 }
 
@@ -450,7 +568,14 @@ function doSwitch(ctx: TurnCtx, side: SideKey, index: number) {
     leaving.stages = { ...EMPTY_STAGES };
     leaving.confusion = 0;
     leaving.recharging = false;
+    leaving.choiceLock = null;
+    leaving.flashFire = false;
     if (leaving.status === 'tox') leaving.toxicCounter = 1;
+    // Cura Natural y Regeneración actúan al retirarse.
+    if (leaving.ability === 'natural-cure') leaving.status = null;
+    if (leaving.ability === 'regenerator') {
+      leaving.hp = Math.min(leaving.maxHp, leaving.hp + Math.floor(leaving.maxHp / 3));
+    }
     emit(
       ctx,
       side === 'player' ? `¡Vuelve, ${leaving.name}!` : `El rival retira a ${leaving.name}.`,
@@ -462,6 +587,35 @@ function doSwitch(ctx: TurnCtx, side: SideKey, index: number) {
     side,
     anim: 'switch',
   });
+  onEntry(ctx, side);
+}
+
+/** Habilidades que actúan al entrar en combate. */
+function onEntry(ctx: TurnCtx, side: SideKey) {
+  const p = activeOf(ctx.state, side);
+  const foeSide = other(side);
+  const foe = activeOf(ctx.state, foeSide);
+  if (p.ability === 'intimidate' && !foe.fainted) {
+    emit(ctx, `¡${p.abilityName} de ${who(ctx.state, side)}!`, { side, anim: 'status' });
+    if (INTIMIDATE_BLOCK.includes(foe.ability)) {
+      emit(ctx, `¡${foe.abilityName} de ${who(ctx.state, foeSide)} lo impide!`, { side: foeSide });
+    } else {
+      changeStage(ctx, foeSide, 'attack', -1, side);
+    }
+  }
+  const weather = WEATHER_ABILITIES[p.ability];
+  if (weather && weatherOf(ctx.state) !== weather) {
+    emit(ctx, `¡${p.abilityName} de ${who(ctx.state, side)}!`, { side, anim: 'status' });
+    setWeather(ctx, weather, p);
+  }
+}
+
+function setWeather(ctx: TurnCtx, kind: Weather, user: Combatant): boolean {
+  if (weatherOf(ctx.state) === kind) return false;
+  const turns = user.item && WEATHER_ROCKS[user.item] === kind ? 8 : 5;
+  ctx.state.weather = { kind, turns };
+  emit(ctx, WEATHER_TEXT[kind].start, { anim: 'status' });
+  return true;
 }
 
 /** Comprueba si el Pokémon puede moverse este turno (sueño, congelación, parálisis, confusión). */
@@ -527,6 +681,8 @@ function useMove(ctx: TurnCtx, side: SideKey, move: BattleMove, index: number) {
 
   // Gasta PP aunque luego falle.
   if (index >= 0) user.moves[index].pp = Math.max(0, user.moves[index].pp - 1);
+  // Los objetos Elección atan al primer movimiento usado hasta retirarse.
+  if (index >= 0 && user.item?.startsWith('choice-')) user.choiceLock = index;
 
   const name = who(ctx.state, side);
   if (move === STRUGGLE) emit(ctx, `¡A ${name} no le quedan movimientos!`, { side });
@@ -548,19 +704,44 @@ function resolveMove(ctx: TurnCtx, side: SideKey, move: BattleMove) {
   const user = activeOf(ctx.state, side);
   const foeSide = other(side);
   const foe = activeOf(ctx.state, foeSide);
-  const targetsFoe = move.damageClass !== 'status' || move.effectTarget === 'opponent';
+  const weather = weatherOf(ctx.state);
+  const targetsFoe =
+    !move.weather && (move.damageClass !== 'status' || move.effectTarget === 'opponent');
 
   // Precisión (los movimientos sobre uno mismo no fallan).
-  if (targetsFoe && move.accuracy !== null) {
+  let accuracy = move.accuracy;
+  if (['thunder', 'hurricane'].includes(move.key)) {
+    if (weather === 'rain') accuracy = null;
+    else if (weather === 'sun') accuracy = 50;
+  }
+  if (move.key === 'blizzard' && (weather === 'hail' || weather === 'snow')) accuracy = null;
+  if (user.ability === 'no-guard' || foe.ability === 'no-guard') accuracy = null;
+  if (targetsFoe && accuracy !== null) {
     const stage = Math.max(-6, Math.min(6, user.stages.accuracy - foe.stages.evasion));
-    const chance = move.accuracy * accuracyMultiplier(stage);
+    let chance = accuracy * accuracyMultiplier(stage);
+    if (user.ability === 'compound-eyes') chance *= 1.3;
+    if (user.ability === 'hustle' && move.damageClass === 'physical') chance *= 0.8;
     if (ctx.rng() * 100 >= chance) {
       emit(ctx, `¡Pero falló!`, { side, anim: 'miss' });
       return;
     }
   }
 
+  if (move.weather) {
+    if (!setWeather(ctx, move.weather, user)) emit(ctx, `¡Pero falló!`, { side });
+    return;
+  }
+
+  // Habilidades que anulan el ataque (Levitación, Absorbe Agua…).
+  if (targetsFoe && move !== STRUGGLE && absorbedByAbility(ctx, foeSide, move)) return;
+
   if (move.ohko) {
+    if (foe.ability === 'sturdy') {
+      emit(ctx, `¡${who(ctx.state, foeSide)} aguanta gracias a ${foe.abilityName}!`, {
+        side: foeSide,
+      });
+      return;
+    }
     if (user.level < foe.level || typeEffectiveness(move.type, foe.types) === 0) {
       emit(ctx, `¡No afecta a ${who(ctx.state, foeSide)}!`, { side: foeSide });
       return;
@@ -583,14 +764,33 @@ function resolveMove(ctx: TurnCtx, side: SideKey, move: BattleMove) {
     emit(ctx, `No afecta a ${who(ctx.state, foeSide)}…`, { side: foeSide, effectiveness: 0 });
     return;
   }
-  const hits = rollHits(move, ctx.rng);
+  if (foe.ability === 'wonder-guard' && effectiveness <= 1 && move !== STRUGGLE) {
+    emit(ctx, `¡${foe.abilityName} protege a ${who(ctx.state, foeSide)}!`, { side: foeSide });
+    return;
+  }
+  const hits =
+    user.ability === 'skill-link' && move.maxHits > 1 ? move.maxHits : rollHits(move, ctx.rng);
+  const critBonus = (user.ability === 'super-luck' ? 1 : 0) + (user.item === 'scope-lens' ? 1 : 0);
+  const critImmune = foe.ability === 'battle-armor' || foe.ability === 'shell-armor';
   let total = 0;
   let landed = 0;
   for (let i = 0; i < hits; i++) {
     const target = activeOf(ctx.state, foeSide);
     if (target.fainted) break;
-    const crit = rollCrit(move.critRate, ctx.rng);
-    const dmg = damage(user, target, move, effectiveness, crit, ctx.rng);
+    const crit = !critImmune && rollCrit(move.critRate + critBonus, ctx.rng);
+    let dmg = damage(user, target, move, effectiveness, crit, ctx.rng, weather);
+    // Banda Aguante y Robustez: con los PS al máximo se aguanta con 1 PS.
+    let endured = '';
+    if (target.hp === target.maxHp && dmg >= target.hp) {
+      if (target.item === 'focus-sash') {
+        endured = `¡${who(ctx.state, foeSide)} resistió gracias a ${target.itemName}!`;
+        target.item = null;
+        dmg = target.hp - 1;
+      } else if (target.ability === 'sturdy') {
+        endured = `¡${who(ctx.state, foeSide)} aguantó el golpe gracias a ${target.abilityName}!`;
+        dmg = target.hp - 1;
+      }
+    }
     total += applyDamage(ctx, foeSide, dmg);
     landed++;
     emit(ctx, crit ? `¡Un golpe crítico!` : '', {
@@ -598,6 +798,7 @@ function resolveMove(ctx: TurnCtx, side: SideKey, move: BattleMove) {
       anim: crit ? 'crit' : 'hit',
       effectiveness,
     });
+    if (endured) emit(ctx, endured, { side: foeSide });
   }
   // Los sucesos sin texto solo animan el golpe y bajan la barra de PS.
   if (effectiveness > 1) emit(ctx, `¡Es muy eficaz!`, { side: foeSide });
@@ -605,25 +806,144 @@ function resolveMove(ctx: TurnCtx, side: SideKey, move: BattleMove) {
   if (hits > 1) emit(ctx, `¡Golpeó ${landed} veces!`, { side: foeSide });
 
   // Absorción o retroceso.
+  const sheerForce = user.ability === 'sheer-force' && hasSecondary(move);
   if (move === STRUGGLE) {
     recoil(ctx, side, Math.max(1, Math.floor(user.maxHp / 4)));
   } else if (move.drain > 0 && total > 0) {
     const amount = Math.max(1, Math.floor((total * move.drain) / 100));
     if (heal(ctx, side, amount, false))
       emit(ctx, `¡${who(ctx.state, foeSide)} ha perdido energía!`, { side, anim: 'heal' });
-  } else if (move.drain < 0 && total > 0) {
+  } else if (move.drain < 0 && total > 0 && user.ability !== 'rock-head') {
     recoil(ctx, side, Math.max(1, Math.floor((total * -move.drain) / 100)));
+  }
+
+  // Contacto (los ataques físicos): Piel Tosca, Casco Dentado, Elec. Estática…
+  if (move.damageClass === 'physical' && landed > 0) contactEffects(ctx, side, foeSide);
+
+  const self = activeOf(ctx.state, side);
+  if (!self.fainted && total > 0) {
+    if (self.item === 'life-orb' && !sheerForce) {
+      applyDamage(ctx, side, Math.max(1, Math.floor(self.maxHp / 10)));
+      emit(ctx, `${who(ctx.state, side)} pierde algo de vida por ${self.itemName}.`, {
+        side,
+        anim: 'hit',
+      });
+    } else if (self.item === 'shell-bell' && self.hp < self.maxHp) {
+      heal(ctx, side, Math.max(1, Math.floor(total / 8)), false);
+      emit(ctx, `${who(ctx.state, side)} recupera PS con ${self.itemName}.`, { side });
+    }
   }
 
   const foeFainted = faintCheck(ctx, foeSide, side);
   if (activeOf(ctx.state, side).fainted) faintCheck(ctx, side);
-  if (foeFainted) return;
+  checkBerry(ctx, side);
+  if (foeFainted) {
+    if (user.ability === 'moxie' && !activeOf(ctx.state, side).fainted) {
+      emit(ctx, `¡${user.abilityName} de ${who(ctx.state, side)}!`, { side });
+      changeStage(ctx, side, 'attack', 1, side);
+    }
+    return;
+  }
+  checkBerry(ctx, foeSide);
+  if (sheerForce) return;
 
   // Retroceso del rival (solo si aún no ha actuado este turno).
-  if (move.flinchChance > 0 && !ctx.acted.has(foeSide) && ctx.rng() * 100 < move.flinchChance) {
+  const chanceMul = user.ability === 'serene-grace' ? 2 : 1;
+  if (
+    move.flinchChance > 0 &&
+    !ctx.acted.has(foeSide) &&
+    activeOf(ctx.state, foeSide).ability !== 'inner-focus' &&
+    ctx.rng() * 100 < move.flinchChance * chanceMul
+  ) {
     ctx.flinched.add(foeSide);
   }
-  applySecondary(ctx, side, move, false);
+  applySecondary(ctx, side, move, false, chanceMul);
+}
+
+/** Habilidades del defensor que anulan el ataque y lo aprovechan. */
+function absorbedByAbility(ctx: TurnCtx, foeSide: SideKey, move: BattleMove): boolean {
+  const foe = activeOf(ctx.state, foeSide);
+  const rule = ABSORB_ABILITIES[foe.ability];
+  if (!rule || rule.type !== move.type) return false;
+  const name = who(ctx.state, foeSide);
+  if (rule.effect === 'immune') {
+    emit(ctx, `¡${foe.abilityName} hace que no afecte a ${name}!`, { side: foeSide });
+  } else if (rule.effect === 'heal') {
+    if (foe.hp < foe.maxHp) {
+      foe.hp = Math.min(foe.maxHp, foe.hp + Math.floor(foe.maxHp / 4));
+      emit(ctx, `¡${name} recuperó PS gracias a ${foe.abilityName}!`, {
+        side: foeSide,
+        anim: 'heal',
+      });
+    } else {
+      emit(ctx, `¡${foe.abilityName} hace que no afecte a ${name}!`, { side: foeSide });
+    }
+  } else if (rule.effect === 'flash') {
+    foe.flashFire = true;
+    emit(ctx, `¡${foe.abilityName} de ${name} potenció sus ataques de tipo fuego!`, {
+      side: foeSide,
+      anim: 'status',
+    });
+  } else {
+    emit(ctx, `¡${foe.abilityName} de ${name}!`, { side: foeSide });
+    changeStage(ctx, foeSide, rule.stat!, 1, foeSide);
+  }
+  return true;
+}
+
+/** Efectos al golpear con contacto: habilidades del defensor y Casco Dentado. */
+function contactEffects(ctx: TurnCtx, side: SideKey, foeSide: SideKey) {
+  const user = activeOf(ctx.state, side);
+  const foe = activeOf(ctx.state, foeSide);
+  if (user.fainted) return;
+  if (foe.ability === 'rough-skin' || foe.ability === 'iron-barbs') {
+    applyDamage(ctx, side, Math.max(1, Math.floor(user.maxHp / 8)));
+    emit(
+      ctx,
+      `¡${foe.abilityName} de ${who(ctx.state, foeSide)} hiere a ${who(ctx.state, side)}!`,
+      {
+        side,
+        anim: 'hit',
+      },
+    );
+  }
+  if (foe.item === 'rocky-helmet' && !user.fainted) {
+    applyDamage(ctx, side, Math.max(1, Math.floor(user.maxHp / 6)));
+    emit(ctx, `¡${foe.itemName} de ${who(ctx.state, foeSide)} hiere a ${who(ctx.state, side)}!`, {
+      side,
+      anim: 'hit',
+    });
+  }
+  const status = CONTACT_STATUS_ABILITIES[foe.ability];
+  if (status && user.hp > 0 && ctx.rng() < 0.3) inflict(ctx, side, status, '', false);
+}
+
+/** Bayas que se comen solas al bajar de la mitad de PS. */
+function checkBerry(ctx: TurnCtx, side: SideKey) {
+  const p = activeOf(ctx.state, side);
+  if (p.fainted || p.hp > p.maxHp / 2) return;
+  const amount =
+    p.item === 'sitrus-berry' ? Math.floor(p.maxHp / 4) : p.item === 'oran-berry' ? 10 : 0;
+  if (!amount) return;
+  const name = p.itemName;
+  p.item = null;
+  p.hp = Math.min(p.maxHp, p.hp + amount);
+  emit(ctx, `¡${who(ctx.state, side)} se comió su ${name} y recuperó PS!`, { side, anim: 'heal' });
+}
+
+/** Bayas que curan problemas de estado. */
+function checkStatusBerry(ctx: TurnCtx, side: SideKey) {
+  const p = activeOf(ctx.state, side);
+  const cures = p.item ? STATUS_BERRIES[p.item] : undefined;
+  if (!cures) return;
+  const cureStatus = p.status && cures.includes(p.status);
+  const cureConfusion = p.confusion > 0 && cures.includes('confusion');
+  if (!cureStatus && !cureConfusion) return;
+  if (cureStatus) p.status = null;
+  if (cureConfusion) p.confusion = 0;
+  const name = p.itemName;
+  p.item = null;
+  emit(ctx, `¡${who(ctx.state, side)} se comió su ${name} y se curó!`, { side, anim: 'heal' });
 }
 
 function rollHits(move: BattleMove, rng: Rng): number {
@@ -648,6 +968,7 @@ function baseDamage(
   cls: DamageClass,
   rng: Rng,
   crit: boolean,
+  mods: { aMul: number; dMul: number; critMul: number } = { aMul: 1, dMul: 1, critMul: 1.5 },
 ): number {
   const physical = cls === 'physical';
   let aStage = physical ? attacker.stages.attack : attacker.stages.specialAttack;
@@ -658,15 +979,19 @@ function baseDamage(
     dStage = Math.min(0, dStage);
   }
   const a =
-    (physical ? attacker.stats.attack : attacker.stats.specialAttack) * stageMultiplier(aStage);
+    (physical ? attacker.stats.attack : attacker.stats.specialAttack) *
+    stageMultiplier(aStage) *
+    mods.aMul;
   const d =
-    (physical ? defender.stats.defense : defender.stats.specialDefense) * stageMultiplier(dStage);
+    (physical ? defender.stats.defense : defender.stats.specialDefense) *
+    stageMultiplier(dStage) *
+    mods.dMul;
   const base =
     Math.floor(
       Math.floor((Math.floor((2 * attacker.level) / 5 + 2) * power * a) / Math.max(1, d)) / 50,
     ) + 2;
   const random = (85 + Math.floor(rng() * 16)) / 100;
-  return Math.floor(base * random * (crit ? 1.5 : 1));
+  return Math.floor(base * random * (crit ? mods.critMul : 1));
 }
 
 /** Daño de un golpe según la fórmula oficial. */
@@ -677,11 +1002,67 @@ export function damage(
   effectiveness: number,
   crit: boolean,
   rng: Rng,
+  weather: Weather | null = null,
 ): number {
-  let dmg = baseDamage(attacker, defender, move.power, move.damageClass, rng, crit);
-  if (attacker.types.includes(move.type)) dmg = Math.floor(dmg * 1.5);
+  const physical = move.damageClass === 'physical';
+  const item = attacker.item ?? '';
+
+  // Potencia: habilidades y objetos que refuerzan el ataque.
+  let power = move.power;
+  if (attacker.ability === 'technician' && power <= 60) power *= 1.5;
+  if (PINCH_ABILITIES[attacker.ability] === move.type && attacker.hp <= attacker.maxHp / 3)
+    power *= 1.5;
+  if (attacker.flashFire && move.type === 'fire') power *= 1.5;
+  if (attacker.ability === 'sheer-force' && hasSecondary(move)) power *= 1.3;
+  if (TYPE_BOOST_ITEMS[item] === move.type) power *= 1.2;
+  if ((item === 'muscle-band' && physical) || (item === 'wise-glasses' && !physical)) power *= 1.1;
+  if (defender.ability === 'thick-fat' && (move.type === 'fire' || move.type === 'ice'))
+    power *= 0.5;
+
+  // Características: Potencia, Agallas, Cinta y Gafas Elección, Chaleco Asalto…
+  let aMul = 1;
+  let dMul = 1;
+  if (physical) {
+    if (attacker.ability === 'huge-power' || attacker.ability === 'pure-power') aMul *= 2;
+    if (attacker.ability === 'hustle') aMul *= 1.5;
+    if (attacker.ability === 'guts' && attacker.status) aMul *= 1.5;
+    if (item === 'choice-band') aMul *= 1.5;
+    if (defender.ability === 'marvel-scale' && defender.status) dMul *= 1.5;
+    if (weather === 'snow' && defender.types.includes('ice')) dMul *= 1.5;
+  } else {
+    if (item === 'choice-specs') aMul *= 1.5;
+    if (defender.item === 'assault-vest') dMul *= 1.5;
+    if (weather === 'sand' && defender.types.includes('rock')) dMul *= 1.5;
+  }
+  const critMul = attacker.ability === 'sniper' ? 2.25 : 1.5;
+
+  let dmg = baseDamage(
+    attacker,
+    defender,
+    Math.max(1, Math.floor(power)),
+    move.damageClass,
+    rng,
+    crit,
+    { aMul, dMul, critMul },
+  );
+  // Tiempo: la lluvia potencia el Agua y frena el Fuego; el sol, al revés.
+  if (weather === 'rain' || weather === 'sun') {
+    const boosted = weather === 'rain' ? 'water' : 'fire';
+    const weakened = weather === 'rain' ? 'fire' : 'water';
+    if (move.type === boosted) dmg = Math.floor(dmg * 1.5);
+    else if (move.type === weakened) dmg = Math.floor(dmg * 0.5);
+  }
+  if (attacker.types.includes(move.type))
+    dmg = Math.floor(dmg * (attacker.ability === 'adaptability' ? 2 : 1.5));
   dmg = Math.floor(dmg * effectiveness);
-  if (attacker.status === 'brn' && move.damageClass === 'physical') dmg = Math.floor(dmg / 2);
+  if (attacker.status === 'brn' && physical && attacker.ability !== 'guts')
+    dmg = Math.floor(dmg / 2);
+  if (effectiveness > 1 && (defender.ability === 'filter' || defender.ability === 'solid-rock'))
+    dmg = Math.floor(dmg * 0.75);
+  if (effectiveness > 1 && item === 'expert-belt') dmg = Math.floor(dmg * 1.2);
+  if (defender.ability === 'multiscale' && defender.hp === defender.maxHp)
+    dmg = Math.floor(dmg / 2);
+  if (item === 'life-orb') dmg = Math.floor(dmg * 1.3);
   return Math.max(1, dmg);
 }
 
@@ -725,24 +1106,30 @@ function faintCheck(ctx: TurnCtx, side: SideKey, by?: SideKey): boolean {
 }
 
 /** Estado y cambios de características que provoca un movimiento. */
-function applySecondary(ctx: TurnCtx, side: SideKey, move: BattleMove, isStatusMove: boolean) {
+function applySecondary(
+  ctx: TurnCtx,
+  side: SideKey,
+  move: BattleMove,
+  isStatusMove: boolean,
+  chanceMul = 1,
+) {
   const targetSide = move.effectTarget === 'user' ? side : other(side);
   const target = activeOf(ctx.state, targetSide);
   if (target.fainted) return;
   let didSomething = false;
 
   if (move.ailment) {
-    const chance = isStatusMove ? 100 : move.ailmentChance;
+    const chance = isStatusMove ? 100 : move.ailmentChance * chanceMul;
     if (chance > 0 && ctx.rng() * 100 < chance) {
       didSomething = inflict(ctx, targetSide, move.ailment, move.key, isStatusMove) || didSomething;
     }
   }
 
   if (move.statChanges.length) {
-    const chance = isStatusMove || move.statChance === 0 ? 100 : move.statChance;
+    const chance = isStatusMove || move.statChance === 0 ? 100 : move.statChance * chanceMul;
     if (ctx.rng() * 100 < chance) {
       for (const { stat, change } of move.statChanges) {
-        didSomething = changeStage(ctx, targetSide, stat, change) || didSomething;
+        didSomething = changeStage(ctx, targetSide, stat, change, side) || didSomething;
       }
     }
   }
@@ -761,6 +1148,12 @@ function inflict(
 ): boolean {
   const p = activeOf(ctx.state, side);
   const name = who(ctx.state, side);
+  const blocked = STATUS_BLOCKING_ABILITIES[p.ability];
+  const kind = ailment === 'psn' && moveKey === 'toxic' ? 'tox' : ailment;
+  if (blocked?.includes(kind)) {
+    if (announceFail) emit(ctx, `¡${p.abilityName} protege a ${name}!`, { side });
+    return false;
+  }
   if (ailment === 'confusion') {
     if (p.confusion > 0) {
       if (announceFail) emit(ctx, `${name} ya está confuso.`, { side });
@@ -768,6 +1161,7 @@ function inflict(
     }
     p.confusion = 2 + Math.floor(ctx.rng() * 4);
     emit(ctx, `¡${name} se encuentra confuso!`, { side, anim: 'status' });
+    checkStatusBerry(ctx, side);
     return true;
   }
   const status: Status = ailment === 'psn' && moveKey === 'toxic' ? 'tox' : ailment;
@@ -791,12 +1185,30 @@ function inflict(
     frz: `¡${name} se ha congelado!`,
   };
   emit(ctx, text[status], { side, anim: 'status' });
+  checkStatusBerry(ctx, side);
   return true;
 }
 
-function changeStage(ctx: TurnCtx, side: SideKey, stat: StatKey, change: number): boolean {
+function changeStage(
+  ctx: TurnCtx,
+  side: SideKey,
+  stat: StatKey,
+  change: number,
+  bySide: SideKey = side,
+): boolean {
   const p = activeOf(ctx.state, side);
   const name = who(ctx.state, side);
+  // Cuerpo Puro y similares impiden que el rival te baje las características.
+  if (
+    change < 0 &&
+    bySide !== side &&
+    (CLEAR_BODY.includes(p.ability) ||
+      (p.ability === 'hyper-cutter' && stat === 'attack') ||
+      (p.ability === 'keen-eye' && stat === 'accuracy'))
+  ) {
+    emit(ctx, `¡${p.abilityName} de ${name} evita que baje su ${STAT_NAMES[stat]}!`, { side });
+    return false;
+  }
   const before = p.stages[stat];
   const after = Math.max(-6, Math.min(6, before + change));
   if (after === before) {
@@ -813,15 +1225,49 @@ function changeStage(ctx: TurnCtx, side: SideKey, stat: StatKey, change: number)
   return true;
 }
 
-/** Daños por quemadura y veneno al final del turno, del más rápido al más lento. */
+/**
+ * Final del turno, del más rápido al más lento: tiempo atmosférico, Restos,
+ * quemadura y veneno, y habilidades como Impulso o Mudar.
+ */
 function endOfTurn(ctx: TurnCtx) {
+  const weather = ctx.state.weather;
   const order: SideKey[] = (['player', 'enemy'] as SideKey[]).sort(
-    (a, b) => effectiveSpeed(activeOf(ctx.state, b)) - effectiveSpeed(activeOf(ctx.state, a)),
+    (a, b) =>
+      effectiveSpeed(activeOf(ctx.state, b), weatherOf(ctx.state)) -
+      effectiveSpeed(activeOf(ctx.state, a), weatherOf(ctx.state)),
   );
+
+  if (weather) {
+    weather.turns -= 1;
+    if (weather.turns <= 0) {
+      ctx.state.weather = null;
+      emit(ctx, WEATHER_TEXT[weather.kind].end);
+    } else {
+      emit(ctx, WEATHER_TEXT[weather.kind].keep);
+      for (const side of order) weatherEffect(ctx, side, weather.kind);
+    }
+  }
+
   for (const side of order) {
     const p = activeOf(ctx.state, side);
-    if (p.fainted || !p.status) continue;
+    if (p.fainted) continue;
     const name = who(ctx.state, side);
+
+    if (p.item === 'leftovers' && p.hp < p.maxHp) {
+      heal(ctx, side, Math.max(1, Math.floor(p.maxHp / 16)), false);
+      emit(ctx, `${name} recuperó unos pocos PS con ${p.itemName}.`, { side });
+    } else if (p.item === 'black-sludge') {
+      if (p.types.includes('poison')) {
+        if (p.hp < p.maxHp) {
+          heal(ctx, side, Math.max(1, Math.floor(p.maxHp / 16)), false);
+          emit(ctx, `${name} recuperó unos pocos PS con ${p.itemName}.`, { side });
+        }
+      } else {
+        applyDamage(ctx, side, Math.max(1, Math.floor(p.maxHp / 8)));
+        emit(ctx, `${p.itemName} hiere a ${name}.`, { side, anim: 'hit' });
+      }
+    }
+
     if (p.status === 'brn') {
       applyDamage(ctx, side, Math.max(1, Math.floor(p.maxHp / 16)));
       emit(ctx, `${name} se resiente de la quemadura.`, { side, anim: 'hit' });
@@ -832,11 +1278,51 @@ function endOfTurn(ctx: TurnCtx) {
       applyDamage(ctx, side, Math.max(1, Math.floor((p.maxHp * p.toxicCounter) / 16)));
       p.toxicCounter = Math.min(15, p.toxicCounter + 1);
       emit(ctx, `El veneno resta PS a ${name}.`, { side, anim: 'hit' });
-    } else {
-      continue;
     }
-    faintCheck(ctx, side, other(side));
+    if (faintCheck(ctx, side, other(side))) continue;
+    checkBerry(ctx, side);
+
+    if (p.ability === 'speed-boost' && p.stages.speed < 6) {
+      emit(ctx, `¡${p.abilityName} de ${name}!`, { side });
+      changeStage(ctx, side, 'speed', 1, side);
+    }
+    if (p.ability === 'shed-skin' && p.status && ctx.rng() < 1 / 3) {
+      p.status = null;
+      emit(ctx, `¡${p.abilityName} de ${name} le curó el problema de estado!`, {
+        side,
+        anim: 'heal',
+      });
+    }
   }
+}
+
+/** Daño o curación que provoca el tiempo a cada Pokémon. */
+function weatherEffect(ctx: TurnCtx, side: SideKey, kind: Weather) {
+  const p = activeOf(ctx.state, side);
+  if (p.fainted) return;
+  const name = who(ctx.state, side);
+  if (kind === 'sand') {
+    const immune =
+      p.types.some((t) => ['rock', 'ground', 'steel'].includes(t)) ||
+      ['sand-veil', 'sand-rush', 'overcoat'].includes(p.ability);
+    if (!immune) {
+      applyDamage(ctx, side, Math.max(1, Math.floor(p.maxHp / 16)));
+      emit(ctx, `La tormenta de arena zarandea a ${name}.`, { side, anim: 'hit' });
+    }
+  } else if (kind === 'hail' && !p.types.includes('ice')) {
+    if (!['overcoat', 'ice-body', 'snow-cloak', 'slush-rush'].includes(p.ability)) {
+      applyDamage(ctx, side, Math.max(1, Math.floor(p.maxHp / 16)));
+      emit(ctx, `El granizo golpea a ${name}.`, { side, anim: 'hit' });
+    }
+  }
+  const heals =
+    (kind === 'rain' && (p.ability === 'rain-dish' || p.ability === 'dry-skin')) ||
+    ((kind === 'hail' || kind === 'snow') && p.ability === 'ice-body');
+  if (heals && p.hp < p.maxHp) {
+    heal(ctx, side, Math.max(1, Math.floor(p.maxHp / 16)), false);
+    emit(ctx, `${name} recuperó PS gracias a ${p.abilityName}.`, { side });
+  }
+  faintCheck(ctx, side, other(side));
 }
 
 /* ------------------------------------------------------------------ */
@@ -844,14 +1330,21 @@ function endOfTurn(ctx: TurnCtx) {
 /* ------------------------------------------------------------------ */
 
 /** Daño medio esperado de un movimiento (sin críticos), para la IA. */
-export function expectedDamage(attacker: Combatant, defender: Combatant, move: BattleMove): number {
+export function expectedDamage(
+  attacker: Combatant,
+  defender: Combatant,
+  move: BattleMove,
+  weather: Weather | null = null,
+): number {
   if (move.damageClass === 'status' || move.power === 0) return 0;
   const eff = typeEffectiveness(move.type, defender.types);
   if (eff === 0) return 0;
+  if (ABSORB_ABILITIES[defender.ability]?.type === move.type) return 0;
+  if (defender.ability === 'wonder-guard' && eff <= 1) return 0;
   const mid = () => 0.5;
   const hits = move.maxHits > 1 ? (move.minHits + move.maxHits) / 2 : 1;
   const acc = move.accuracy === null ? 1 : move.accuracy / 100;
-  return damage(attacker, defender, move, eff, false, mid) * hits * acc;
+  return damage(attacker, defender, move, eff, false, mid, weather) * hits * acc;
 }
 
 /**
@@ -863,14 +1356,21 @@ export function chooseEnemyAction(state: BattleState, rng: Rng = Math.random): A
   const me = activeOf(state, 'enemy');
   const foe = activeOf(state, 'player');
   if (!hasUsableMoves(me)) return { kind: 'struggle' };
+  const weather = weatherOf(state);
+  const allowed = allowedMoves(me);
 
   const scored = me.moves
     .map((move, index) => ({ move, index }))
-    .filter(({ move }) => move.pp > 0)
+    .filter(({ index }) => allowed.includes(index))
     .map(({ move, index }) => {
       let score: number;
-      if (move.damageClass !== 'status') {
-        const dmg = expectedDamage(me, foe, move);
+      if (move.weather) {
+        // Cambiar el tiempo compensa si favorece a sus ataques.
+        const favours: Record<string, string> = { rain: 'water', sun: 'fire' };
+        const helps = me.moves.some((m) => m.type === favours[move.weather!]);
+        score = weather !== move.weather && helps && me.hp / me.maxHp > 0.5 ? 28 : 2;
+      } else if (move.damageClass !== 'status') {
+        const dmg = expectedDamage(me, foe, move, weather);
         score = (dmg / foe.maxHp) * 100;
         if (dmg >= foe.hp) score += 60 + move.priority * 20;
         // Autodestruirse solo compensa si es para rematar; recargar, menos.
@@ -911,7 +1411,7 @@ export function chooseEnemyReplacement(state: BattleState): number {
   let bestScore = -1;
   state.enemy.team.forEach((p, i) => {
     if (p.fainted) return;
-    const score = Math.max(0, ...p.moves.map((m) => expectedDamage(p, foe, m)));
+    const score = Math.max(0, ...p.moves.map((m) => expectedDamage(p, foe, m, weatherOf(state))));
     if (score > bestScore) {
       bestScore = score;
       best = i;
@@ -1005,6 +1505,7 @@ export function toBattleMove(data: ApiMove): BattleMove {
     ohko: category === 'ohko',
     selfKo: SELF_KO.includes(data.name),
     recharge: RECHARGE.includes(data.name),
+    weather: WEATHER_MOVES[data.name] ?? null,
   };
 }
 
@@ -1169,7 +1670,7 @@ const UNSUPPORTED = new Set([
  */
 export function isSupportedMove(m: BattleMove, category = ''): boolean {
   if (UNSUPPORTED.has(m.key)) return false;
-  if (m.ohko) return true;
+  if (m.ohko || m.weather) return true;
   if (m.damageClass !== 'status') return m.power > 0;
   if (!['ailment', 'net-good-stats', 'heal'].includes(category)) return false;
   return m.ailment !== null || m.statChanges.length > 0 || m.healing > 0;
