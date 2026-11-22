@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { catchError, firstValueFrom, map, Observable, of, shareReplay } from 'rxjs';
 
+import { FORMS_ID_START } from '../shared/pokedex';
 import {
   PokemonDetail,
   PokemonDetailPage,
@@ -196,25 +197,6 @@ export function cleanFlavorText(text: string): string {
     .trim();
 }
 
-/** Generaciones con su región, para los filtros del listado. */
-export const GENERATIONS = [
-  { id: 1, label: 'I · Kanto' },
-  { id: 2, label: 'II · Johto' },
-  { id: 3, label: 'III · Hoenn' },
-  { id: 4, label: 'IV · Sinnoh' },
-  { id: 5, label: 'V · Teselia' },
-  { id: 6, label: 'VI · Kalos' },
-  { id: 7, label: 'VII · Alola' },
-  { id: 8, label: 'VIII · Galar' },
-  { id: 9, label: 'IX · Paldea' },
-];
-
-/** Las formas alternativas (megas, regionales...) tienen ids a partir de 10001. */
-export const FORMS_ID_START = 10001;
-
-/** Último Pokémon con número de Pokédex nacional (Pecharunt). */
-export const LAST_NATIONAL_DEX = 1025;
-
 /** Reproduce el grito de un Pokémon; si el navegador lo bloquea, no hace nada. */
 export function playPokemonCry(id: number, volume = 0.5): void {
   const audio = new Audio(
@@ -223,3 +205,6 @@ export function playPokemonCry(id: number, volume = 0.5): void {
   audio.volume = volume;
   audio.play().catch(() => {});
 }
+
+// Se reexportan para no cambiar los imports existentes.
+export { FORMS_ID_START, GENERATIONS, LAST_NATIONAL_DEX } from '../shared/pokedex';

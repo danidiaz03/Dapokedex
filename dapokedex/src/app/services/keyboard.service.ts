@@ -1,7 +1,7 @@
 import { DOCUMENT, Injectable, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
-import { LAST_NATIONAL_DEX } from './pokemon';
+import { LAST_NATIONAL_DEX } from '../shared/pokedex';
 
 /** Una tecla que se muestra en la barra de mandos o en la ayuda. */
 export interface KeyHint {

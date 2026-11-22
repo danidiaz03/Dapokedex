@@ -9,7 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { KeyboardService } from '../../services/keyboard.service';
-import { GENERATIONS, LAST_NATIONAL_DEX } from '../../services/pokemon';
+import { GENERATIONS, LAST_NATIONAL_DEX } from '../../shared/pokedex';
 
 const SEEN_KEY = 'dapokedex.arranque';
 const SOUND_KEY = 'dapokedex.sonido';

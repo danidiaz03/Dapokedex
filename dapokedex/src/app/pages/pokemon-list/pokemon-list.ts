@@ -284,9 +284,9 @@ export class PokemonList implements OnInit {
       this.searchMatches.set(0);
       return of([]);
     }
-    // Se puede buscar por nombre (en inglés o en español, sin importar tildes ni
-    // signos) o por número de Pokédex, dentro de los filtros activos.
-    const source = this.filteredBase() ?? this.allPokemons();
+    // Se busca en todas las cajas (no solo en la generación abierta) por nombre,
+    // en inglés o en español y sin importar tildes ni signos, o por número.
+    const source = this.allPokemons().filter((p) => getIdFromUrl(p.url) < FORMS_ID_START);
     const query = normalizeSearch(term);
     const names = this.pokemonService.speciesNames();
     const matches = source.filter((p) => {
