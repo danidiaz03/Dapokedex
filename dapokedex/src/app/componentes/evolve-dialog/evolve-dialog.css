@@ -18,15 +18,15 @@
   align-items: center;
   gap: 16px;
   text-align: center;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--px), sans-serif;
 }
 .evolve-title {
-  font: 700 22px/30px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 22px/30px var(--px);
+  color: var(--tinta);
 }
 .evolve-text {
-  font: 400 15px/22px Be Vietnam Pro;
-  color: #5e3f3a;
+  font: 400 15px/22px var(--texto);
+  color: var(--tinta-suave);
 }
 .evolve-sprite {
   width: 200px;
@@ -44,18 +44,18 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  border: 2px solid #efecff;
-  background: #f7f5ff;
+  border: 2px solid var(--hueco);
+  background: var(--hueco);
   border-radius: 16px;
   padding: 10px;
   cursor: pointer;
-  font: 700 14px Space Grotesk;
+  font: 700 14px var(--px);
   transition:
     border-color 0.2s ease,
     transform 0.2s ease;
 }
 .evolve-option:hover {
-  border-color: #b91c1c;
+  border-color: var(--cursor-osc);
   transform: translateY(-2px);
 }
 .evolve-option img {
@@ -65,17 +65,17 @@
 .evolve-later {
   border: none;
   background: none;
-  color: #5e3f3a;
-  font: 600 14px Space Grotesk;
+  color: var(--tinta-suave);
+  font: 600 14px var(--px);
   cursor: pointer;
 }
 .evolve-confirm {
   border: none;
-  background: #b91c1c;
+  background: var(--cursor-osc);
   color: #fff;
   border-radius: 12px;
   padding: 12px 28px;
-  font: 700 16px Space Grotesk;
+  font: 700 16px var(--px);
   cursor: pointer;
 }
 .evolve-stage {
@@ -105,7 +105,7 @@
   animation: evolve-glow 3.6s ease-in forwards;
 }
 .evolve-stage {
-  background: #1a1a2e;
+  background: var(--tinta);
   border-radius: 50%;
 }
 .evolve-sprite--reveal {

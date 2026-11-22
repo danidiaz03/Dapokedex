@@ -13,16 +13,16 @@
   flex-wrap: wrap;
 }
 .ranking__title {
-  font: 700 36px/44px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 36px/44px var(--px);
+  color: var(--tinta);
 }
 .ranking__subtitle {
-  font: 400 15px/22px Be Vietnam Pro;
-  color: #5e3f3a;
+  font: 400 15px/22px var(--texto);
+  color: var(--tinta-suave);
 }
 .ranking__countdown {
-  font: 600 13px/18px Roboto Mono;
-  background: #1a1a2e;
+  font: 600 13px/18px var(--px);
+  background: var(--tinta);
   color: #fff;
   border-radius: 999px;
   padding: 6px 12px;
@@ -33,29 +33,29 @@
 }
 .ranking__tab {
   border: none;
-  background: #efecff;
-  color: #1a1a2e;
+  background: var(--hueco);
+  color: var(--tinta);
   border-radius: 999px;
   padding: 8px 16px;
-  font: 600 14px Space Grotesk;
+  font: 600 14px var(--px);
   cursor: pointer;
 }
 .ranking__tab--active {
-  background: #b91c1c;
+  background: var(--cursor-osc);
   color: #fff;
 }
 .ranking__status,
 .ranking__hint {
-  font: 400 15px/22px Be Vietnam Pro;
+  font: 400 15px/22px var(--texto);
 }
 .ranking__hint a {
-  color: #9e0000;
+  color: var(--cursor-osc);
   font-weight: 700;
 }
 .ranking__retry {
   margin-left: 8px;
   border: none;
-  background: #1a1a2e;
+  background: var(--tinta);
   color: #fff;
   border-radius: 8px;
   padding: 6px 12px;
@@ -69,11 +69,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  font: 400 16px Be Vietnam Pro;
+  font: 400 16px var(--texto);
 }
 .ranking__cta {
-  color: #9e0000;
-  font: 700 16px Space Grotesk;
+  color: var(--cursor-osc);
+  font: 700 16px var(--px);
 }
 .ranking__list {
   list-style: none;
@@ -89,25 +89,25 @@
   background: #fff;
   border-radius: 16px;
   padding: 12px 16px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--px), sans-serif;
 }
 .ranking__row--podium {
   background: linear-gradient(135deg, #fff, #fef3c7);
 }
 .ranking__row--me {
-  outline: 2px solid #b91c1c;
+  outline: 2px solid var(--cursor-osc);
 }
 .ranking__row--mine {
   margin-top: 8px;
 }
 .ranking__pos {
-  font: 700 22px Space Grotesk;
+  font: 700 22px var(--px);
   text-align: center;
 }
 .ranking__name {
   font-weight: 700;
   font-size: 16px;
-  color: #1a1a2e;
+  color: var(--tinta);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -117,19 +117,19 @@
   text-overflow: ellipsis;
 }
 .ranking__you {
-  font: 700 10px/14px Space Grotesk;
+  font: 700 10px/14px var(--px);
   text-transform: uppercase;
-  background: #b91c1c;
+  background: var(--cursor-osc);
   color: #fff;
   border-radius: 999px;
   padding: 2px 8px;
 }
 .ranking__level {
-  font: 400 13px Roboto Mono;
-  color: #5e3f3a;
+  font: 400 13px var(--px);
+  color: var(--tinta-suave);
 }
 .ranking__xp {
-  font: 700 15px Roboto Mono;
+  font: 700 15px var(--px);
   color: #15803d;
 }
 @media (max-width: 575px) {
@@ -150,6 +150,6 @@
   gap: 8px;
 }
 .ranking__title-badge {
-  font: 500 12px/16px Be Vietnam Pro;
+  font: 500 12px/16px var(--texto);
   color: #b45309;
 }

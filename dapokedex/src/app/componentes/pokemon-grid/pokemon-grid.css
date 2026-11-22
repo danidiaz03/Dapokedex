@@ -11,11 +11,11 @@
   border-radius: 16px;
   background: #fff;
   text-decoration: none;
-  color: #1a1a2e;
+  color: var(--tinta);
   transition: box-shadow 0.3s ease;
 }
 .pokemon-grid__item:hover {
-  box-shadow: 0 0 5px 0 #b91c1c;
+  box-shadow: 0 0 5px 0 var(--cursor-osc);
 }
 .pokemon-grid__item img {
   width: 96px;
@@ -23,18 +23,18 @@
   image-rendering: pixelated;
 }
 .pokemon-grid__id {
-  font: 400 12px/16px Roboto Mono;
-  color: #5e3f3a;
+  font: 400 12px/16px var(--px);
+  color: var(--tinta-suave);
 }
 .pokemon-grid__name {
-  font: 700 14px/20px Space Grotesk;
+  font: 700 14px/20px var(--px);
   text-align: center;
 }
 .pokemon-grid__badge {
   margin-top: 4px;
-  font: 600 10px/14px Space Grotesk;
+  font: 600 10px/14px var(--px);
   text-transform: uppercase;
-  background: #1a1a2e;
+  background: var(--tinta);
   color: #fff;
   border-radius: 999px;
   padding: 2px 8px;

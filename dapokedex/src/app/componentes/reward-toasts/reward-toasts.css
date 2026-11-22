@@ -17,13 +17,13 @@
   text-align: left;
   border: none;
   cursor: pointer;
-  background: #1a1a2e;
+  background: var(--tinta);
   color: #fff;
   border-radius: 16px;
   padding: 12px 16px;
   box-shadow: 0 10px 30px rgba(26, 26, 46, 0.35);
   animation: toast-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--px), sans-serif;
 }
 .toast__icon {
   font-size: 28px;
@@ -41,7 +41,7 @@
   line-height: 22px;
 }
 .toast--xp {
-  background: linear-gradient(135deg, #1a1a2e, #3730a3);
+  background: linear-gradient(135deg, var(--tinta), #3730a3);
 }
 .toast--achievement {
   background: linear-gradient(135deg, #b45309, #f59e0b);
@@ -53,7 +53,7 @@
   background: linear-gradient(135deg, #be185d, #a855f7);
 }
 .toast--streak {
-  background: linear-gradient(135deg, #b91c1c, #f97316);
+  background: linear-gradient(135deg, var(--cursor-osc), #f97316);
 }
 @keyframes toast-in {
   from {
@@ -88,27 +88,27 @@
   padding: 32px 48px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   animation: pop-in 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--px), sans-serif;
   text-align: center;
 }
 .level-up__eyebrow {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #9e0000;
+  color: var(--cursor-osc);
 }
 .level-up__level {
   font-size: 96px;
   line-height: 1;
   font-weight: 700;
-  background: linear-gradient(135deg, #b91c1c, #f59e0b);
+  background: linear-gradient(135deg, var(--cursor-osc), #f59e0b);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .level-up__unlock {
   font-size: 16px;
-  color: #1a1a2e;
+  color: var(--tinta);
 }
 .confetti {
   position: absolute;

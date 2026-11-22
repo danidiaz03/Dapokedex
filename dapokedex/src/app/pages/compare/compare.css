@@ -5,12 +5,12 @@
   margin: 40px auto 48px;
 }
 .compare-title {
-  font: 700 36px/44px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 36px/44px var(--px);
+  color: var(--tinta);
 }
 .compare-subtitle {
-  font: 400 16px/24px Be Vietnam Pro;
-  color: #5e3f3a;
+  font: 400 16px/24px var(--texto);
+  color: var(--tinta-suave);
   margin-top: -16px;
 }
 .compare-pickers {
@@ -21,16 +21,16 @@
 }
 .compare-picker input {
   width: 100%;
-  border: 1px solid #e8e5ff;
-  background: #e8e5ff;
+  border: 1px solid var(--hueco);
+  background: var(--hueco);
   border-radius: 8px;
   padding: 10px 16px;
-  font: 400 16px Space Grotesk;
+  font: 400 16px var(--px);
   text-transform: capitalize;
 }
 .compare-swap {
   border: none;
-  background: #1a1a2e;
+  background: var(--tinta);
   color: #fff;
   border-radius: 50%;
   width: 40px;
@@ -60,15 +60,15 @@
   height: auto;
 }
 .compare-card__name {
-  font: 700 22px/28px Space Grotesk;
+  font: 700 22px/28px var(--px);
   text-transform: capitalize;
-  color: #1a1a2e;
+  color: var(--tinta);
   text-decoration: none;
 }
 .compare-card__meta,
 .compare-card__empty {
-  font: 400 14px/20px Be Vietnam Pro;
-  color: #5e3f3a;
+  font: 400 14px/20px var(--texto);
+  color: var(--tinta-suave);
 }
 .compare-stats {
   display: flex;
@@ -86,10 +86,10 @@
 }
 .compare-row__label {
   text-align: center;
-  font: 700 13px/18px Space Grotesk;
+  font: 700 13px/18px var(--px);
 }
 .compare-row__value {
-  font: 400 15px/20px Roboto Mono;
+  font: 400 15px/20px var(--px);
   text-align: center;
 }
 .compare-row__value--win {
@@ -98,7 +98,7 @@
 }
 .compare-row__bar {
   height: 10px;
-  background: #efecff;
+  background: var(--hueco);
   border-radius: 999px;
   overflow: hidden;
   display: flex;
@@ -116,7 +116,7 @@
   background: #22c55e;
 }
 .compare-row--total {
-  border-top: 1px solid #efecff;
+  border-top: 1px solid var(--hueco);
   padding-top: 10px;
 }
 .compare-advantage {
@@ -126,19 +126,19 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font: 400 15px/22px Be Vietnam Pro;
+  font: 400 15px/22px var(--texto);
 }
 .compare-advantage h2 {
-  font: 700 20px/28px Space Grotesk;
+  font: 700 20px/28px var(--px);
 }
 .compare-advantage strong {
   text-transform: capitalize;
 }
 .mult {
-  font: 700 14px Roboto Mono;
+  font: 700 14px var(--px);
   padding: 2px 8px;
   border-radius: 6px;
-  background: #e2e8f0;
+  background: var(--hueco-borde);
 }
 .mult--good {
   background: #dcfce7;
@@ -146,7 +146,7 @@
 }
 .mult--bad {
   background: #fee2e2;
-  color: #b91c1c;
+  color: var(--cursor-osc);
 }
 @media (max-width: 575px) {
   .compare-row {

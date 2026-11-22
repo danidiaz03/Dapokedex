@@ -4,26 +4,26 @@
 }
 
 .game-title {
-  font: 700 32px/40px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 32px/40px var(--px);
+  color: var(--tinta);
   margin: 0 0 8px;
 }
 
 .game-subtitle {
-  font: 400 16px/24px Space Grotesk;
-  color: #475569;
+  font: 400 16px/24px var(--px);
+  color: var(--tinta-suave);
   margin: 0;
 }
 
 .loading-text,
 .empty-text {
-  font: 400 16px/24px Space Grotesk;
-  color: #475569;
+  font: 400 16px/24px var(--px);
+  color: var(--tinta-suave);
   text-align: center;
 }
 
 .empty-subtext {
-  font: 400 14px/20px Space Grotesk;
+  font: 400 14px/20px var(--px);
   color: #94a3b8;
   text-align: center;
   margin: 8px 0 24px;
@@ -45,17 +45,17 @@
 
 .btn-collection {
   padding: 12px 24px;
-  background: #f1f5f9;
-  color: #1a1a2e;
-  border: 1px solid #e2e8f0;
+  background: var(--hueco);
+  color: var(--tinta);
+  border: 1px solid var(--hueco-borde);
   border-radius: 12px;
-  font: 700 14px/20px Space Grotesk;
+  font: 700 14px/20px var(--px);
   cursor: pointer;
   transition: background 0.3s ease;
 }
 
 .btn-collection:hover {
-  background: #e2e8f0;
+  background: var(--hueco-borde);
 }
 
 .starters-grid {
@@ -83,12 +83,12 @@
 }
 
 .starter-card--selected {
-  border: 2px solid #cc0000;
+  border: 2px solid var(--cursor-osc);
   box-shadow: 0px 0px 10px 0px #b91c1c55;
 }
 
 .starter-image-container {
-  background: #e2e0fc;
+  background: var(--hueco);
   border-radius: 50%;
   padding: 24px;
   margin-bottom: 16px;
@@ -99,8 +99,8 @@
 }
 
 .starter-name {
-  font: 700 18px/26px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 18px/26px var(--px);
+  color: var(--tinta);
   margin: 0;
   text-transform: capitalize;
 }
@@ -109,11 +109,11 @@
   display: block;
   margin: 0 auto;
   padding: 16px 48px;
-  background: linear-gradient(to bottom, #9e0000, #cc0000);
+  background: linear-gradient(to bottom, var(--cursor-osc), var(--cursor-osc));
   color: #ffffff;
   border: none;
   border-radius: 16px;
-  font: 700 18px/26px Space Grotesk;
+  font: 700 18px/26px var(--px);
   cursor: pointer;
   transition: opacity 0.3s ease;
 }
@@ -133,7 +133,7 @@
   border-radius: 24px;
   padding: 24px;
   text-align: center;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--hueco-borde);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -142,11 +142,11 @@
 }
 
 .pokemon-card:hover {
-  box-shadow: 0px 0px 5px 0px #b91c1c;
+  box-shadow: 0px 0px 5px 0px var(--cursor-osc);
 }
 
 .pokemon-image-container {
-  background: #e2e0fc;
+  background: var(--hueco);
   border-radius: 50%;
   padding: 32px;
   transition: padding 0.5s ease;
@@ -161,8 +161,8 @@
 }
 
 .pokemon-name {
-  font: 700 16px/24px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 16px/24px var(--px);
+  color: var(--tinta);
   text-transform: capitalize;
   margin: 0;
 }
@@ -174,7 +174,7 @@
 }
 
 .type-badge {
-  font: 600 11px/16px Space Grotesk;
+  font: 600 11px/16px var(--px);
   padding: 2px 10px;
   border-radius: 99px;
   text-transform: capitalize;
@@ -197,7 +197,7 @@
   color: #444441;
 }
 .type-badge--poison {
-  background: #eeedfe;
+  background: var(--hueco);
   color: #3c3489;
 }
 .type-badge--electric {
@@ -221,11 +221,11 @@
   color: #042c53;
 }
 .type-badge--dragon {
-  background: #eeedfe;
+  background: var(--hueco);
   color: #26215c;
 }
 .type-badge--ghost {
-  background: #eeedfe;
+  background: var(--hueco);
   color: #26215c;
 }
 .type-badge--fighting {
@@ -261,9 +261,9 @@
 }
 
 .stat {
-  font: 600 10px/14px Space Grotesk;
-  color: #475569;
-  background: #f1f5f9;
+  font: 600 10px/14px var(--px);
+  color: var(--tinta-suave);
+  background: var(--hueco);
   padding: 2px 6px;
   border-radius: 6px;
 }
@@ -271,11 +271,11 @@
 .btn-battle {
   margin-top: 4px;
   padding: 10px;
-  background: linear-gradient(to bottom, #9e0000, #cc0000);
+  background: linear-gradient(to bottom, var(--cursor-osc), var(--cursor-osc));
   color: #ffffff;
   border: none;
   border-radius: 12px;
-  font: 700 13px/20px Space Grotesk;
+  font: 700 13px/20px var(--px);
   cursor: pointer;
   transition: opacity 0.3s ease;
 }
@@ -313,10 +313,10 @@
   padding: 16px 20px;
   margin-bottom: 32px;
   border-radius: 16px;
-  background: linear-gradient(90deg, #1a1a2e, #3b3b6d);
+  background: linear-gradient(90deg, var(--tinta), #3b3b6d);
   color: #fff;
   text-decoration: none;
-  font: 400 15px/22px Space Grotesk;
+  font: 400 15px/22px var(--px);
 }
 .minigame-banner__icon {
   font-size: 28px;
@@ -336,7 +336,7 @@
   display: flex;
   gap: 20px;
   align-items: center;
-  background: linear-gradient(135deg, #1a1a2e, #3730a3);
+  background: linear-gradient(135deg, var(--tinta), #3730a3);
   color: #fff;
   border-radius: 24px;
   padding: 20px 24px;
@@ -350,15 +350,15 @@
   min-width: 84px;
   height: 84px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f59e0b, #b91c1c);
+  background: linear-gradient(135deg, #f59e0b, var(--cursor-osc));
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15);
 }
 .trainer-card__level-label {
-  font: 600 11px/14px Space Grotesk;
+  font: 600 11px/14px var(--px);
   text-transform: uppercase;
 }
 .trainer-card__level-value {
-  font: 700 36px/36px Space Grotesk;
+  font: 700 36px/36px var(--px);
 }
 .trainer-card__main {
   flex: 1;
@@ -372,10 +372,10 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  font: 400 15px/20px Space Grotesk;
+  font: 400 15px/20px var(--px);
 }
 .trainer-card__xp {
-  font: 400 13px/20px Roboto Mono;
+  font: 400 13px/20px var(--px);
   opacity: 0.85;
 }
 .xp-bar {
@@ -396,7 +396,7 @@
   gap: 8px;
 }
 .chip {
-  font: 500 12px/16px Space Grotesk;
+  font: 500 12px/16px var(--px);
   background: rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   padding: 4px 10px;
@@ -405,7 +405,7 @@
   background: rgba(249, 115, 22, 0.35);
 }
 .trainer-card__next {
-  font: 400 13px/18px Be Vietnam Pro;
+  font: 400 13px/18px var(--texto);
   opacity: 0.85;
 }
 .hub-grid {
@@ -428,18 +428,18 @@
   align-items: center;
 }
 .hub-panel__header h2 {
-  font: 700 20px/28px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 20px/28px var(--px);
+  color: var(--tinta);
 }
 .hub-panel__count {
-  font: 700 14px Roboto Mono;
-  background: #efecff;
+  font: 700 14px var(--px);
+  background: var(--hueco);
   border-radius: 999px;
   padding: 4px 10px;
 }
 .hub-panel__hint {
-  font: 400 12px/16px Be Vietnam Pro;
-  color: #5e3f3a;
+  font: 400 12px/16px var(--texto);
+  color: var(--tinta-suave);
 }
 .challenges {
   list-style: none;
@@ -453,7 +453,7 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: #f7f5ff;
+  background: var(--hueco);
 }
 .challenge--done {
   background: #dcfce7;
@@ -468,13 +468,13 @@
   gap: 6px;
 }
 .challenge__title {
-  font: 600 14px/18px Space Grotesk;
-  color: #1a1a2e;
+  font: 600 14px/18px var(--px);
+  color: var(--tinta);
 }
 .challenge__bar {
   height: 8px;
   border-radius: 999px;
-  background: #e2e0fc;
+  background: var(--hueco);
   overflow: hidden;
 }
 .challenge__bar div {
@@ -484,8 +484,8 @@
   transition: width 0.6s ease;
 }
 .challenge__value {
-  font: 700 13px Roboto Mono;
-  color: #1a1a2e;
+  font: 700 13px var(--px);
+  color: var(--tinta);
 }
 .achievements {
   list-style: none;
@@ -504,19 +504,19 @@
   background: linear-gradient(135deg, #fef3c7, #fde68a);
 }
 .achievement--locked {
-  background: #f1f5f9;
+  background: var(--hueco);
   opacity: 0.7;
 }
 .achievement__icon {
   font-size: 28px;
 }
 .achievement__title {
-  font: 700 12px/16px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 12px/16px var(--px);
+  color: var(--tinta);
 }
 .achievement__desc {
-  font: 400 11px/14px Be Vietnam Pro;
-  color: #5e3f3a;
+  font: 400 11px/14px var(--texto);
+  color: var(--tinta-suave);
 }
 @media (max-width: 768px) {
   .hub-grid {
@@ -534,7 +534,7 @@
 .trainer-card__ranking {
   align-self: flex-start;
   color: #fde68a;
-  font: 700 14px/20px Space Grotesk;
+  font: 700 14px/20px var(--px);
   text-decoration: none;
 }
 .trainer-card__ranking:hover {

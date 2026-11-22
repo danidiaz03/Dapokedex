@@ -1,18 +1,18 @@
 .type-hero {
   padding: 48px 0 40px;
   color: #fff;
-  background: linear-gradient(135deg, var(--type-color, #1a1a2e), #1a1a2e 140%);
+  background: linear-gradient(135deg, var(--type-color, var(--tinta)), var(--tinta) 140%);
 }
 .type-hero__eyebrow {
-  font: 500 14px/20px Roboto Mono;
+  font: 500 14px/20px var(--px);
   text-transform: uppercase;
   opacity: 0.85;
 }
 .type-hero__title {
-  font: 700 56px/64px Space Grotesk;
+  font: 700 56px/64px var(--px);
 }
 .type-hero__count {
-  font: 400 16px/24px Be Vietnam Pro;
+  font: 400 16px/24px var(--texto);
   opacity: 0.9;
 }
 .type-content {
@@ -36,11 +36,11 @@
   opacity: 1 !important;
 }
 .type-picker__item--active {
-  outline: 2px solid #1a1a2e;
+  outline: 2px solid var(--tinta);
   outline-offset: 2px;
 }
 .type-status {
-  font: 400 16px/24px Be Vietnam Pro;
+  font: 400 16px/24px var(--texto);
 }
 .type-relations {
   display: grid;
@@ -53,8 +53,8 @@
   gap: 12px;
 }
 .type-section-title {
-  font: 700 24px/32px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 24px/32px var(--px);
+  color: var(--tinta);
 }
 .matchup {
   display: flex;
@@ -71,10 +71,10 @@
   background: #dcfce7;
 }
 .matchup--immune {
-  background: #e2e8f0;
+  background: var(--hueco-borde);
 }
 .matchup__label {
-  font: 700 13px/18px Space Grotesk;
+  font: 700 13px/18px var(--px);
   min-width: 170px;
 }
 .matchup__types {

@@ -13,28 +13,28 @@
   gap: 16px;
 }
 .guess-title {
-  font: 700 32px/40px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 32px/40px var(--px);
+  color: var(--tinta);
   margin: 0 0 8px;
 }
 .guess-subtitle {
-  font: 400 16px/24px Space Grotesk;
-  color: #475569;
+  font: 400 16px/24px var(--px);
+  color: var(--tinta-suave);
   margin: 0;
 }
 .guess-header select {
-  background: #e8e5ff;
-  border: 1px solid #e8e5ff;
+  background: var(--hueco);
+  border: 1px solid var(--hueco);
   border-radius: 8px;
   padding: 8px 12px;
-  font: 400 14px/20px Space Grotesk;
+  font: 400 14px/20px var(--px);
 }
 .guess-score {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
-  font: 400 15px/22px Space Grotesk;
-  color: #1a1a2e;
+  font: 400 15px/22px var(--px);
+  color: var(--tinta);
 }
 .guess-card {
   background: #fff;
@@ -49,7 +49,7 @@
   width: min(320px, 100%);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, #e2e0fc 0%, #c7d2fe 100%);
+  background: radial-gradient(circle, var(--hueco) 0%, #c7d2fe 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,8 +70,8 @@
   filter: brightness(0);
 }
 .guess-result {
-  font: 700 20px/28px Space Grotesk;
-  color: #9e0000;
+  font: 700 20px/28px var(--px);
+  color: var(--cursor-osc);
   margin: 0;
 }
 .guess-result--ok {
@@ -91,15 +91,15 @@
 .guess-option {
   padding: 14px;
   border-radius: 14px;
-  border: 2px solid #e2e0fc;
+  border: 2px solid var(--hueco);
   background: #f5f3ff;
-  font: 700 16px/22px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 16px/22px var(--px);
+  color: var(--tinta);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 .guess-option:hover:not(:disabled) {
-  border-color: #786ec6;
+  border-color: var(--fondo);
 }
 .guess-option:disabled {
   cursor: default;
@@ -120,13 +120,13 @@
 .guess-btn {
   background: none;
   border: none;
-  color: #786ec6;
-  font: 700 14px/20px Space Grotesk;
+  color: var(--fondo);
+  font: 700 14px/20px var(--px);
   cursor: pointer;
 }
 .guess-back {
-  color: #786ec6;
-  font: 700 14px/20px Space Grotesk;
+  color: var(--fondo);
+  font: 700 14px/20px var(--px);
   text-decoration: none;
 }
 @media (max-width: 575px) {

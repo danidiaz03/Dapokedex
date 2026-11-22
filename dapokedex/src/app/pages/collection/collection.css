@@ -12,8 +12,8 @@
 }
 
 .collection-title {
-  font: 700 32px/40px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 32px/40px var(--px);
+  color: var(--tinta);
   margin: 0;
 }
 
@@ -22,11 +22,11 @@
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(to bottom, #9e0000, #cc0000);
+  background: linear-gradient(to bottom, var(--cursor-osc), var(--cursor-osc));
   color: #ffffff;
   border: none;
   border-radius: 12px;
-  font: 700 14px/20px Space Grotesk;
+  font: 700 14px/20px var(--px);
   cursor: pointer;
   transition: opacity 0.3s ease;
 }
@@ -39,22 +39,22 @@
   background: rgba(255, 255, 255, 0.3);
   padding: 2px 8px;
   border-radius: 99px;
-  font: 700 12px/16px Space Grotesk;
+  font: 700 12px/16px var(--px);
 }
 
 .error-text {
   background: #fee2e2;
-  color: #9e0000;
+  color: var(--cursor-osc);
   border-radius: 8px;
   padding: 10px 16px;
-  font: 400 14px/20px Space Grotesk;
+  font: 400 14px/20px var(--px);
   margin-bottom: 16px;
 }
 
 .loading-text,
 .empty-text {
-  font: 400 16px/24px Space Grotesk;
-  color: #475569;
+  font: 400 16px/24px var(--px);
+  color: var(--tinta-suave);
 }
 
 .filters {
@@ -65,10 +65,10 @@
 
 .filters input,
 .filters select {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--hueco-borde);
   border-radius: 8px;
   padding: 9px 16px;
-  font: 400 16px/24px Space Grotesk;
+  font: 400 16px/24px var(--px);
   background: #f8fafc;
   outline: none;
   transition: border 0.3s ease;
@@ -105,26 +105,26 @@
 }
 
 .pokemon-card:hover {
-  box-shadow: 0px 0px 5px 0px #b91c1c;
+  box-shadow: 0px 0px 5px 0px var(--cursor-osc);
 }
 
 .pokemon-card--in-team {
-  border: 2px solid #cc0000;
+  border: 2px solid var(--cursor-osc);
 }
 
 .team-badge {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: #cc0000;
+  background: var(--cursor-osc);
   color: #ffffff;
-  font: 700 10px/14px Space Grotesk;
+  font: 700 10px/14px var(--px);
   padding: 2px 8px;
   border-radius: 99px;
 }
 
 .pokemon-image-container {
-  background: #e2e0fc;
+  background: var(--hueco);
   border-radius: 50%;
   padding: 32px;
   transition: padding 0.5s ease;
@@ -139,8 +139,8 @@
 }
 
 .pokemon-name {
-  font: 700 16px/24px Space Grotesk;
-  color: #1a1a2e;
+  font: 700 16px/24px var(--px);
+  color: var(--tinta);
   text-transform: capitalize;
   margin: 0;
 }
@@ -152,7 +152,7 @@
 }
 
 .type-badge {
-  font: 600 11px/16px Space Grotesk;
+  font: 600 11px/16px var(--px);
   padding: 2px 10px;
   border-radius: 99px;
   text-transform: capitalize;
@@ -175,7 +175,7 @@
   color: #444441;
 }
 .type-badge--poison {
-  background: #eeedfe;
+  background: var(--hueco);
   color: #3c3489;
 }
 .type-badge--electric {
@@ -199,11 +199,11 @@
   color: #042c53;
 }
 .type-badge--dragon {
-  background: #eeedfe;
+  background: var(--hueco);
   color: #26215c;
 }
 .type-badge--ghost {
-  background: #eeedfe;
+  background: var(--hueco);
   color: #26215c;
 }
 .type-badge--fighting {
@@ -239,9 +239,9 @@
 }
 
 .stat {
-  font: 600 10px/14px Space Grotesk;
-  color: #475569;
-  background: #f1f5f9;
+  font: 600 10px/14px var(--px);
+  color: var(--tinta-suave);
+  background: var(--hueco);
   padding: 2px 6px;
   border-radius: 6px;
 }
@@ -249,11 +249,11 @@
 .btn-team {
   margin-top: 4px;
   padding: 10px;
-  background: linear-gradient(to bottom, #9e0000, #cc0000);
+  background: linear-gradient(to bottom, var(--cursor-osc), var(--cursor-osc));
   color: #ffffff;
   border: none;
   border-radius: 12px;
-  font: 700 12px/18px Space Grotesk;
+  font: 700 12px/18px var(--px);
   cursor: pointer;
   transition: opacity 0.3s ease;
 }
@@ -264,7 +264,7 @@
 
 .btn-team--remove {
   background: #fee2e2;
-  color: #9e0000;
+  color: var(--cursor-osc);
 }
 
 .btn-team--remove:hover {
@@ -291,14 +291,14 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  font: 700 12px Roboto Mono;
-  color: #1a1a2e;
+  font: 700 12px var(--px);
+  color: var(--tinta);
 }
 .pokemon-level__bar {
   flex: 1;
   height: 6px;
   border-radius: 999px;
-  background: #e2e0fc;
+  background: var(--hueco);
   overflow: hidden;
 }
 .pokemon-level__bar div {
@@ -312,7 +312,7 @@
   padding: 6px 14px;
   background: linear-gradient(135deg, #3b82f6, #a855f7);
   color: #fff;
-  font: 700 13px Space Grotesk;
+  font: 700 13px var(--px);
   cursor: pointer;
 }
 .dex-progress {
@@ -323,7 +323,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--px), sans-serif;
 }
 .dex-progress__head {
   display: flex;
@@ -334,14 +334,14 @@
 .region__bar {
   height: 10px;
   border-radius: 999px;
-  background: #efecff;
+  background: var(--hueco);
   overflow: hidden;
 }
 .dex-progress__bar div,
 .region__bar div {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #b91c1c, #f59e0b);
+  background: linear-gradient(90deg, var(--cursor-osc), #f59e0b);
   transition: width 0.8s ease;
 }
 .dex-progress__regions {
@@ -360,9 +360,9 @@
   height: 6px;
 }
 .region__count {
-  font: 400 12px Roboto Mono;
+  font: 400 12px var(--px);
   text-align: right;
-  color: #5e3f3a;
+  color: var(--tinta-suave);
 }
 .region--complete .region__name {
   font-weight: 700;
