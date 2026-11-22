@@ -8,6 +8,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 24px;
 }
 
@@ -22,11 +24,12 @@
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(to bottom, var(--cursor-osc), var(--cursor-osc));
-  color: #ffffff;
+  background: var(--marco);
+  color: var(--tinta);
+  box-shadow: inset 0 -3px 0 var(--marco-osc);
   border: none;
   border-radius: 12px;
-  font: 700 14px/20px var(--px);
+  font: 400 15px/20px var(--px);
   cursor: var(--cursor-mano);
   transition: opacity 0.3s ease;
 }
@@ -369,4 +372,55 @@
 .region--complete .region__name {
   font-weight: 700;
   color: #b45309;
+}
+
+/* Tarjetas compactas al estilo de los huecos del PC. */
+.collection-grid {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+.pokemon-card {
+  border-radius: 12px;
+  padding: 10px;
+  gap: 6px;
+  border: 3px solid transparent;
+  background: rgba(234, 244, 242, 0.96);
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+}
+.pokemon-card:hover {
+  background: var(--blanco);
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+}
+.pokemon-card--in-team {
+  border-color: var(--marco);
+}
+.team-badge {
+  background: var(--marco);
+  color: var(--tinta);
+}
+.pokemon-image-container,
+.pokemon-card:hover .pokemon-image-container {
+  background: none;
+  padding: 0;
+}
+.pokemon-image {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto;
+  object-fit: contain;
+}
+.pokemon-name {
+  font: 400 15px/1.2 var(--px);
+}
+.pokemon-stats {
+  gap: 4px;
+}
+@media (max-width: 520px) {
+  .collection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pokemon-image {
+    width: 88px;
+    height: 88px;
+  }
 }

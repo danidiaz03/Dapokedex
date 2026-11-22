@@ -140,3 +140,78 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Tarjeta de entrenador al estilo del panel Resumen. */
+.titulo-zona {
+  margin-bottom: 16px;
+}
+.account-header {
+  display: block;
+  background: var(--blanco);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 0 #0d3633;
+  margin-bottom: 32px;
+}
+.account-header__cab {
+  background: var(--tinta);
+  color: var(--marco);
+  padding: 10px 14px;
+  font: 400 16px/1 var(--px);
+}
+.user-info {
+  padding: 16px;
+  flex-wrap: wrap;
+}
+.user-info > div {
+  flex: 1;
+  min-width: 0;
+}
+.user-name {
+  font: 400 24px/1.2 var(--px);
+  color: var(--tinta);
+  text-transform: none;
+}
+.user-email {
+  font: 400 15px/1.4 var(--texto);
+  color: var(--tinta-suave);
+  overflow-wrap: anywhere;
+}
+.btn-logout {
+  background: var(--hueco);
+  color: var(--cursor-osc);
+}
+.btn-logout:hover {
+  background: var(--blanco);
+}
+.favorites-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.pokemon-card {
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(234, 244, 242, 0.96);
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+}
+.pokemon-card:hover {
+  background: var(--blanco);
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+}
+.pokemon-image-container {
+  background: none;
+  padding: 0;
+  margin-bottom: 4px;
+}
+.pokemon-image {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+.pokemon-name {
+  font: 400 15px/1.2 var(--px);
+}
+/* El botón de quitar siempre visible: en móvil no hay "hover". */
+.remove-favorite {
+  opacity: 1;
+}
