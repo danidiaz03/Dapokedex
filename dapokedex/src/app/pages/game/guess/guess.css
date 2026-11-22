@@ -34,7 +34,7 @@
   flex-wrap: wrap;
   gap: 24px;
   font: 400 15px/22px var(--px);
-  color: var(--tinta);
+  color: var(--texto-claro);
 }
 .guess-card {
   background: #fff;

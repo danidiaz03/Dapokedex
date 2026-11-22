@@ -2,7 +2,6 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--hueco);
 }
 
 .loading-screen {
@@ -85,8 +84,9 @@
 
 .btn-start {
   padding: 16px 48px;
-  background: linear-gradient(to bottom, var(--cursor-osc), var(--cursor-osc));
-  color: #ffffff;
+  background: var(--marco);
+  color: var(--tinta);
+  box-shadow: inset 0 -3px 0 var(--marco-osc);
   border: none;
   border-radius: 16px;
   font: 700 18px/26px var(--px);
@@ -99,8 +99,13 @@
 }
 
 .battle-arena {
-  background: linear-gradient(180deg, var(--hueco) 0%, var(--hueco) 60%);
-  padding: 32px;
+  /* El campo de batalla es una caja del PC: marco amarillo y mural de rayas. */
+  background: repeating-linear-gradient(45deg, var(--mural-a) 0 14px, var(--mural-b) 14px 28px);
+  border: 8px solid var(--marco);
+  border-radius: 16px;
+  box-shadow: 0 6px 0 var(--marco-osc);
+  margin: 20px clamp(12px, 3vw, 36px) 0;
+  padding: 24px;
   display: flex;
   justify-content: space-between;
   align-items: stretch;
@@ -122,16 +127,16 @@
 .player-side {
   align-items: flex-start;
   justify-content: flex-end;
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.12) 100%);
-  border: 2px solid rgba(37, 99, 235, 0.35);
+  background: rgba(234, 244, 242, 0.94);
+  border: 3px solid var(--tinta);
 }
 
 .enemy-side {
   align-items: flex-end;
   justify-content: flex-end;
   text-align: right;
-  background: linear-gradient(180deg, rgba(204, 0, 0, 0.04) 0%, rgba(204, 0, 0, 0.12) 100%);
-  border: 2px solid rgba(204, 0, 0, 0.35);
+  background: rgba(234, 244, 242, 0.94);
+  border: 3px solid var(--cursor-osc);
 }
 
 .side-label {
@@ -383,7 +388,6 @@
   border-radius: 10px;
   padding: 8px 14px;
   font: 400 14px/22px var(--px);
-  text-transform: capitalize;
   opacity: 1;
   transition: opacity 1s ease;
   animation: slideIn 0.3s ease;
@@ -558,10 +562,12 @@
 }
 
 .result-title.win {
-  color: #3b6d11;
+  color: var(--marco);
+  text-shadow: 4px 4px 0 var(--tinta);
 }
 .result-title.lose {
-  color: #a32d2d;
+  color: var(--cursor);
+  text-shadow: 4px 4px 0 var(--tinta);
 }
 
 .result-subtitle {
@@ -606,8 +612,9 @@
 
 .btn-primary {
   padding: 12px 32px;
-  background: linear-gradient(to bottom, var(--cursor-osc), var(--cursor-osc));
-  color: #ffffff;
+  background: var(--marco);
+  color: var(--tinta);
+  box-shadow: inset 0 -3px 0 var(--marco-osc);
   border: none;
   border-radius: 12px;
   font: 700 14px/20px var(--px);
@@ -644,20 +651,46 @@
     padding: 16px 0;
   }
 
+  /* En móvil los dos Pokémon van lado a lado y compactos para que los
+     movimientos queden a la vista sin tener que desplazarse en cada turno. */
   .battle-arena {
-    flex-direction: column;
+    flex-direction: row;
     align-items: stretch;
-    gap: 16px;
+    gap: 6px;
+    min-height: 0;
+    padding: 8px;
+    margin: 12px 8px 0;
+    border-width: 6px;
   }
 
   .enemy-side,
   .player-side {
     align-items: center;
     text-align: center;
+    padding: 8px 6px;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .pokemon-stats,
+  .vs-badge {
+    display: none;
+  }
+
+  .pokemon-info-box {
+    width: 100%;
+    min-width: 0;
+    padding: 8px;
+  }
+
+  .pokemon-sprite {
+    width: 96px;
+    height: 96px;
   }
 
   .battle-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
   }
 }
 
@@ -694,8 +727,9 @@
   margin: 8px 0 16px;
 }
 .result-rewards__xp {
+  text-shadow: 3px 3px 0 var(--tinta);
   font: 700 32px/40px var(--px);
-  color: #15803d;
+  color: var(--marco);
   animation: reward-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
 }
 .result-rewards__item {
@@ -732,6 +766,7 @@
   gap: 8px;
 }
 .team-growth__title {
+  color: var(--hueco);
   font: 700 18px/24px var(--px);
   text-align: left;
 }
