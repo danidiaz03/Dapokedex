@@ -1,251 +1,649 @@
-.battle-wrapper {
-  min-height: 100vh;
+/* Batalla con el mismo lenguaje que el resto de la web: cajas amarillas,
+   mural de rayas, paneles con cabecera oscura y huecos claros. */
+
+.zona {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 26px clamp(12px, 3vw, 36px) 40px;
   display: flex;
   flex-direction: column;
+  gap: 18px;
+}
+.zona-cab p {
+  margin-top: 6px;
 }
 
-.loading-screen {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  font: 400 16px/24px var(--px);
-  color: var(--hueco);
-}
-
-.preview-screen {
-  padding: 40px 0;
-  text-align: center;
-}
-
-.preview-title {
-  font: 700 40px/48px var(--px);
-  color: var(--hueco);
-  margin: 0 0 48px;
-}
-
-.preview-teams {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 32px;
-  margin-bottom: 48px;
-}
-
-.preview-team-title {
-  font: 700 20px/28px var(--px);
-  color: var(--hueco);
-  margin: 0 0 16px;
-}
-
-.preview-team-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  max-width: 400px;
-}
-
-.preview-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 16px;
-  width: 100px;
-  text-align: center;
-  border: 1px solid var(--hueco-borde);
-}
-
-.preview-sprite {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-}
-
-.preview-name {
-  font: 700 11px/16px var(--px);
-  color: var(--tinta);
-  text-transform: capitalize;
-  margin: 4px 0;
-}
-
-.preview-types {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2px;
-}
-
-.vs-divider {
-  font: 700 48px/56px var(--px);
-  color: var(--cursor-osc);
-  align-self: center;
-  padding: 0 16px;
-}
-
-.btn-start {
-  padding: 16px 48px;
-  background: var(--marco);
-  color: var(--tinta);
-  box-shadow: inset 0 -3px 0 var(--marco-osc);
-  border: none;
-  border-radius: 16px;
-  font: 700 18px/26px var(--px);
-  cursor: var(--cursor-mano);
-  transition: opacity 0.3s ease;
-}
-
-.btn-start:hover {
-  opacity: 0.9;
-}
-
-.battle-arena {
-  /* El campo de batalla es una caja del PC: marco amarillo y mural de rayas. */
-  background: repeating-linear-gradient(45deg, var(--mural-a) 0 14px, var(--mural-b) 14px 28px);
-  border: 8px solid var(--marco);
-  border-radius: 16px;
-  box-shadow: 0 6px 0 var(--marco-osc);
-  margin: 20px clamp(12px, 3vw, 36px) 0;
-  padding: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: stretch;
+.aviso-centro {
+  min-height: 60vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
   gap: 16px;
-  min-height: 320px;
+  font: 400 18px/1.3 var(--px);
+  color: var(--hueco);
+  text-align: center;
+}
+.parpadeo {
+  animation: parpadeo 1s steps(2) infinite;
+}
+@keyframes parpadeo {
+  50% {
+    opacity: 0.3;
+  }
 }
 
-.enemy-side,
-.player-side {
-  flex: 1;
+.botonera {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 20px;
-  position: relative;
-}
-
-.player-side {
-  align-items: flex-start;
-  justify-content: flex-end;
-  background: rgba(234, 244, 242, 0.94);
-  border: 3px solid var(--tinta);
-}
-
-.enemy-side {
-  align-items: flex-end;
-  justify-content: flex-end;
-  text-align: right;
-  background: rgba(234, 244, 242, 0.94);
-  border: 3px solid var(--cursor-osc);
-}
-
-.side-label {
-  display: inline-block;
-  font: 700 12px/16px var(--px);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 4px 12px;
-  border-radius: 99px;
-  color: #ffffff;
-}
-
-.side-label--player {
-  background: #2563eb;
-}
-
-.side-label--enemy {
-  background: var(--cursor-osc);
-}
-
-.vs-badge {
-  align-self: center;
-  font: 700 28px/1 var(--px);
-  color: #64748b;
-  padding: 8px 12px;
-  background: #ffffff;
-  border-radius: 50%;
-  border: 2px solid var(--hueco-borde);
-  box-shadow: 0px 4px 6px -1px #00000015;
-  flex-shrink: 0;
-}
-
-.pokemon-info-box {
-  background: #ffffff;
-  border: 1px solid var(--hueco-borde);
-  border-radius: 16px;
-  padding: 12px 16px;
-  min-width: 220px;
-  box-shadow: 0px 4px 6px -1px #00000010;
-}
-
-.pokemon-info-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.pokemon-name {
-  font: 700 14px/20px var(--px);
-  color: var(--tinta);
-  margin: 0;
-  text-transform: capitalize;
-}
-
-.pokemon-types {
-  display: flex;
-  gap: 4px;
-}
-
-.pokemon-stats {
-  display: flex;
-  gap: 6px;
+  justify-content: center;
   flex-wrap: wrap;
-  margin-top: 8px;
+  gap: 10px;
 }
 
-.stat {
-  font: 600 10px/14px var(--px);
-  color: var(--tinta-suave);
-  background: var(--hueco);
-  padding: 2px 6px;
+/* ---- Cajas ---- */
+.caja {
+  background: var(--marco);
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 6px 0 var(--marco-osc);
+  min-width: 0;
+}
+/* El rival lleva el marco en rojo para distinguir los bandos de un vistazo. */
+.caja--rival {
+  background: var(--cursor);
+  box-shadow: 0 6px 0 var(--cursor-osc);
+}
+.caja-cab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 4px 6px 10px;
+}
+.caja-cab h2 {
+  font: 400 20px/1 var(--px);
+  color: var(--tinta);
+}
+.caja--rival .caja-cab h2 {
+  color: var(--blanco);
+}
+.mural {
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.etiqueta {
+  font: 400 13px/1 var(--px);
+  padding: 6px 9px 5px;
   border-radius: 6px;
 }
+.etiqueta--tuya {
+  background: var(--tinta);
+  color: var(--marco);
+}
+.etiqueta--rival {
+  background: var(--blanco);
+  color: var(--cursor-osc);
+}
+.campo .etiqueta--rival {
+  background: var(--cursor);
+  color: var(--blanco);
+}
 
-.hp-bar-bg {
-  background: var(--hueco-borde);
-  border-radius: 99px;
-  height: 8px;
+/* ---- Huecos (tarjetas de Pokémon) ---- */
+.huecos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.hueco {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 6px 10px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(234, 244, 242, 0.94);
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+  color: var(--tinta);
+  text-align: center;
+  font: inherit;
+}
+.hueco img {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+}
+.hueco b {
+  font: 400 14px/1.15 var(--px);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hueco__nivel {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  font: 400 12px/1 var(--px);
+  background: var(--tinta);
+  color: var(--marco);
+  border-radius: 4px;
+  padding: 3px 5px;
+}
+.hueco__shiny {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+  font-size: 16px;
+}
+.tipos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+.hueco .type-badge {
+  font-size: 11px;
+  padding: 3px 6px 2px;
+}
+
+/* ---- Previa ---- */
+.enfrentamiento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+.vs {
+  font: 400 34px/1 var(--px);
+  color: var(--marco);
+  text-shadow: 3px 3px 0 var(--tinta);
+}
+.arranque {
+  display: flex;
+  justify-content: center;
+}
+.btn-grande {
+  font-size: 20px;
+  padding: 16px 28px;
+}
+
+/* ---- Campo de batalla ---- */
+.campo-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 10px;
+}
+.marcador {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bolas {
+  display: flex;
+  gap: 5px;
+}
+/* Cada Pokémon del equipo es una bola: llena si sigue en pie. */
+.bola {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--blanco) 0 2px, var(--tinta) 2px 3.5px, transparent 3.5px),
+    linear-gradient(var(--cursor) 0 44%, var(--tinta) 44% 56%, var(--blanco) 56%);
+  box-shadow: 0 0 0 2px var(--tinta);
+}
+.bola--fuera {
+  filter: grayscale(1);
+  opacity: 0.35;
+}
+.bola--activa {
+  box-shadow:
+    0 0 0 2px var(--tinta),
+    0 0 0 4px var(--blanco);
+}
+
+.escena {
+  display: grid;
+  gap: 8px;
+  padding: 16px clamp(12px, 3vw, 28px);
+}
+.lado {
+  display: grid;
+  align-items: center;
+  gap: 16px;
+}
+.lado--rival {
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+}
+.lado--tuyo {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+}
+.peana {
+  display: grid;
+  place-items: center;
+  position: relative;
+  padding-bottom: 10px;
+}
+/* Sombra ovalada bajo el Pokémon, como si estuviera en el terreno. */
+.peana::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  width: 70%;
+  max-width: 200px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(15, 37, 36, 0.28);
+}
+.sprite {
+  position: relative;
+  z-index: 1;
+  width: 170px;
+  height: 170px;
+  object-fit: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.2));
+  animation: entrar 0.4s ease;
+}
+.lado--tuyo .sprite {
+  width: 190px;
+  height: 190px;
+}
+
+/* ---- Ficha de cada Pokémon ---- */
+.ficha {
+  background: var(--blanco);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 0 #0d3633;
+  min-width: 0;
+}
+.ficha__cab {
+  background: var(--tinta);
+  color: var(--marco);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+}
+.ficha--rival .ficha__cab {
+  background: var(--cursor-osc);
+  color: var(--blanco);
+}
+.ficha__nombre {
+  font: 400 18px/1 var(--px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ficha__lado {
+  font: 400 13px/1 var(--px);
+  color: var(--texto-claro);
+  flex: none;
+}
+.ficha--rival .ficha__lado {
+  color: #ffd6d7;
+}
+.ficha__cuerpo {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ficha .tipos {
+  justify-content: flex-start;
+}
+
+/* Barra de PS en bloques, como en las consolas portátiles. */
+.ps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ps__etq {
+  font: 400 12px/1 var(--px);
+  background: var(--marco);
+  color: var(--tinta);
+  border-radius: 4px;
+  padding: 3px 5px;
+}
+.ps__barra {
+  flex: 1;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--tinta);
+  padding: 2px;
+}
+.ps__barra i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ok);
+  transition:
+    width 0.5s steps(12),
+    background 0.2s;
+}
+.ps__barra i[data-nivel='mid'] {
+  background: #f2a81d;
+}
+.ps__barra i[data-nivel='low'] {
+  background: var(--cursor);
+}
+.ps__barra--fina {
   width: 100%;
+  height: 9px;
+  flex: none;
 }
-
-.hp-bar-fill {
-  height: 8px;
-  border-radius: 99px;
-  transition: width 0.5s ease;
-}
-
-.hp-bar-fill.high {
-  background: #639922;
-}
-.hp-bar-fill.mid {
-  background: #ba7517;
-}
-.hp-bar-fill.low {
-  background: #a32d2d;
-}
-
-.hp-text {
-  font: 400 11px/16px var(--px);
-  color: var(--tinta-suave);
-  margin: 4px 0 0;
+.ps__num {
+  font: 400 15px/1 var(--px);
   text-align: right;
+  color: var(--tinta);
 }
 
-@keyframes shake {
-  0% {
-    transform: translateX(0);
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+.stats div {
+  background: var(--hueco);
+  border-radius: 6px;
+  padding: 4px 2px;
+  text-align: center;
+  box-shadow: inset 0 -2px 0 var(--hueco-borde);
+}
+.stats dt {
+  font-size: 11px;
+  color: var(--tinta-suave);
+}
+.stats dd {
+  font: 400 14px/1.1 var(--px);
+}
+
+/* ---- Cuadro de diálogo ---- */
+.dialogo {
+  background: var(--blanco);
+  border: 4px solid var(--tinta);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 0 3px var(--hueco-borde),
+    0 5px 0 #0d3633;
+  padding: 14px 18px;
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.dialogo p {
+  font: 400 18px/1.35 var(--px);
+  color: var(--tinta);
+  transition: opacity 1s ease;
+}
+.dialogo p.fade-out {
+  opacity: 0;
+}
+.dialogo__espera {
+  color: var(--tinta-suave) !important;
+}
+
+/* ---- Mandos: movimientos y cambio ---- */
+.turno {
+  margin-left: auto;
+  font: 400 14px/1 var(--px);
+  color: var(--tinta-suave);
+}
+.movs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 4px;
+}
+.mov {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px 13px;
+  border: none;
+  border-radius: 10px;
+  background: var(--hueco);
+  box-shadow:
+    inset 6px 0 0 var(--type-color, var(--tinta)),
+    inset 0 -3px 0 var(--hueco-borde);
+  color: var(--tinta);
+  text-align: left;
+  cursor: var(--cursor-mano);
+  font: inherit;
+  min-width: 0;
+}
+.mov:hover:not(:disabled),
+.mov:focus-visible {
+  background: var(--blanco);
+  outline: 3px solid var(--cursor);
+  outline-offset: -1px;
+}
+.mov:active:not(:disabled) {
+  transform: translateY(2px);
+}
+.mov:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.mov--agotado {
+  filter: grayscale(1);
+}
+.mov__nombre {
+  font: 400 17px/1.1 var(--px);
+  padding-left: 4px;
+  text-transform: capitalize;
+}
+.mov__nombre kbd {
+  margin-right: 4px;
+}
+.mov__datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding-left: 4px;
+  font-size: 13px;
+  color: var(--tinta-suave);
+}
+.mov__datos .type-badge {
+  font-size: 11px;
+  padding: 3px 6px 2px;
+}
+.mov__pp {
+  margin-left: auto;
+  font: 400 13px/1 var(--px);
+  color: var(--tinta);
+}
+.clase {
+  font: 400 12px/1 var(--px);
+  border-radius: 4px;
+  padding: 3px 5px;
+  background: var(--tinta);
+  color: var(--blanco);
+}
+.clase--physical {
+  background: #b8432e;
+}
+.clase--special {
+  background: #3b5bab;
+}
+.clase--status {
+  background: #6b6f73;
+}
+
+.huecos--elegir {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.hueco--boton {
+  cursor: var(--cursor-mano);
+}
+.hueco--boton:hover:not(:disabled),
+.hueco--boton:focus-visible {
+  background: var(--blanco);
+  outline: 4px solid var(--cursor);
+  outline-offset: -2px;
+}
+.hueco--boton:disabled {
+  opacity: 0.4;
+  filter: grayscale(1);
+  cursor: default;
+}
+.hueco--boton .ps__num {
+  font-size: 12px;
+}
+
+/* ---- Resultado ---- */
+.resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.resultado__cab {
+  background: var(--tinta);
+  color: var(--hueco);
+  border-radius: 10px;
+  padding: 22px 18px;
+  text-align: center;
+}
+.resultado__titulo {
+  font: 400 44px/1 var(--px);
+  color: var(--marco);
+  margin-bottom: 10px;
+}
+.caja--rival .resultado__titulo {
+  color: var(--cursor);
+}
+.resultado__cab p {
+  font-size: 16px;
+}
+.resultado .huecos {
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+.sello {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  font: 400 12px/1 var(--px);
+  background: var(--ok);
+  color: var(--blanco);
+  border-radius: 4px;
+  padding: 3px 5px;
+  z-index: 1;
+}
+.sello--shiny {
+  right: auto;
+  left: 6px;
+  background: var(--tinta);
+  color: var(--marco);
+}
+
+.premios {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+}
+.premios__xp {
+  font: 400 30px/1 var(--px);
+  background: var(--tinta);
+  color: var(--marco);
+  border-radius: 8px;
+  padding: 10px 14px;
+  animation: premio 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.premios__item {
+  font: 400 14px/1.2 var(--px);
+  background: var(--blanco);
+  color: var(--tinta);
+  border-radius: 6px;
+  padding: 7px 10px;
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+}
+
+.crecimiento {
+  background: var(--blanco);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.crecimiento h2 {
+  font: 400 18px/1 var(--px);
+  margin-bottom: 2px;
+}
+.crecimiento__fila {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  background: var(--hueco);
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: inset 0 -3px 0 var(--hueco-borde);
+}
+.crecimiento__fila--sube {
+  box-shadow:
+    inset 6px 0 0 var(--ok),
+    inset 0 -3px 0 var(--hueco-borde);
+}
+.crecimiento__fila img {
+  width: 48px;
+  height: 48px;
+}
+.crecimiento__nombre {
+  flex: 1;
+  min-width: 100px;
+  font: 400 16px/1.1 var(--px);
+}
+.crecimiento__nivel {
+  font: 400 15px/1 var(--px);
+}
+.crecimiento__nivel strong {
+  color: var(--ok);
+  font-weight: 400;
+}
+.crecimiento__xp {
+  font-size: 14px;
+  color: var(--tinta-suave);
+}
+.evolucionar {
+  animation: latido 1.4s ease-in-out infinite;
+}
+
+/* ---- Animaciones ---- */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: scale(0.5) translateY(20px);
   }
+}
+@keyframes premio {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+@keyframes latido {
+  50% {
+    transform: scale(1.05);
+  }
+}
+@keyframes shake {
   20% {
     transform: translateX(-10px);
   }
@@ -258,553 +656,128 @@
   80% {
     transform: translateX(8px);
   }
-  100% {
-    transform: translateX(0);
-  }
 }
-
 @keyframes flash {
-  0% {
-    opacity: 1;
-  }
-  25% {
-    opacity: 0.2;
-  }
-  50% {
-    opacity: 1;
-  }
+  25%,
   75% {
     opacity: 0.2;
   }
-  100% {
-    opacity: 1;
-  }
 }
-
-@keyframes enterBattle {
-  from {
-    opacity: 0;
-    transform: scale(0.5) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.pokemon-sprite {
-  width: 140px;
-  height: 140px;
-  object-fit: contain;
-  animation: enterBattle 0.4s ease;
-}
-
-.pokemon-sprite.shake {
+.sprite.shake {
   animation: shake 0.5s ease;
 }
-
-.pokemon-sprite.flash {
+.sprite.flash {
   animation: flash 0.3s ease;
 }
-
-.team-status {
-  background: #ffffff;
-  border-top: 1px solid var(--hueco-borde);
-  padding: 8px 24px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.team-status-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.team-status-group--enemy {
-  align-items: flex-end;
-}
-
-.team-status-label {
-  font: 700 10px/14px var(--px);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 10px;
-  border-radius: 99px;
-  color: #ffffff;
-}
-
-.team-avatars {
-  display: flex;
-  gap: 6px;
-}
-
-.team-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--hueco);
-  border: 2px solid transparent;
-  overflow: hidden;
-  transition:
-    border 0.3s ease,
-    opacity 0.3s ease;
-}
-
-.team-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.team-avatar.active {
-  border: 2px solid var(--tinta);
-}
-
-.team-avatar.enemy.active {
-  border: 2px solid var(--cursor-osc);
-}
-
-.team-avatar.fainted {
-  opacity: 0.3;
-  filter: grayscale(100%);
-}
-
-.battle-logs {
-  min-height: 80px;
-  padding: 10px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: #ffffff;
-  border-top: 1px solid var(--hueco-borde);
-  border-bottom: 1px solid var(--hueco-borde);
-}
-
-.battle-log-message {
-  background: #ffffff;
-  color: var(--tinta);
-  border: 1px solid var(--hueco-borde);
-  border-radius: 10px;
-  padding: 8px 14px;
-  font: 400 14px/22px var(--px);
-  opacity: 1;
-  transition: opacity 1s ease;
-  animation: slideIn 0.3s ease;
-  box-shadow: 0px 2px 4px #00000008;
-}
-
-.battle-log-message p {
-  margin: 0;
-}
-
-.battle-log-message.fade-out {
-  opacity: 0;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (prefers-reduced-motion: reduce) {
+  .sprite,
+  .sprite.shake,
+  .sprite.flash,
+  .evolucionar,
+  .parpadeo,
+  .premios__xp {
+    animation: none;
   }
 }
 
-.battle-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 16px;
-  background: #ffffff;
-}
-
-.move-btn {
-  border: 1px solid var(--hueco-borde);
-  border-radius: 12px;
-  padding: 12px 16px;
-  text-align: left;
-  cursor: var(--cursor-mano);
-  background: #f8fafc;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.move-btn:hover:not(:disabled) {
-  background: var(--hueco);
-  border-color: var(--cursor-osc);
-}
-
-.move-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.move-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.move-name {
-  font: 700 14px/20px var(--px);
-  color: var(--tinta);
-  margin: 0;
-  text-transform: capitalize;
-}
-
-.move-details {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.move-stat {
-  font: 400 11px/16px var(--px);
-  color: var(--tinta-suave);
-}
-
-.damage-class {
-  font: 600 10px/14px var(--px);
-  padding: 2px 6px;
-  border-radius: 99px;
-}
-
-.damage-class--physical {
-  background: #faece7;
-  color: #712b13;
-}
-.damage-class--special {
-  background: var(--hueco);
-  color: #3c3489;
-}
-.damage-class--status {
-  background: #d3d1c7;
-  color: #444441;
-}
-
-.select-pokemon {
-  background: #ffffff;
-  padding: 16px;
-  border-top: 1px solid var(--hueco-borde);
-}
-
-.select-title {
-  font: 700 14px/20px var(--px);
-  color: var(--hueco);
-  margin: 0 0 12px;
-}
-
-.select-grid {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.select-card {
-  background: #f8fafc;
-  border: 1px solid var(--hueco-borde);
-  border-radius: 12px;
-  padding: 12px;
-  text-align: center;
-  cursor: var(--cursor-mano);
-  width: 100px;
-  transition: border-color 0.2s ease;
-}
-
-.select-card:hover:not(.fainted) {
-  border-color: var(--cursor-osc);
-}
-
-.select-card.fainted {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.select-sprite {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-}
-
-.select-name {
-  font: 700 11px/16px var(--px);
-  color: var(--tinta);
-  text-transform: capitalize;
-  margin: 4px 0;
-}
-
-.result-screen {
-  padding: 60px 0;
-  text-align: center;
-}
-
-.result-content {
-  margin-bottom: 40px;
-}
-
-.result-title {
-  font: 700 48px/56px var(--px);
-  margin: 0 0 12px;
-}
-
-.result-title.win {
-  color: var(--marco);
-  text-shadow: 4px 4px 0 var(--tinta);
-}
-.result-title.lose {
-  color: var(--cursor);
-  text-shadow: 4px 4px 0 var(--tinta);
-}
-
-.result-subtitle {
-  font: 400 18px/28px var(--px);
-  color: var(--hueco);
-  margin: 0 0 32px;
-}
-
-.captured-grid {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.captured-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 16px;
-  text-align: center;
-  border: 1px solid var(--hueco-borde);
-}
-
-.captured-sprite {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-}
-
-.captured-name {
-  font: 700 12px/18px var(--px);
-  color: var(--tinta);
-  text-transform: capitalize;
-  margin: 4px 0 0;
-}
-
-.result-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-}
-
-.btn-primary {
-  padding: 12px 32px;
-  background: var(--marco);
-  color: var(--tinta);
-  box-shadow: inset 0 -3px 0 var(--marco-osc);
-  border: none;
-  border-radius: 12px;
-  font: 700 14px/20px var(--px);
-  cursor: var(--cursor-mano);
-  transition: opacity 0.3s ease;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-}
-
-.btn-secondary {
-  padding: 12px 32px;
-  background: var(--hueco);
-  color: var(--tinta-suave);
-  border: 1px solid var(--hueco-borde);
-  border-radius: 12px;
-  font: 700 14px/20px var(--px);
-  cursor: var(--cursor-mano);
-  transition: background 0.3s ease;
-}
-
-.btn-secondary:hover {
-  background: var(--hueco-borde);
-}
-
-@media (max-width: 768px) {
-  .preview-teams {
-    flex-direction: column;
-    align-items: center;
+/* ---- Tablet y móvil ---- */
+@media (max-width: 860px) {
+  .enfrentamiento {
+    grid-template-columns: minmax(0, 1fr);
   }
-
-  .vs-divider {
-    padding: 16px 0;
-  }
-
-  /* En móvil los dos Pokémon van lado a lado y compactos para que los
-     movimientos queden a la vista sin tener que desplazarse en cada turno. */
-  .battle-arena {
-    flex-direction: row;
-    align-items: stretch;
-    gap: 6px;
-    min-height: 0;
-    padding: 8px;
-    margin: 12px 8px 0;
-    border-width: 6px;
-  }
-
-  .enemy-side,
-  .player-side {
-    align-items: center;
+  .vs {
     text-align: center;
-    padding: 8px 6px;
-    gap: 6px;
-    min-width: 0;
   }
-
-  .pokemon-stats,
-  .vs-badge {
+  .huecos--elegir {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .zona {
+    padding: 16px 10px 32px;
+    gap: 14px;
+  }
+  .escena {
+    padding: 10px 8px;
+    gap: 4px;
+  }
+  .lado {
+    gap: 8px;
+  }
+  .lado--rival {
+    grid-template-columns: minmax(0, 1fr) 110px;
+  }
+  .lado--tuyo {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+  .sprite {
+    width: 104px;
+    height: 104px;
+  }
+  .lado--tuyo .sprite {
+    width: 116px;
+    height: 116px;
+  }
+  .peana::after {
+    height: 14px;
+  }
+  .ficha__nombre {
+    font-size: 15px;
+  }
+  .ficha__cab {
+    padding: 7px 9px;
+  }
+  .ficha__cuerpo {
+    padding: 8px 9px 9px;
+    gap: 6px;
+  }
+  .ficha .type-badge {
+    font-size: 11px;
+    padding: 3px 6px 2px;
+  }
+  /* En móvil las estadísticas sobran: se prioriza ver los movimientos. */
+  .stats {
     display: none;
   }
-
-  .pokemon-info-box {
-    width: 100%;
-    min-width: 0;
-    padding: 8px;
+  .ps__num {
+    font-size: 13px;
   }
-
-  .pokemon-sprite {
-    width: 96px;
-    height: 96px;
+  .dialogo {
+    min-height: 60px;
+    padding: 10px 12px;
   }
-
-  .battle-actions {
-    grid-template-columns: 1fr 1fr;
+  .dialogo p {
+    font-size: 16px;
+  }
+  .movs {
+    gap: 8px;
+    padding: 2px;
+  }
+  .mov {
+    padding: 10px 10px 11px;
     gap: 6px;
   }
-}
-
-.captured-card {
-  position: relative;
-}
-.new-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #16a34a;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 9999px;
-}
-.move-btn--empty {
-  filter: grayscale(1);
-}
-.shiny-badge {
-  right: auto;
-  left: 8px;
-  background: linear-gradient(135deg, #f59e0b, #ec4899);
-}
-.shiny-mark {
-  font-size: 18px;
-}
-.result-rewards {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  margin: 8px 0 16px;
-}
-.result-rewards__xp {
-  text-shadow: 3px 3px 0 var(--tinta);
-  font: 700 32px/40px var(--px);
-  color: var(--marco);
-  animation: reward-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
-}
-.result-rewards__item {
-  font: 600 14px/20px var(--px);
-  background: #fef3c7;
-  border-radius: 999px;
-  padding: 4px 12px;
-}
-@keyframes reward-pop {
-  from {
-    transform: scale(0.3);
-    opacity: 0;
+  .mov__nombre {
+    font-size: 15px;
   }
-}
-.preview-card {
-  position: relative;
-}
-.preview-level {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  font: 700 11px/14px var(--px);
-  background: var(--tinta);
-  color: #fff;
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-.team-growth {
-  width: 100%;
-  max-width: 560px;
-  margin: 0 auto 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.team-growth__title {
-  color: var(--hueco);
-  font: 700 18px/24px var(--px);
-  text-align: left;
-}
-.team-growth__row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  background: #fff;
-  border-radius: 14px;
-  padding: 6px 12px;
-  font-family: var(--px), sans-serif;
-}
-.team-growth__row--up {
-  background: #ecfdf5;
-}
-.team-growth__row img {
-  width: 44px;
-  height: 44px;
-}
-.team-growth__name {
-  flex: 1;
-  font-weight: 700;
-  text-align: left;
-}
-.team-growth__level strong {
-  color: #15803d;
-}
-.team-growth__xp {
-  font: 400 13px var(--px);
-  color: var(--tinta-suave);
-}
-.team-growth__evolve {
-  border: none;
-  border-radius: 999px;
-  padding: 6px 14px;
-  background: var(--marco);
-  color: var(--tinta);
-  box-shadow: inset 0 -3px 0 var(--marco-osc);
-  color: #fff;
-  font: 700 13px var(--px);
-  cursor: var(--cursor-mano);
-  animation: evolve-pulse 1.4s ease-in-out infinite;
-}
-@keyframes evolve-pulse {
-  50% {
-    box-shadow: 0 0 0 6px rgba(168, 85, 247, 0.25);
+  .mov__datos > span:nth-child(3),
+  .mov__datos > span:nth-child(4) {
+    display: none;
+  }
+  .huecos {
+    gap: 8px;
+  }
+  .hueco img {
+    width: 64px;
+    height: 64px;
+  }
+  .hueco b {
+    font-size: 12px;
+  }
+  .btn-grande {
+    width: 100%;
+  }
+  .resultado__titulo {
+    font-size: 34px;
   }
 }

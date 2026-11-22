@@ -1,315 +1,341 @@
-<div class="battle-wrapper">
+<main class="zona">
   @if (loading()) {
-    <div class="loading-screen">
-      <p>Cargando batalla...</p>
+    <div class="aviso-centro">
+      <p class="parpadeo">Cargando batalla…</p>
     </div>
   } @else if (loadError()) {
-    <div class="loading-screen">
+    <div class="aviso-centro">
       <p>{{ loadError() }}</p>
-      <div class="result-actions">
-        <button class="btn-secondary" (click)="goBack()">Volver al juego</button>
-        <button class="btn-primary" (click)="newBattle()">Reintentar</button>
+      <div class="botonera">
+        <button class="btn-caja" (click)="goBack()">Volver al juego</button>
+        <button class="btn-caja btn-caja--accion" (click)="newBattle()">Reintentar</button>
       </div>
     </div>
   } @else if (phase() === 'preview') {
-    <div class="preview-screen c-container">
-      <h1 class="preview-title">¡Batalla por equipos!</h1>
-
-      <div class="preview-teams">
-        <div class="preview-team">
-          <h2 class="preview-team-title">Tu equipo</h2>
-          <div class="preview-team-grid">
-            @for (pokemon of playerTeam(); track pokemon.id) {
-              <div class="preview-card">
-                <span class="preview-level">Nv. {{ pokemonLevel(pokemon.id) }}</span>
-                <img [src]="pokemon.sprite" [alt]="pokemon.name" class="preview-sprite" />
-                @if (pokemon.shiny) {
-                  <span class="shiny-mark" title="Shiny">✨</span>
-                }
-                <p class="preview-name">{{ pokemon.name | nombre: pokemon.id }}</p>
-                <div class="preview-types">
-                  @for (type of pokemon.types; track $index) {
-                    <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-
-        <div class="vs-divider">VS</div>
-
-        <div class="preview-team">
-          <h2 class="preview-team-title">Equipo rival</h2>
-          <div class="preview-team-grid">
-            @for (pokemon of enemyTeam(); track pokemon.id) {
-              <div class="preview-card">
-                <img [src]="pokemon.sprite" [alt]="pokemon.name" class="preview-sprite" />
-                @if (pokemon.shiny) {
-                  <span class="shiny-mark" title="Shiny">✨</span>
-                }
-                <p class="preview-name">{{ pokemon.name | nombre: pokemon.id }}</p>
-                <div class="preview-types">
-                  @for (type of pokemon.types; track $index) {
-                    <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-        </div>
+    <!-- ===== Antes de empezar: los dos equipos frente a frente ===== -->
+    <header class="zona-cab">
+      <div>
+        <h1 class="titulo-zona">Batalla por equipos</h1>
+        <p class="texto-zona">Si ganas, los Pokémon rivales se unen a tu colección.</p>
       </div>
+    </header>
 
-      <button class="btn-start" (click)="startBattle()">
+    <div class="enfrentamiento">
+      <section class="caja" aria-label="Tu equipo">
+        <div class="caja-cab">
+          <span class="etiqueta etiqueta--tuya">Tú</span>
+          <h2>Tu equipo</h2>
+        </div>
+        <div class="mural huecos">
+          @for (pokemon of playerTeam(); track pokemon.id) {
+            <div class="hueco">
+              <span class="hueco__nivel">Nv. {{ pokemonLevel(pokemon.id) }}</span>
+              @if (pokemon.shiny) {
+                <span class="hueco__shiny" title="Shiny">✨</span>
+              }
+              <img [src]="pokemon.sprite" [alt]="pokemon.name" />
+              <b>{{ pokemon.name | nombre: pokemon.id }}</b>
+              <div class="tipos">
+                @for (type of pokemon.types; track $index) {
+                  <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <div class="vs" aria-hidden="true">VS</div>
+
+      <section class="caja caja--rival" aria-label="Equipo rival">
+        <div class="caja-cab">
+          <span class="etiqueta etiqueta--rival">Rival</span>
+          <h2>Equipo rival</h2>
+        </div>
+        <div class="mural huecos">
+          @for (pokemon of enemyTeam(); track pokemon.id) {
+            <div class="hueco">
+              @if (pokemon.shiny) {
+                <span class="hueco__shiny" title="Shiny">✨</span>
+              }
+              <img [src]="pokemon.sprite" [alt]="pokemon.name" />
+              <b>{{ pokemon.name | nombre: pokemon.id }}</b>
+              <div class="tipos">
+                @for (type of pokemon.types; track $index) {
+                  <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <div class="arranque">
+      <button class="btn-caja btn-caja--accion btn-grande" (click)="startBattle()">
         ⚔️ ¡Comenzar batalla! <kbd>Intro</kbd>
       </button>
     </div>
   } @else if (phase() === 'battle' || phase() === 'select-pokemon') {
-    <div class="battle-arena">
-      <div class="player-side">
-        <span class="side-label side-label--player">Tú</span>
-        <div class="pokemon-info-box">
-          <div class="pokemon-info-header">
-            <p class="pokemon-name">{{ activePokemon()!.name | nombre: activePokemon()!.id }}</p>
-            <div class="pokemon-types">
-              @for (type of activePokemon()!.types; track $index) {
-                <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
-              }
-            </div>
-          </div>
-          <div class="hp-bar-bg">
-            <div
-              class="hp-bar-fill"
-              [class]="getHpClass(activePokemon()!)"
-              [style.width.%]="getHpPercent(activePokemon()!)"
-            ></div>
-          </div>
-          <p class="hp-text">{{ activePokemon()!.hp }} / {{ activePokemon()!.maxHp }} HP</p>
-          <div class="pokemon-stats">
-            <span class="stat">ATK {{ activePokemon()!.attack }}</span>
-            <span class="stat">DEF {{ activePokemon()!.defense }}</span>
-            <span class="stat">SP.ATK {{ activePokemon()!.specialAttack }}</span>
-            <span class="stat">SP.DEF {{ activePokemon()!.specialDefense }}</span>
-            <span class="stat">SPD {{ activePokemon()!.speed }}</span>
+    <!-- ===== Combate ===== -->
+    <section class="caja campo" aria-label="Campo de batalla">
+      <div class="campo-cab">
+        <div class="marcador">
+          <span class="etiqueta etiqueta--tuya">Tú</span>
+          <div class="bolas">
+            @for (pokemon of playerTeam(); track pokemon.id) {
+              <i
+                class="bola"
+                [class.bola--fuera]="pokemon.fainted"
+                [class.bola--activa]="pokemon.id === activePokemon()!.id"
+                [title]="pokemon.name | nombre: pokemon.id"
+              ></i>
+            }
           </div>
         </div>
-        <img
-          class="pokemon-sprite"
-          [class.shake]="playerShaking()"
-          [class.flash]="playerFlashing()"
-          [src]="activePokemon()!.sprite"
-          [alt]="activePokemon()!.name"
-        />
-      </div>
-
-      <div class="vs-badge">VS</div>
-
-      <div class="enemy-side">
-        <span class="side-label side-label--enemy">Rival</span>
-        <div class="pokemon-info-box">
-          <div class="pokemon-info-header">
-            <p class="pokemon-name">{{ activeEnemy()!.name | nombre: activeEnemy()!.id }}</p>
-            <div class="pokemon-types">
-              @for (type of activeEnemy()!.types; track $index) {
-                <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
-              }
-            </div>
+        <div class="marcador marcador--rival">
+          <div class="bolas">
+            @for (pokemon of enemyTeam(); track pokemon.id) {
+              <i
+                class="bola bola--rival"
+                [class.bola--fuera]="pokemon.fainted"
+                [class.bola--activa]="pokemon.id === activeEnemy()!.id"
+                [title]="pokemon.name | nombre: pokemon.id"
+              ></i>
+            }
           </div>
-          <div class="hp-bar-bg">
-            <div
-              class="hp-bar-fill"
-              [class]="getHpClass(activeEnemy()!)"
-              [style.width.%]="getHpPercent(activeEnemy()!)"
-            ></div>
-          </div>
-          <p class="hp-text">{{ activeEnemy()!.hp }} / {{ activeEnemy()!.maxHp }} HP</p>
-          <div class="pokemon-stats">
-            <span class="stat">ATK {{ activeEnemy()!.attack }}</span>
-            <span class="stat">DEF {{ activeEnemy()!.defense }}</span>
-            <span class="stat">SP.ATK {{ activeEnemy()!.specialAttack }}</span>
-            <span class="stat">SP.DEF {{ activeEnemy()!.specialDefense }}</span>
-            <span class="stat">SPD {{ activeEnemy()!.speed }}</span>
-          </div>
-        </div>
-        <img
-          class="pokemon-sprite"
-          [class.shake]="enemyShaking()"
-          [class.flash]="enemyFlashing()"
-          [src]="activeEnemy()!.sprite"
-          [alt]="activeEnemy()!.name"
-        />
-      </div>
-    </div>
-
-    <div class="team-status">
-      <div class="team-status-group team-status-group--player">
-        <span class="team-status-label side-label--player">Tu equipo</span>
-        <div class="team-avatars">
-          @for (pokemon of playerTeam(); track pokemon.id) {
-            <div
-              class="team-avatar"
-              [class.fainted]="pokemon.fainted"
-              [class.active]="pokemon.id === activePokemon()!.id"
-            >
-              <img [src]="pokemon.sprite" [alt]="pokemon.name" />
-            </div>
-          }
+          <span class="etiqueta etiqueta--rival">Rival</span>
         </div>
       </div>
-      <div class="team-status-group team-status-group--enemy">
-        <span class="team-status-label side-label--enemy">Equipo rival</span>
-        <div class="team-avatars">
-          @for (pokemon of enemyTeam(); track pokemon.id) {
-            <div
-              class="team-avatar enemy"
-              [class.fainted]="pokemon.fainted"
-              [class.active]="pokemon.id === activeEnemy()!.id"
-            >
-              <img [src]="pokemon.sprite" [alt]="pokemon.name" />
+
+      <div class="mural escena">
+        <!-- Rival: ficha a la izquierda, Pokémon arriba a la derecha -->
+        <div class="lado lado--rival">
+          <div class="ficha ficha--rival">
+            <div class="ficha__cab">
+              <span class="ficha__nombre">{{ activeEnemy()!.name | nombre: activeEnemy()!.id }}</span>
+              <span class="ficha__lado">Rival</span>
             </div>
-          }
+            <div class="ficha__cuerpo">
+              <div class="tipos">
+                @for (type of activeEnemy()!.types; track $index) {
+                  <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
+                }
+              </div>
+              <div class="ps">
+                <span class="ps__etq">PS</span>
+                <div class="ps__barra">
+                  <i
+                    [attr.data-nivel]="getHpClass(activeEnemy()!)"
+                    [style.width.%]="getHpPercent(activeEnemy()!)"
+                  ></i>
+                </div>
+              </div>
+              <p class="ps__num">{{ activeEnemy()!.hp }} / {{ activeEnemy()!.maxHp }}</p>
+            </div>
+          </div>
+          <div class="peana">
+            <img
+              class="sprite"
+              [class.shake]="enemyShaking()"
+              [class.flash]="enemyFlashing()"
+              [src]="activeEnemy()!.sprite"
+              [alt]="activeEnemy()!.name"
+            />
+          </div>
+        </div>
+
+        <!-- Tú: Pokémon abajo a la izquierda, ficha a la derecha -->
+        <div class="lado lado--tuyo">
+          <div class="peana">
+            <img
+              class="sprite"
+              [class.shake]="playerShaking()"
+              [class.flash]="playerFlashing()"
+              [src]="activePokemon()!.sprite"
+              [alt]="activePokemon()!.name"
+            />
+          </div>
+          <div class="ficha">
+            <div class="ficha__cab">
+              <span class="ficha__nombre">{{
+                activePokemon()!.name | nombre: activePokemon()!.id
+              }}</span>
+              <span class="ficha__lado">Nv. {{ pokemonLevel(activePokemon()!.id) }}</span>
+            </div>
+            <div class="ficha__cuerpo">
+              <div class="tipos">
+                @for (type of activePokemon()!.types; track $index) {
+                  <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
+                }
+              </div>
+              <div class="ps">
+                <span class="ps__etq">PS</span>
+                <div class="ps__barra">
+                  <i
+                    [attr.data-nivel]="getHpClass(activePokemon()!)"
+                    [style.width.%]="getHpPercent(activePokemon()!)"
+                  ></i>
+                </div>
+              </div>
+              <p class="ps__num">{{ activePokemon()!.hp }} / {{ activePokemon()!.maxHp }}</p>
+              <dl class="stats">
+                <div><dt>Ata</dt><dd>{{ activePokemon()!.attack }}</dd></div>
+                <div><dt>Def</dt><dd>{{ activePokemon()!.defense }}</dd></div>
+                <div><dt>At.Esp</dt><dd>{{ activePokemon()!.specialAttack }}</dd></div>
+                <div><dt>Df.Esp</dt><dd>{{ activePokemon()!.specialDefense }}</dd></div>
+                <div><dt>Vel</dt><dd>{{ activePokemon()!.speed }}</dd></div>
+              </dl>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="battle-logs">
+    <!-- Cuadro de diálogo con lo que va pasando -->
+    <div class="dialogo" aria-live="polite">
       @for (log of battleLogs(); track log.id) {
-        <div class="battle-log-message" [class.fade-out]="!log.visible">
-          <p>{{ log.text }}</p>
-        </div>
+        <p [class.fade-out]="!log.visible">{{ log.text }}</p>
+      } @empty {
+        <p class="dialogo__espera">
+          @if (phase() === 'select-pokemon') {
+            ¿Qué Pokémon sacas ahora?
+          } @else if (isPlayerTurn()) {
+            ¿Qué hará {{ activePokemon()!.name | nombre: activePokemon()!.id }}?
+          } @else {
+            …
+          }
+        </p>
       }
     </div>
 
     @if (phase() === 'select-pokemon') {
-      <div class="select-pokemon">
-        <p class="select-title">Elige tu siguiente Pokémon:</p>
-        <div class="select-grid">
+      <section class="caja mandos" aria-label="Elegir Pokémon">
+        <div class="caja-cab">
+          <h2>Elige tu siguiente Pokémon</h2>
+        </div>
+        <div class="mural huecos huecos--elegir">
           @for (pokemon of playerTeam(); track pokemon.id; let i = $index) {
-            <div
-              class="select-card"
-              [class.fainted]="pokemon.fainted"
+            <button
+              class="hueco hueco--boton"
+              [disabled]="pokemon.fainted"
               (click)="selectNextPokemon(pokemon)"
             >
-              <img [src]="pokemon.sprite" [alt]="pokemon.name" class="select-sprite" />
-              <p class="select-name">
-                <kbd>{{ i + 1 }}</kbd> {{ pokemon.name | nombre: pokemon.id }}
-              </p>
-              <div class="hp-bar-bg">
-                <div
-                  class="hp-bar-fill"
-                  [class]="getHpClass(pokemon)"
+              <img [src]="pokemon.sprite" [alt]="pokemon.name" />
+              <b><kbd>{{ i + 1 }}</kbd> {{ pokemon.name | nombre: pokemon.id }}</b>
+              <div class="ps__barra ps__barra--fina">
+                <i
+                  [attr.data-nivel]="getHpClass(pokemon)"
                   [style.width.%]="getHpPercent(pokemon)"
-                ></div>
+                ></i>
               </div>
-              <p class="hp-text">{{ pokemon.hp }}/{{ pokemon.maxHp }} HP</p>
-            </div>
+              <span class="ps__num">{{ pokemon.hp }}/{{ pokemon.maxHp }}</span>
+            </button>
           }
         </div>
-      </div>
+      </section>
     } @else {
-      <div class="battle-actions">
-        @if (!hasUsableMoves(activePokemon()!)) {
-          <button class="move-btn" [disabled]="!isPlayerTurn()" (click)="useStruggle()">
-            <div class="move-header">
-              <p class="move-name">Forcejeo</p>
-              <span class="damage-class damage-class--physical">Físico</span>
-            </div>
-            <div class="move-details">
-              <span class="move-stat">Sin PP: el Pokémon se hará daño a sí mismo</span>
-            </div>
-          </button>
-        }
-        @for (move of activePokemon()!.moves; track $index; let i = $index) {
-          <button
-            class="move-btn"
-            [class.move-btn--empty]="move.pp === 0"
-            [disabled]="!isPlayerTurn() || move.pp === 0"
-            (click)="useMove(move)"
-          >
-            <div class="move-header">
-              <p class="move-name">
-                <kbd>{{ i + 1 }}</kbd> {{ move.name }}
-              </p>
-              <span class="damage-class damage-class--{{ move.damageClass }}">
-                {{
+      <section class="caja mandos" aria-label="Movimientos">
+        <div class="caja-cab">
+          <h2>Movimientos</h2>
+          @if (!isPlayerTurn()) {
+            <span class="turno">Turno del rival…</span>
+          }
+        </div>
+        <div class="movs">
+          @if (!hasUsableMoves(activePokemon()!)) {
+            <button class="mov c-bg-normal" [disabled]="!isPlayerTurn()" (click)="useStruggle()">
+              <span class="mov__nombre">Forcejeo</span>
+              <span class="mov__datos">Sin PP: el Pokémon se hará daño a sí mismo</span>
+            </button>
+          }
+          @for (move of activePokemon()!.moves; track $index; let i = $index) {
+            <button
+              class="mov c-bg-{{ move.type }}"
+              [class.mov--agotado]="move.pp === 0"
+              [disabled]="!isPlayerTurn() || move.pp === 0"
+              (click)="useMove(move)"
+            >
+              <span class="mov__nombre"><kbd>{{ i + 1 }}</kbd> {{ move.name }}</span>
+              <span class="mov__datos">
+                <span class="type-badge type-badge--{{ move.type }}">{{ move.type | tipo }}</span>
+                <span class="clase clase--{{ move.damageClass }}">{{
                   move.damageClass === 'physical'
                     ? 'Físico'
                     : move.damageClass === 'special'
                       ? 'Especial'
                       : 'Estado'
-                }}
+                }}</span>
+                <span>Pot. {{ move.power || '—' }}</span>
+                <span>Prec. {{ move.accuracy || '—' }}</span>
+                <span class="mov__pp">PP {{ move.pp }}/{{ move.maxPp }}</span>
               </span>
-            </div>
-            <div class="move-details">
-              <span class="type-badge type-badge--{{ move.type }}">{{ move.type | tipo }}</span>
-              <span class="move-stat">POW: {{ move.power || '—' }}</span>
-              <span class="move-stat">ACC: {{ move.accuracy || '—' }}</span>
-              <span class="move-stat">PP: {{ move.pp }}/{{ move.maxPp }}</span>
-            </div>
-          </button>
-        }
-      </div>
+            </button>
+          }
+        </div>
+      </section>
     }
   } @else if (phase() === 'result') {
-    <div class="result-screen c-container">
-      @if (playerWon()) {
-        <div class="result-content">
-          <h1 class="result-title win">¡Victoria!</h1>
-          <p class="result-subtitle">
+    <!-- ===== Resultado ===== -->
+    <section class="caja resultado" [class.caja--rival]="!playerWon()">
+      <div class="resultado__cab">
+        @if (playerWon()) {
+          <h1 class="resultado__titulo">¡Victoria!</h1>
+          <p>
             Los Pokémon rivales se han unido a tu colección.
             @if (newCaptures().length > 0) {
               ¡{{ newCaptures().length }}
               {{ newCaptures().length === 1 ? 'es nuevo' : 'son nuevos' }}!
             }
           </p>
-          <div class="captured-grid">
-            @for (pokemon of enemyTeam(); track pokemon.id) {
-              <div class="captured-card">
-                @if (isNewCapture(pokemon.id)) {
-                  <span class="new-badge">¡Nuevo!</span>
-                }
-                @if (pokemon.shiny) {
-                  <span class="new-badge shiny-badge">✨ Shiny</span>
-                }
-                <img [src]="pokemon.sprite" [alt]="pokemon.name" class="captured-sprite" />
-                <p class="captured-name">{{ pokemon.name | nombre: pokemon.id }}</p>
-              </div>
-            }
-          </div>
-        </div>
-      } @else {
-        <div class="result-content">
-          <h1 class="result-title lose">¡Derrota!</h1>
-          <p class="result-subtitle">Tu equipo ha sido derrotado. ¡Inténtalo de nuevo!</p>
-        </div>
-      }
+        } @else {
+          <h1 class="resultado__titulo">¡Derrota!</h1>
+          <p>Tu equipo ha sido derrotado. ¡Inténtalo de nuevo!</p>
+        }
+      </div>
+
       @if (rewardXp() > 0 || highlightRewards().length) {
-        <div class="result-rewards">
-          <span class="result-rewards__xp">+{{ rewardXp() }} XP</span>
+        <div class="premios">
+          <span class="premios__xp">+{{ rewardXp() }} XP</span>
           @for (line of highlightRewards(); track $index) {
-            <span class="result-rewards__item">{{ line }}</span>
+            <span class="premios__item">{{ line }}</span>
           }
         </div>
       }
+
+      @if (playerWon()) {
+        <div class="mural huecos">
+          @for (pokemon of enemyTeam(); track pokemon.id) {
+            <div class="hueco">
+              @if (isNewCapture(pokemon.id)) {
+                <span class="sello">¡Nuevo!</span>
+              }
+              @if (pokemon.shiny) {
+                <span class="sello sello--shiny">✨ Shiny</span>
+              }
+              <img [src]="pokemon.sprite" [alt]="pokemon.name" />
+              <b>{{ pokemon.name | nombre: pokemon.id }}</b>
+            </div>
+          }
+        </div>
+      }
+
       @if (teamGrowth().length) {
-        <div class="team-growth">
-          <h2 class="team-growth__title">Tu equipo</h2>
+        <div class="crecimiento">
+          <h2>Tu equipo</h2>
           @for (g of teamGrowth(); track g.id) {
-            <div
-              class="team-growth__row"
-              [class.team-growth__row--up]="g.levelAfter > g.levelBefore"
-            >
+            <div class="crecimiento__fila" [class.crecimiento__fila--sube]="g.levelAfter > g.levelBefore">
               <img [src]="pokemonSprite(g.id)" [alt]="g.name" />
-              <span class="team-growth__name">{{ g.name | nombre: g.id }}</span>
-              <span class="team-growth__level">
+              <span class="crecimiento__nombre">{{ g.name | nombre: g.id }}</span>
+              <span class="crecimiento__nivel">
                 Nv. {{ g.levelAfter }}
                 @if (g.levelAfter > g.levelBefore) {
                   <strong>▲ +{{ g.levelAfter - g.levelBefore }}</strong>
                 }
               </span>
-              <span class="team-growth__xp">+{{ g.gained }} XP</span>
+              <span class="crecimiento__xp">+{{ g.gained }} XP</span>
               @if (g.evolutions.length) {
-                <button class="team-growth__evolve" (click)="evolving.set(g)">
+                <button class="btn-caja btn-caja--accion evolucionar" (click)="evolving.set(g)">
                   ✨ ¡Evolucionar!
                 </button>
               }
@@ -317,13 +343,16 @@
           }
         </div>
       }
-      <div class="result-actions">
-        <button class="btn-secondary" (click)="goBack()">Volver al juego</button>
-        <button class="btn-primary" (click)="newBattle()">Nueva batalla con el mismo equipo</button>
+
+      <div class="botonera">
+        <button class="btn-caja" (click)="goBack()">Volver al juego</button>
+        <button class="btn-caja btn-caja--accion" (click)="newBattle()">
+          ⚔️ Nueva batalla con el mismo equipo
+        </button>
       </div>
-    </div>
+    </section>
   }
-</div>
+</main>
 
 @if (evolving(); as g) {
   <app-evolve-dialog
