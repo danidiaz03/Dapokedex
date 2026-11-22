@@ -1,9 +1,10 @@
-import { Component, inject, OnDestroy, OnInit, signal, WritableSignal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { FirestoreService } from '../../../services/firestore.service';
 import { PokemonService, getArtworkUrl, playPokemonCry } from '../../../services/pokemon';
-import { PokemonDetailPage, PokemonMove } from '../../../interfaces/pokemon';
+import { PokemonDetailPage } from '../../../interfaces/pokemon';
 import { TypeNamePipe } from '../../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../../pipes/pokemon-name.pipe';
 import { ProgressService } from '../../../services/progress.service';
@@ -13,10 +14,31 @@ import { baseStatTotal, pickBalancedEnemies } from '../../../game/matchmaking';
 import { EvolveDialog } from '../../../componentes/evolve-dialog/evolve-dialog';
 import {
   EvolutionOption,
+  MAX_LEVEL,
   availableEvolutions,
   battleXp,
   pokemonLevel,
 } from '../../../game/pokemon-levels';
+import {
+  Action,
+  BattleEvent,
+  BattleMove,
+  BattleState,
+  Combatant,
+  STATUS_LABEL,
+  SideKey,
+  StatKey,
+  activeOf,
+  chooseEnemyAction,
+  chooseEnemyReplacement,
+  createCombatant,
+  hasAlive,
+  hasUsableMoves,
+  isSupportedMove,
+  resolveTurn,
+  switchIn,
+  toBattleMove,
+} from '../../../game/battle-engine';
 import {
   Reward,
   SHINY_CHANCE,
@@ -27,33 +49,6 @@ import {
 
 const SHINY_ARTWORK_URL =
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny';
-
-interface BattleMove {
-  name: string;
-  power: number;
-  type: string;
-  damageClass: string;
-  accuracy: number | null;
-  pp: number;
-  maxPp: number;
-}
-
-interface BattlePokemon {
-  id: number;
-  name: string;
-  hp: number;
-  maxHp: number;
-  attack: number;
-  defense: number;
-  specialAttack: number;
-  specialDefense: number;
-  speed: number;
-  types: string[];
-  moves: BattleMove[];
-  sprite: string;
-  shiny: boolean;
-  fainted: boolean;
-}
 
 /** Cómo ha crecido cada Pokémon del equipo tras la batalla. */
 interface TeamGrowth {
@@ -66,35 +61,28 @@ interface TeamGrowth {
   evolutions: EvolutionOption[];
 }
 
-interface BattleLogEntry {
-  id: number;
-  text: string;
-  visible: boolean;
-}
-
 type BattlePhase = 'preview' | 'battle' | 'select-pokemon' | 'result';
-type Side = 'player' | 'enemy';
 
-// Movimiento de emergencia cuando no quedan PP (equivalente a "Forcejeo").
-const STRUGGLE: BattleMove = {
-  name: 'Forcejeo',
-  power: 50,
-  type: 'normal',
-  damageClass: 'physical',
-  accuracy: null,
-  pp: 1,
-  maxPp: 1,
-};
-
-// Cuántos movimientos del Pokémon consultamos para elegir 4 que hagan daño.
-const MOVE_SAMPLE_SIZE = 16;
-const TURN_DELAY = 3000;
+// Cuántos movimientos del Pokémon consultamos para elegir 4 que tengan sentido.
+const MOVE_SAMPLE_SIZE = 18;
 // Candidatos consultados por cada rival para poder elegir uno equilibrado.
 const CANDIDATES_PER_ENEMY = 5;
 
+const STAGE_SHORT: Partial<Record<StatKey, string>> = {
+  attack: 'Ata',
+  defense: 'Def',
+  specialAttack: 'At.Esp',
+  specialDefense: 'Df.Esp',
+  speed: 'Vel',
+  accuracy: 'Prec',
+  evasion: 'Eva',
+};
+
+const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 @Component({
   selector: 'app-battle',
-  imports: [TypeNamePipe, PokemonNamePipe, EvolveDialog],
+  imports: [TypeNamePipe, PokemonNamePipe, EvolveDialog, NgTemplateOutlet],
   templateUrl: './battle.html',
   styleUrl: './battle.css',
 })
@@ -108,13 +96,27 @@ export class Battle implements OnInit, OnDestroy {
   private progressService = inject(ProgressService);
   private evolutionService = inject(EvolutionService);
 
-  playerTeam = signal<BattlePokemon[]>([]);
-  enemyTeam = signal<BattlePokemon[]>([]);
-  activePokemon = signal<BattlePokemon | null>(null);
-  activeEnemy = signal<BattlePokemon | null>(null);
-  battleLogs = signal<BattleLogEntry[]>([]);
+  /** Estado completo del combate; todo lo demás se deriva de aquí. */
+  state = signal<BattleState | null>(null);
+  playerTeam = computed(() => this.state()?.player.team ?? []);
+  enemyTeam = computed(() => this.state()?.enemy.team ?? []);
+  activePokemon = computed(() => {
+    const s = this.state();
+    return s ? activeOf(s, 'player') : null;
+  });
+  activeEnemy = computed(() => {
+    const s = this.state();
+    return s ? activeOf(s, 'enemy') : null;
+  });
+
   phase = signal<BattlePhase>('preview');
-  isPlayerTurn = signal(true);
+  /** Mientras se reproducen los sucesos de un turno no se puede elegir nada. */
+  busy = signal(false);
+  /** Lista de Pokémon abierta para cambiar voluntariamente. */
+  switching = signal(false);
+  isPlayerTurn = computed(() => this.phase() === 'battle' && !this.busy());
+  message = signal('');
+
   playerWon = signal(false);
   loading = signal(true);
   loadError = signal('');
@@ -124,6 +126,8 @@ export class Battle implements OnInit, OnDestroy {
   enemyShaking = signal(false);
   playerFlashing = signal(false);
   enemyFlashing = signal(false);
+  playerFainting = signal(false);
+  enemyFainting = signal(false);
   /** Recompensas de la última batalla para el resumen final. */
   rewards = signal<Reward[]>([]);
   rewardXp = signal(0);
@@ -134,87 +138,20 @@ export class Battle implements OnInit, OnDestroy {
   /** Rivales derrotados por cada Pokémon del jugador en esta batalla. */
   private koBy = new Map<number, number>();
 
-  private logCounter = 0;
   private audioCtx: AudioContext | null = null;
-  // Guardamos todos los timers para cancelarlos al salir de la batalla; antes
-  // el turno del rival seguía ejecutándose aunque ya hubieras cambiado de página.
-  private timeouts = new Set<ReturnType<typeof setTimeout>>();
-  private intervals = new Set<ReturnType<typeof setInterval>>();
+  /** Cambia al salir o reiniciar: la reproducción en curso se detiene sola. */
+  private run = 0;
+  private destroyed = false;
 
-  private schedule(fn: () => void, ms: number) {
-    const id = setTimeout(() => {
-      this.timeouts.delete(id);
-      fn();
-    }, ms);
-    this.timeouts.add(id);
+  statusText(p: Combatant): string {
+    return p.status ? STATUS_LABEL[p.status] : '';
   }
 
   ngOnDestroy() {
+    this.destroyed = true;
+    this.run++;
     this.unregisterKeys?.();
-    this.timeouts.forEach(clearTimeout);
-    this.intervals.forEach(clearInterval);
     this.audioCtx?.close().catch(() => {});
-  }
-
-  playCry(pokemonId: number) {
-    playPokemonCry(pokemonId);
-  }
-
-  playHitSound(effectiveness: number) {
-    // Un único AudioContext reutilizado: los navegadores limitan cuántos se
-    // pueden crear y antes se creaba uno nuevo en cada golpe.
-    this.audioCtx ??= new AudioContext();
-    const ctx = this.audioCtx;
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-
-    const [from, to, gain, duration] =
-      effectiveness >= 2
-        ? [300, 80, 0.4, 0.3]
-        : effectiveness === 0
-          ? [100, 100, 0.2, 0.15]
-          : [200, 60, 0.3, 0.2];
-
-    oscillator.frequency.setValueAtTime(from, ctx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(to, ctx.currentTime + duration);
-    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + duration);
-  }
-
-  private animate(flag: WritableSignal<boolean>, ms: number) {
-    flag.set(true);
-    this.schedule(() => flag.set(false), ms);
-  }
-
-  typewriterLog(text: string) {
-    const id = this.logCounter++;
-    this.battleLogs.update((logs) => [...logs, { id, text: '', visible: true }]);
-
-    let i = 0;
-    const interval = setInterval(() => {
-      i++;
-      this.battleLogs.update((logs) =>
-        logs.map((l) => (l.id === id ? { ...l, text: text.slice(0, i) } : l)),
-      );
-      if (i >= text.length) {
-        clearInterval(interval);
-        this.intervals.delete(interval);
-        this.schedule(() => {
-          this.battleLogs.update((logs) =>
-            logs.map((l) => (l.id === id ? { ...l, visible: false } : l)),
-          );
-        }, 2500);
-        this.schedule(() => {
-          this.battleLogs.update((logs) => logs.filter((l) => l.id !== id));
-        }, 3500);
-      }
-    }, 30);
-    this.intervals.add(interval);
   }
 
   async ngOnInit() {
@@ -223,6 +160,7 @@ export class Battle implements OnInit, OnDestroy {
       [
         { keys: ['A'], label: 'Empezar / nueva batalla (Intro)' },
         { keys: ['1', '2', '3', '4'], label: 'Movimiento' },
+        { keys: ['C'], label: 'Cambiar de Pokémon' },
         { keys: ['1', '…', '6'], label: 'Elegir Pokémon' },
       ],
       'Batalla',
@@ -230,7 +168,10 @@ export class Battle implements OnInit, OnDestroy {
     await this.loadBattle();
   }
 
-  /** Mandos del combate: los números eligen movimiento o Pokémon según la fase. */
+  /* ------------------------------------------------------------------ */
+  /* Teclado                                                             */
+  /* ------------------------------------------------------------------ */
+
   private onKey(e: KeyboardEvent): boolean {
     const phase = this.phase();
     const n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
@@ -246,27 +187,42 @@ export class Battle implements OnInit, OnDestroy {
       }
       return false;
     }
+    if (phase === 'battle' && e.key.toLowerCase() === 'c') {
+      if (this.isPlayerTurn()) this.switching.update((v) => !v);
+      return true;
+    }
+    if (phase === 'battle' && this.switching() && e.key === 'Escape') {
+      this.switching.set(false);
+      return true;
+    }
     if (n < 0) return false;
     if (phase === 'battle') {
-      const pokemon = this.activePokemon();
-      if (!pokemon || !this.isPlayerTurn()) return true;
-      if (!this.hasUsableMoves(pokemon)) {
+      if (!this.isPlayerTurn()) return true;
+      if (this.switching()) {
+        this.switchTo(n);
+        return true;
+      }
+      const pokemon = this.activePokemon()!;
+      if (!hasUsableMoves(pokemon)) {
         this.useStruggle();
         return true;
       }
-      const move = pokemon.moves[n];
-      if (move && move.pp > 0) this.useMove(move);
+      if (pokemon.moves[n]?.pp > 0) this.useMove(n);
       return true;
     }
     if (phase === 'select-pokemon') {
-      const pokemon = this.playerTeam()[n];
-      if (pokemon && !pokemon.fainted) this.selectNextPokemon(pokemon);
+      this.selectNextPokemon(n);
       return true;
     }
     return false;
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Preparación                                                         */
+  /* ------------------------------------------------------------------ */
+
   private async loadBattle() {
+    this.pokemonService.loadSpeciesNames();
     this.loading.set(true);
     this.loadError.set('');
 
@@ -306,14 +262,30 @@ export class Battle implements OnInit, OnDestroy {
       );
       const enemyData = enemyIds.map((id) => candidates.find((c) => c.id === id)!);
 
-      const [playerTeam, enemyTeam] = await Promise.all([
+      // Los rivales tienen el nivel medio de tu equipo (±1): subir de nivel a
+      // tus Pokémon los hace más fuertes, como en los juegos.
+      const levels = teamIds.map((id) => this.pokemonLevel(id));
+      const avg = Math.round(levels.reduce((a, b) => a + b, 0) / levels.length);
+      const enemyLevel = () =>
+        Math.max(2, Math.min(MAX_LEVEL, avg + Math.floor(Math.random() * 3) - 1));
+
+      const [player, enemy] = await Promise.all([
         // Los shinies capturados aparecen brillantes en tu equipo.
-        Promise.all(playerData.map((d) => this.mapPokemon(d, ownedShinies.includes(d.id)))),
-        Promise.all(enemyData.map((d) => this.mapPokemon(d, Math.random() < SHINY_CHANCE))),
+        Promise.all(
+          playerData.map((d) =>
+            this.toCombatant(d, this.pokemonLevel(d.id), ownedShinies.includes(d.id)),
+          ),
+        ),
+        Promise.all(
+          enemyData.map((d) => this.toCombatant(d, enemyLevel(), Math.random() < SHINY_CHANCE)),
+        ),
       ]);
 
-      this.playerTeam.set(playerTeam);
-      this.enemyTeam.set(enemyTeam);
+      this.state.set({
+        player: { team: player, active: 0 },
+        enemy: { team: enemy, active: 0 },
+        turn: 0,
+      });
     } catch {
       this.loadError.set(
         'No se pudo preparar la batalla. Revisa tu conexión e inténtalo de nuevo.',
@@ -332,312 +304,267 @@ export class Battle implements OnInit, OnDestroy {
     return ids;
   }
 
-  private toBattleMove(data: PokemonMove): BattleMove {
-    const spanishName = data.names?.find((n) => n.language.name === 'es')?.name;
-    return {
-      name: spanishName ?? data.name.replace(/-/g, ' '),
-      power: data.power ?? 0,
-      type: data.type.name,
-      damageClass: data.damage_class.name,
-      accuracy: data.accuracy,
-      pp: data.pp,
-      maxPp: data.pp,
-    };
-  }
-
   /**
-   * Elige 4 movimientos útiles. Antes se cogían los 4 primeros de la lista,
-   * que muchas veces eran de estado y no hacían daño. Ahora se priorizan los
-   * movimientos con potencia y los del mismo tipo que el Pokémon (STAB).
+   * Elige 4 movimientos con sentido: ataques potentes de tipos distintos
+   * (mejor si son de su tipo) y, a veces, uno de estado que el motor sabe aplicar.
    */
   private async pickMoves(data: PokemonDetailPage, types: string[]): Promise<BattleMove[]> {
     const sample = [...data.moves].sort(() => Math.random() - 0.5).slice(0, MOVE_SAMPLE_SIZE);
-
     const moves = (
       await Promise.all(
         sample.map((m) =>
           this.pokemonService
             .getMove(m.move.url)
-            .then((d) => this.toBattleMove(d))
+            .then((d) => {
+              const move = toBattleMove(d);
+              return isSupportedMove(move, d.meta?.category?.name) ? move : null;
+            })
             .catch(() => null),
         ),
       )
     ).filter((m): m is BattleMove => m !== null);
 
-    const score = (m: BattleMove) =>
-      (m.power > 0 ? 1000 : 0) + (types.includes(m.type) ? 100 : 0) + Math.min(m.power, 120);
+    const attacks = moves
+      .filter((m) => m.damageClass !== 'status' && !m.ohko)
+      .map((m) => ({
+        m,
+        score:
+          Math.min(m.power, 130) *
+            ((m.accuracy ?? 100) / 100) *
+            (types.includes(m.type) ? 1.5 : 1) +
+          (m.priority > 0 ? 15 : 0),
+      }))
+      .sort((a, b) => b.score - a.score);
+    const statusMoves = moves.filter((m) => m.damageClass === 'status');
 
-    return moves.sort((a, b) => score(b) - score(a)).slice(0, 4);
+    const chosen: BattleMove[] = [];
+    // Primero el mejor ataque de cada tipo para tener cobertura.
+    for (const { m } of attacks) {
+      if (chosen.length >= 3) break;
+      if (!chosen.some((c) => c.type === m.type)) chosen.push(m);
+    }
+    if (statusMoves.length && Math.random() < 0.7) {
+      chosen.push(statusMoves[Math.floor(Math.random() * statusMoves.length)]);
+    }
+    for (const { m } of attacks) {
+      if (chosen.length >= 4) break;
+      if (!chosen.includes(m)) chosen.push(m);
+    }
+    for (const m of moves) {
+      if (chosen.length >= 4) break;
+      if (!chosen.includes(m)) chosen.push(m);
+    }
+    return chosen.slice(0, 4);
   }
 
-  async mapPokemon(data: PokemonDetailPage, shiny = false): Promise<BattlePokemon> {
-    const getStat = (name: string) => data.stats.find((s) => s.stat.name === name)?.base_stat ?? 50;
+  private async toCombatant(
+    data: PokemonDetailPage,
+    level: number,
+    shiny: boolean,
+  ): Promise<Combatant> {
+    const stat = (name: string) => data.stats.find((s) => s.stat.name === name)?.base_stat ?? 50;
     const types = data.types.map((t) => t.type.name);
-
-    return {
+    return createCombatant({
       id: data.id,
-      name: data.name,
-      hp: getStat('hp'),
-      maxHp: getStat('hp'),
-      attack: getStat('attack'),
-      defense: getStat('defense'),
-      specialAttack: getStat('special-attack'),
-      specialDefense: getStat('special-defense'),
-      speed: getStat('speed'),
+      // Nombre oficial en español para los mensajes del combate.
+      name: this.pokemonService.displayName(data.name, data.id),
+      level,
       types,
-      moves: await this.pickMoves(data, types),
       sprite: shiny ? `${SHINY_ARTWORK_URL}/${data.id}.png` : getArtworkUrl(data.id),
       shiny,
-      fainted: false,
-    };
+      base: {
+        hp: stat('hp'),
+        attack: stat('attack'),
+        defense: stat('defense'),
+        specialAttack: stat('special-attack'),
+        specialDefense: stat('special-defense'),
+        speed: stat('speed'),
+      },
+      moves: await this.pickMoves(data, types),
+    });
   }
 
-  startBattle() {
-    const player = this.playerTeam()[0];
-    const enemy = this.enemyTeam()[0];
-    this.activePokemon.set(player);
-    this.activeEnemy.set(enemy);
+  /* ------------------------------------------------------------------ */
+  /* Combate                                                             */
+  /* ------------------------------------------------------------------ */
+
+  async startBattle() {
+    const s = this.state();
+    if (!s || this.phase() !== 'preview') return;
     this.phase.set('battle');
+    this.busy.set(true);
+    const run = this.run;
+    const enemy = activeOf(s, 'enemy');
+    const player = activeOf(s, 'player');
 
+    this.playCry(enemy.id);
+    await this.say(
+      enemy.shiny
+        ? `✨ ¡El rival saca a ${enemy.name}! ¡Es shiny!`
+        : `¡El rival saca a ${enemy.name}!`,
+      run,
+    );
     this.playCry(player.id);
-    this.schedule(() => this.playCry(enemy.id), 800);
-    if (enemy.shiny) this.typewriterLog(`✨ ¡Increíble! ¡${enemy.name} es shiny!`);
-
-    const playerFirst = this.playerGoesFirst();
-    this.typewriterLog(`¡${playerFirst ? player.name : enemy.name} es más rápido y ataca primero!`);
-    this.startRound(playerFirst);
+    await this.say(`¡Adelante, ${player.name}!`, run);
+    if (run !== this.run) return;
+    this.busy.set(false);
   }
 
-  /** El Pokémon con más velocidad ataca primero; en caso de empate, al azar. */
-  private playerGoesFirst(): boolean {
-    const playerSpeed = this.activePokemon()!.speed;
-    const enemySpeed = this.activeEnemy()!.speed;
-    if (playerSpeed === enemySpeed) return Math.random() > 0.5;
-    return playerSpeed > enemySpeed;
-  }
-
-  private startRound(playerFirst = this.playerGoesFirst()) {
-    if (playerFirst) {
-      this.isPlayerTurn.set(true);
-    } else {
-      this.isPlayerTurn.set(false);
-      this.schedule(() => this.enemyTurn(), TURN_DELAY);
-    }
-  }
-
-  async getTypeEffectiveness(moveType: string, defenderTypes: string[]): Promise<number> {
-    const data = await this.pokemonService.getType(moveType);
-    let multiplier = 1;
-
-    for (const defType of defenderTypes) {
-      if (data.damage_relations.double_damage_to.some((t) => t.name === defType)) multiplier *= 2;
-      if (data.damage_relations.half_damage_to.some((t) => t.name === defType)) multiplier *= 0.5;
-      if (data.damage_relations.no_damage_to.some((t) => t.name === defType)) multiplier *= 0;
-    }
-
-    return multiplier;
-  }
-
-  // Nivel usado en la fórmula de daño. Como la vida y los stats usan el
-  // stat base del Pokémon, un nivel bajo (p. ej. 5) hace un daño ridículo
-  // frente a esa vida. 50 da combates de 2-4 turnos por Pokémon.
-  private readonly BATTLE_LEVEL = 50;
-
-  calculateDamage(
-    attacker: BattlePokemon,
-    defender: BattlePokemon,
-    move: BattleMove,
-    effectiveness: number,
-  ): number {
-    if (move.power === 0) return 0;
-    // Un movimiento inmune (eficacia 0) no debe hacer daño alguno.
-    if (effectiveness === 0) return 0;
-
-    const attackStat = move.damageClass === 'special' ? attacker.specialAttack : attacker.attack;
-    const defenseStat = move.damageClass === 'special' ? defender.specialDefense : defender.defense;
-    const random = 0.85 + Math.random() * 0.15;
-    // STAB: bonus x1.5 si el tipo del movimiento coincide con un tipo del atacante.
-    const stab = attacker.types.includes(move.type) ? 1.5 : 1;
-
-    const base =
-      (((2 * this.BATTLE_LEVEL) / 5 + 2) * attackStat * move.power) / (defenseStat * 50) + 2;
-
-    const damage = Math.floor(base * stab * effectiveness * random);
-
-    return Math.max(1, damage);
-  }
-
-  /** Movimientos con PP disponibles; si no queda ninguno se usa Forcejeo. */
-  hasUsableMoves(pokemon: BattlePokemon): boolean {
-    return pokemon.moves.some((m) => m.pp > 0);
+  useMove(index: number) {
+    this.act({ kind: 'move', index });
   }
 
   useStruggle() {
-    this.useMove(STRUGGLE);
+    this.act({ kind: 'struggle' });
   }
 
-  async useMove(move: BattleMove) {
-    if (!this.isPlayerTurn() || this.phase() !== 'battle') return;
-    if (move !== STRUGGLE && move.pp <= 0) return;
-    this.isPlayerTurn.set(false);
+  toggleSwitch() {
+    if (this.isPlayerTurn()) this.switching.update((v) => !v);
+  }
 
-    const { defenderFainted } = await this.performAttack('player', move);
-    if (this.phase() !== 'battle') return;
+  /** Cambio voluntario: gasta el turno y el rival ataca al que entra. */
+  switchTo(index: number) {
+    const s = this.state();
+    const target = s?.player.team[index];
+    if (!s || !target || target.fainted || index === s.player.active) return;
+    this.switching.set(false);
+    this.act({ kind: 'switch', index });
+  }
 
-    if (defenderFainted) {
-      const attacker = this.activePokemon()!.id;
-      this.koBy.set(attacker, (this.koBy.get(attacker) ?? 0) + 1);
-      this.schedule(() => {
-        this.typewriterLog(`¡${this.activeEnemy()!.name} se debilitó!`);
-        this.schedule(() => this.checkNextEnemy(), 2500);
-      }, 2000);
+  private async act(action: Action) {
+    const s = this.state();
+    if (!s || !this.isPlayerTurn()) return;
+    this.busy.set(true);
+    this.switching.set(false);
+    const run = this.run;
+
+    await this.runTurn(action, run);
+  }
+
+  private async runTurn(action: Action, run: number) {
+    const s = this.state()!;
+    const { state, events } = resolveTurn(s, action, chooseEnemyAction(s));
+    await this.play(events, run, state);
+    if (run !== this.run) return;
+    await this.afterTurn(run);
+  }
+
+  /** Tras el turno: fin del combate o sustitución de los debilitados. */
+  private async afterTurn(run: number) {
+    let s = this.state()!;
+    if (!hasAlive(s, 'enemy')) return this.endBattle(true);
+    if (!hasAlive(s, 'player')) return this.endBattle(false);
+
+    if (activeOf(s, 'enemy').fainted) {
+      const next = switchIn(s, 'enemy', chooseEnemyReplacement(s));
+      await this.play(next.events, run, next.state);
+      if (run !== this.run) return;
+      s = this.state()!;
+    }
+
+    if (activeOf(s, 'player').fainted) {
+      const alive = s.player.team.map((p, i) => ({ p, i })).filter(({ p }) => !p.fainted);
+      if (alive.length === 1) {
+        const next = switchIn(s, 'player', alive[0].i);
+        await this.play(next.events, run, next.state);
+      } else {
+        this.phase.set('select-pokemon');
+        this.message.set('¿Qué Pokémon sacas ahora?');
+        this.busy.set(false);
+        return;
+      }
+    }
+    if (run !== this.run) return;
+    // Tras un Hiperrayo el Pokémon no puede elegir: el turno pasa solo.
+    if (activeOf(this.state()!, 'player').recharging) {
+      await this.runTurn({ kind: 'move', index: 0 }, run);
       return;
     }
-
-    this.schedule(() => this.enemyTurn(), TURN_DELAY);
+    this.busy.set(false);
   }
 
-  async enemyTurn() {
-    if (this.phase() !== 'battle') return;
-    const enemy = this.activeEnemy()!;
-
-    // La IA elige al azar entre sus movimientos con daño y PP restantes.
-    const usable = enemy.moves.filter((m) => m.pp > 0 && m.power > 0);
-    const fallback = enemy.moves.filter((m) => m.pp > 0);
-    const pool = usable.length > 0 ? usable : fallback;
-    const move = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : STRUGGLE;
-
-    const { defenderFainted } = await this.performAttack('enemy', move);
-    if (this.phase() !== 'battle') return;
-
-    if (defenderFainted) {
-      this.schedule(() => {
-        this.typewriterLog(`¡${this.activePokemon()!.name} se debilitó!`);
-        this.schedule(() => this.checkNextPlayer(), 2500);
-      }, 2000);
-      return;
-    }
-
-    this.schedule(() => this.isPlayerTurn.set(true), TURN_DELAY);
-  }
-
-  /**
-   * Resuelve un ataque completo: gasta PP, comprueba la precisión, calcula
-   * el daño y actualiza los signals del atacante y el defensor sin mutarlos.
-   */
-  private async performAttack(side: Side, move: BattleMove): Promise<{ defenderFainted: boolean }> {
-    const attackerSignal = side === 'player' ? this.activePokemon : this.activeEnemy;
-    const defenderSignal = side === 'player' ? this.activeEnemy : this.activePokemon;
-    const attackerTeam = side === 'player' ? this.playerTeam : this.enemyTeam;
-    const defenderTeam = side === 'player' ? this.enemyTeam : this.playerTeam;
-
-    let attacker = attackerSignal()!;
-    const defender = defenderSignal()!;
-
-    if (move !== STRUGGLE) {
-      attacker = {
-        ...attacker,
-        moves: attacker.moves.map((m) => (m === move ? { ...m, pp: m.pp - 1 } : m)),
-      };
-      attackerSignal.set(attacker);
-      this.updateTeamPokemon(attackerTeam, attacker);
-    }
-
-    if (move.power === 0) {
-      this.typewriterLog(`¡${attacker.name} usó ${move.name}! Pero no hizo daño.`);
-      return { defenderFainted: false };
-    }
-
-    const hits = move.accuracy === null || Math.random() * 100 < move.accuracy;
-    if (!hits) {
-      this.typewriterLog(`¡${attacker.name} usó ${move.name}! Pero falló.`);
-      return { defenderFainted: false };
-    }
-
-    this.animate(side === 'player' ? this.playerFlashing : this.enemyFlashing, 300);
-    this.schedule(
-      () => this.animate(side === 'player' ? this.enemyShaking : this.playerShaking, 500),
-      200,
-    );
-
-    const effectiveness = await this.getTypeEffectiveness(move.type, defender.types);
-    this.playHitSound(effectiveness);
-    const damage = this.calculateDamage(attacker, defender, move, effectiveness);
-    const newHp = Math.max(0, defender.hp - damage);
-
-    let log = `¡${attacker.name} usó ${move.name}! ${defender.name} perdió ${damage} PS.`;
-    if (effectiveness >= 2) log += ' ¡Es muy eficaz!';
-    else if (effectiveness < 1 && effectiveness > 0) log += ' No es muy eficaz...';
-    else if (effectiveness === 0)
-      log = `¡${attacker.name} usó ${move.name}! No afecta a ${defender.name}...`;
-
-    // Forcejeo hace al atacante un cuarto del daño causado.
-    if (move === STRUGGLE && damage > 0) {
-      const recoil = Math.max(1, Math.floor(damage / 4));
-      attacker = { ...attacker, hp: Math.max(1, attacker.hp - recoil) };
-      attackerSignal.set(attacker);
-      this.updateTeamPokemon(attackerTeam, attacker);
-      log += ` ${attacker.name} también se hizo daño.`;
-    }
-
-    const updatedDefender = { ...defender, hp: newHp, fainted: newHp <= 0 };
-    defenderSignal.set(updatedDefender);
-    this.updateTeamPokemon(defenderTeam, updatedDefender);
-    this.typewriterLog(log);
-
-    return { defenderFainted: updatedDefender.fainted };
-  }
-
-  updateTeamPokemon(teamSignal: WritableSignal<BattlePokemon[]>, updated: BattlePokemon) {
-    teamSignal.update((team) => team.map((p) => (p.id === updated.id ? updated : p)));
-  }
-
-  checkNextEnemy() {
-    const nextEnemy = this.enemyTeam().find((p) => !p.fainted);
-    if (!nextEnemy) {
-      this.endBattle(true);
-      return;
-    }
-    this.activeEnemy.set(nextEnemy);
-    this.playCry(nextEnemy.id);
-    this.typewriterLog(
-      nextEnemy.shiny
-        ? `✨ ¡El rival saca a ${nextEnemy.name} shiny!`
-        : `¡El rival saca a ${nextEnemy.name}!`,
-    );
-    this.startRound();
-  }
-
-  checkNextPlayer() {
-    const alivePlayers = this.playerTeam().filter((p) => !p.fainted);
-    if (alivePlayers.length === 0) {
-      this.endBattle(false);
-      return;
-    }
-    // Si solo queda uno, entra directamente sin pasar por la pantalla de selección.
-    if (alivePlayers.length === 1) {
-      this.selectNextPokemon(alivePlayers[0]);
-      return;
-    }
-    this.phase.set('select-pokemon');
-    this.typewriterLog('Elige tu siguiente Pokémon.');
-  }
-
-  selectNextPokemon(pokemon: BattlePokemon) {
-    if (pokemon.fainted) return;
-    this.activePokemon.set(pokemon);
-    this.playCry(pokemon.id);
-    this.typewriterLog(`¡${pokemon.name} entra en batalla!`);
+  /** Sustituto del Pokémon debilitado del jugador. */
+  async selectNextPokemon(index: number) {
+    const s = this.state();
+    const target = s?.player.team[index];
+    if (!s || this.phase() !== 'select-pokemon' || !target || target.fainted) return;
     this.phase.set('battle');
-    this.startRound();
+    this.busy.set(true);
+    const run = this.run;
+    const next = switchIn(s, 'player', index);
+    await this.play(next.events, run, next.state);
+    if (run !== this.run) return;
+    this.busy.set(false);
   }
+
+  /** Reproduce los sucesos de un turno uno a uno, con texto, animaciones y sonido. */
+  private async play(events: BattleEvent[], run: number, final: BattleState) {
+    for (const e of events) {
+      if (run !== this.run) return;
+      if (e.koBy) this.koBy.set(e.koBy, (this.koBy.get(e.koBy) ?? 0) + 1);
+      this.animateEvent(e);
+      // La barra de PS baja justo después de que el golpe empiece.
+      if (e.anim === 'hit' || e.anim === 'crit') await wait(180);
+      this.state.set(e.state);
+      if (e.anim === 'switch' && e.side) this.playCry(activeOf(e.state, e.side).id);
+      if (e.text) await this.say(e.text, run);
+      else await wait(e.anim === 'heal' ? 500 : 420);
+    }
+    // El estado final incluye lo que no genera mensaje (p. ej. tener que recargar).
+    if (run === this.run) this.state.set(final);
+  }
+
+  private animateEvent(e: BattleEvent) {
+    const side = e.side as SideKey | undefined;
+    if (!side) return;
+    const flag = (kind: 'shake' | 'flash' | 'faint', s: SideKey) =>
+      ({
+        shake: s === 'player' ? this.playerShaking : this.enemyShaking,
+        flash: s === 'player' ? this.playerFlashing : this.enemyFlashing,
+        faint: s === 'player' ? this.playerFainting : this.enemyFainting,
+      })[kind];
+    const pulse = (kind: 'shake' | 'flash' | 'faint', s: SideKey, ms: number) => {
+      const f = flag(kind, s);
+      f.set(false);
+      requestAnimationFrame(() => f.set(true));
+      setTimeout(() => f.set(false), ms);
+    };
+    switch (e.anim) {
+      case 'attack':
+        pulse('flash', side, 300);
+        break;
+      case 'hit':
+      case 'crit':
+        pulse('shake', side, 500);
+        this.playHitSound(e.anim === 'crit' ? 2 : (e.effectiveness ?? 1));
+        break;
+      case 'faint':
+        pulse('faint', side, 900);
+        break;
+    }
+  }
+
+  /** Escribe un mensaje letra a letra y espera a que dé tiempo a leerlo. */
+  private async say(text: string, run: number) {
+    for (let i = 1; i <= text.length; i += 2) {
+      if (run !== this.run) return;
+      this.message.set(text.slice(0, i));
+      await wait(22);
+    }
+    this.message.set(text);
+    await wait(Math.min(1600, 650 + text.length * 14));
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Fin                                                                 */
+  /* ------------------------------------------------------------------ */
 
   async endBattle(won: boolean) {
     this.playerWon.set(won);
     this.phase.set('result');
+    this.busy.set(false);
 
     if (won) {
-      this.typewriterLog('¡Ganaste la batalla!');
       const userId = this.authService.currentUser()?.uid;
       if (userId) {
         const enemyIds = this.enemyTeam().map((p) => p.id);
@@ -646,8 +573,6 @@ export class Battle implements OnInit, OnDestroy {
         // Una sola escritura con todos los capturados en lugar de una por Pokémon.
         await this.firestoreService.addToCollection(userId, ...enemyIds);
       }
-    } else {
-      this.typewriterLog('¡Perdiste la batalla!');
     }
 
     // Experiencia, retos diarios y logros: también se gana algo al perder.
@@ -664,14 +589,6 @@ export class Battle implements OnInit, OnDestroy {
     this.rewards.set(rewards);
     this.rewardXp.set(xpFromRewards(rewards));
     await this.growTeam(won);
-  }
-
-  pokemonSprite(id: number): string {
-    return getArtworkUrl(id);
-  }
-
-  pokemonLevel(id: number): number {
-    return pokemonLevel(this.teamXp()[id] ?? 0);
   }
 
   /** Reparte experiencia al equipo y comprueba quién puede evolucionar. */
@@ -735,34 +652,13 @@ export class Battle implements OnInit, OnDestroy {
     });
   }
 
-  isNewCapture(pokemonId: number): boolean {
-    return this.newCaptures().includes(pokemonId);
-  }
-
-  getHpPercent(pokemon: BattlePokemon): number {
-    return Math.floor((pokemon.hp / pokemon.maxHp) * 100);
-  }
-
-  getHpClass(pokemon: BattlePokemon): string {
-    const pct = this.getHpPercent(pokemon);
-    if (pct > 50) return 'high';
-    if (pct > 20) return 'mid';
-    return 'low';
-  }
-
-  goBack() {
-    this.router.navigate(['/game']);
-  }
-
   /** Reinicia la batalla con el mismo equipo y un rival nuevo. */
   async newBattle() {
-    this.timeouts.forEach(clearTimeout);
-    this.intervals.forEach(clearInterval);
-    this.timeouts.clear();
-    this.intervals.clear();
-    this.battleLogs.set([]);
-    this.activePokemon.set(null);
-    this.activeEnemy.set(null);
+    this.run++;
+    this.state.set(null);
+    this.message.set('');
+    this.busy.set(false);
+    this.switching.set(false);
     this.newCaptures.set([]);
     this.teamGrowth.set([]);
     this.evolving.set(null);
@@ -772,5 +668,87 @@ export class Battle implements OnInit, OnDestroy {
     this.playerWon.set(false);
     this.phase.set('preview');
     await this.loadBattle();
+  }
+
+  goBack() {
+    this.router.navigate(['/game']);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Ayudas para la plantilla                                            */
+  /* ------------------------------------------------------------------ */
+
+  hasUsableMoves(p: Combatant): boolean {
+    return hasUsableMoves(p);
+  }
+
+  /** Cambios de características activos, p. ej. "Ata +2". */
+  stageChips(p: Combatant): { label: string; up: boolean }[] {
+    return (Object.keys(STAGE_SHORT) as StatKey[])
+      .filter((k) => p.stages[k] !== 0)
+      .map((k) => ({
+        label: `${STAGE_SHORT[k]} ${p.stages[k] > 0 ? '+' : '−'}${Math.abs(p.stages[k])}`,
+        up: p.stages[k] > 0,
+      }));
+  }
+
+  canSwitch(): boolean {
+    const s = this.state();
+    return !!s && s.player.team.some((p, i) => !p.fainted && i !== s.player.active);
+  }
+
+  isNewCapture(pokemonId: number): boolean {
+    return this.newCaptures().includes(pokemonId);
+  }
+
+  pokemonSprite(id: number): string {
+    return getArtworkUrl(id);
+  }
+
+  pokemonLevel(id: number): number {
+    return pokemonLevel(this.teamXp()[id] ?? 0);
+  }
+
+  getHpPercent(pokemon: Combatant): number {
+    return Math.max(0, Math.ceil((pokemon.hp / pokemon.maxHp) * 100));
+  }
+
+  getHpClass(pokemon: Combatant): string {
+    const pct = this.getHpPercent(pokemon);
+    if (pct > 50) return 'high';
+    if (pct > 20) return 'mid';
+    return 'low';
+  }
+
+  playCry(pokemonId: number) {
+    if (!this.destroyed) playPokemonCry(pokemonId);
+  }
+
+  playHitSound(effectiveness: number) {
+    // Un único AudioContext reutilizado: los navegadores limitan cuántos se pueden crear.
+    try {
+      this.audioCtx ??= new AudioContext();
+    } catch {
+      return;
+    }
+    const ctx = this.audioCtx;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    const [from, to, gain, duration] =
+      effectiveness >= 2
+        ? [300, 80, 0.4, 0.3]
+        : effectiveness === 0
+          ? [100, 100, 0.2, 0.15]
+          : [200, 60, 0.3, 0.2];
+
+    oscillator.frequency.setValueAtTime(from, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(to, ctx.currentTime + duration);
+    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + duration);
   }
 }

@@ -194,7 +194,12 @@
   height: 16px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 50%, var(--blanco) 0 2px, var(--tinta) 2px 3.5px, transparent 3.5px),
+    radial-gradient(
+      circle at 50% 50%,
+      var(--blanco) 0 2px,
+      var(--tinta) 2px 3.5px,
+      transparent 3.5px
+    ),
     linear-gradient(var(--cursor) 0 44%, var(--tinta) 44% 56%, var(--blanco) 56%);
   box-shadow: 0 0 0 2px var(--tinta);
 }
@@ -395,11 +400,6 @@
 }
 
 /* ---- Mandos: movimientos y cambio ---- */
-.turno {
-  margin-left: auto;
-  font: 400 14px/1 var(--px);
-  color: var(--tinta-suave);
-}
 .movs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -675,8 +675,114 @@
   .sprite.flash,
   .evolucionar,
   .parpadeo,
+  .dialogo__flecha,
+  .sprite.cae,
   .premios__xp {
     animation: none;
+  }
+}
+
+/* ---- Estados, etapas y extras del combate ---- */
+.turno-num {
+  font: 400 13px/1 var(--px);
+  color: var(--tinta-suave);
+}
+.estado {
+  font: 400 12px/1 var(--px);
+  border-radius: 4px;
+  padding: 4px 6px 3px;
+  color: var(--blanco);
+  background: var(--tinta);
+}
+.estado--brn {
+  background: #d4542c;
+}
+.estado--psn,
+.estado--tox {
+  background: #8d3f9e;
+}
+.estado--par {
+  background: #e2b512;
+  color: var(--tinta);
+}
+.estado--slp {
+  background: #6b7a86;
+}
+.estado--frz {
+  background: #4fa9d6;
+  color: var(--tinta);
+}
+.estado--con {
+  background: var(--tinta-suave);
+}
+.etapas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.etapa {
+  font: 400 12px/1 var(--px);
+  background: #dff3ea;
+  color: #11714f;
+  border-radius: 4px;
+  padding: 3px 5px;
+}
+.etapa--baja {
+  background: #fde4e4;
+  color: var(--cursor-osc);
+}
+.bola--estado {
+  box-shadow:
+    0 0 0 2px var(--tinta),
+    0 0 0 4px #a35bd0;
+}
+.caja-cab .cambiar,
+.caja-cab .volver {
+  margin-left: auto;
+  padding: 9px 12px;
+}
+.mov__prio {
+  font: 400 12px/1 var(--px);
+  color: var(--tinta);
+  background: var(--marco-claro);
+  border-radius: 4px;
+  padding: 3px 5px;
+}
+.mov__pp--bajo {
+  color: var(--cursor-osc);
+}
+.hueco--activo {
+  outline: 3px dashed var(--tinta-suave);
+  outline-offset: -2px;
+}
+.hueco--activo:disabled {
+  opacity: 0.8;
+  filter: none;
+}
+.hueco__estado {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
+.dialogo {
+  position: relative;
+}
+/* Flecha que parpadea mientras hay mensajes, como en las consolas. */
+.dialogo__flecha {
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+  border: 7px solid transparent;
+  border-top: 9px solid var(--cursor);
+  animation: parpadeo 0.8s steps(2) infinite;
+}
+.sprite.cae {
+  animation: cae 0.6s ease-in forwards;
+}
+@keyframes cae {
+  to {
+    opacity: 0;
+    transform: translateY(40px);
   }
 }
 
@@ -760,8 +866,7 @@
   .mov__nombre {
     font-size: 15px;
   }
-  .mov__datos > span:nth-child(3),
-  .mov__datos > span:nth-child(4) {
+  .mov__extra {
     display: none;
   }
   .huecos {

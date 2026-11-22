@@ -29,7 +29,7 @@
         <div class="mural huecos">
           @for (pokemon of playerTeam(); track pokemon.id) {
             <div class="hueco">
-              <span class="hueco__nivel">Nv. {{ pokemonLevel(pokemon.id) }}</span>
+              <span class="hueco__nivel">Nv. {{ pokemon.level }}</span>
               @if (pokemon.shiny) {
                 <span class="hueco__shiny" title="Shiny">✨</span>
               }
@@ -55,6 +55,7 @@
         <div class="mural huecos">
           @for (pokemon of enemyTeam(); track pokemon.id) {
             <div class="hueco">
+              <span class="hueco__nivel">Nv. {{ pokemon.level }}</span>
               @if (pokemon.shiny) {
                 <span class="hueco__shiny" title="Shiny">✨</span>
               }
@@ -87,18 +88,21 @@
               <i
                 class="bola"
                 [class.bola--fuera]="pokemon.fainted"
+                [class.bola--estado]="!!pokemon.status"
                 [class.bola--activa]="pokemon.id === activePokemon()!.id"
                 [title]="pokemon.name | nombre: pokemon.id"
               ></i>
             }
           </div>
         </div>
+        <span class="turno-num">Turno {{ state()!.turn + 1 }}</span>
         <div class="marcador marcador--rival">
           <div class="bolas">
             @for (pokemon of enemyTeam(); track pokemon.id) {
               <i
                 class="bola bola--rival"
                 [class.bola--fuera]="pokemon.fainted"
+                [class.bola--estado]="!!pokemon.status"
                 [class.bola--activa]="pokemon.id === activeEnemy()!.id"
                 [title]="pokemon.name | nombre: pokemon.id"
               ></i>
@@ -111,34 +115,15 @@
       <div class="mural escena">
         <!-- Rival: ficha a la izquierda, Pokémon arriba a la derecha -->
         <div class="lado lado--rival">
-          <div class="ficha ficha--rival">
-            <div class="ficha__cab">
-              <span class="ficha__nombre">{{ activeEnemy()!.name | nombre: activeEnemy()!.id }}</span>
-              <span class="ficha__lado">Rival</span>
-            </div>
-            <div class="ficha__cuerpo">
-              <div class="tipos">
-                @for (type of activeEnemy()!.types; track $index) {
-                  <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
-                }
-              </div>
-              <div class="ps">
-                <span class="ps__etq">PS</span>
-                <div class="ps__barra">
-                  <i
-                    [attr.data-nivel]="getHpClass(activeEnemy()!)"
-                    [style.width.%]="getHpPercent(activeEnemy()!)"
-                  ></i>
-                </div>
-              </div>
-              <p class="ps__num">{{ activeEnemy()!.hp }} / {{ activeEnemy()!.maxHp }}</p>
-            </div>
-          </div>
+          <ng-container
+            *ngTemplateOutlet="ficha; context: { $implicit: activeEnemy()!, rival: true }"
+          />
           <div class="peana">
             <img
               class="sprite"
               [class.shake]="enemyShaking()"
               [class.flash]="enemyFlashing()"
+              [class.cae]="enemyFainting() || activeEnemy()!.fainted"
               [src]="activeEnemy()!.sprite"
               [alt]="activeEnemy()!.name"
             />
@@ -152,84 +137,71 @@
               class="sprite"
               [class.shake]="playerShaking()"
               [class.flash]="playerFlashing()"
+              [class.cae]="playerFainting() || activePokemon()!.fainted"
               [src]="activePokemon()!.sprite"
               [alt]="activePokemon()!.name"
             />
           </div>
-          <div class="ficha">
-            <div class="ficha__cab">
-              <span class="ficha__nombre">{{
-                activePokemon()!.name | nombre: activePokemon()!.id
-              }}</span>
-              <span class="ficha__lado">Nv. {{ pokemonLevel(activePokemon()!.id) }}</span>
-            </div>
-            <div class="ficha__cuerpo">
-              <div class="tipos">
-                @for (type of activePokemon()!.types; track $index) {
-                  <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
-                }
-              </div>
-              <div class="ps">
-                <span class="ps__etq">PS</span>
-                <div class="ps__barra">
-                  <i
-                    [attr.data-nivel]="getHpClass(activePokemon()!)"
-                    [style.width.%]="getHpPercent(activePokemon()!)"
-                  ></i>
-                </div>
-              </div>
-              <p class="ps__num">{{ activePokemon()!.hp }} / {{ activePokemon()!.maxHp }}</p>
-              <dl class="stats">
-                <div><dt>Ata</dt><dd>{{ activePokemon()!.attack }}</dd></div>
-                <div><dt>Def</dt><dd>{{ activePokemon()!.defense }}</dd></div>
-                <div><dt>At.Esp</dt><dd>{{ activePokemon()!.specialAttack }}</dd></div>
-                <div><dt>Df.Esp</dt><dd>{{ activePokemon()!.specialDefense }}</dd></div>
-                <div><dt>Vel</dt><dd>{{ activePokemon()!.speed }}</dd></div>
-              </dl>
-            </div>
-          </div>
+          <ng-container
+            *ngTemplateOutlet="ficha; context: { $implicit: activePokemon()!, rival: false }"
+          />
         </div>
       </div>
     </section>
 
     <!-- Cuadro de diálogo con lo que va pasando -->
     <div class="dialogo" aria-live="polite">
-      @for (log of battleLogs(); track log.id) {
-        <p [class.fade-out]="!log.visible">{{ log.text }}</p>
-      } @empty {
+      @if (busy() || phase() === 'select-pokemon') {
+        <p>{{ message() }}</p>
+      } @else if (switching()) {
+        <p class="dialogo__espera">¿A quién sacas? Cambiar gasta tu turno.</p>
+      } @else {
         <p class="dialogo__espera">
-          @if (phase() === 'select-pokemon') {
-            ¿Qué Pokémon sacas ahora?
-          } @else if (isPlayerTurn()) {
-            ¿Qué hará {{ activePokemon()!.name | nombre: activePokemon()!.id }}?
-          } @else {
-            …
-          }
+          ¿Qué hará {{ activePokemon()!.name | nombre: activePokemon()!.id }}?
         </p>
+      }
+      @if (busy()) {
+        <i class="dialogo__flecha" aria-hidden="true"></i>
       }
     </div>
 
-    @if (phase() === 'select-pokemon') {
+    @if (phase() === 'select-pokemon' || switching()) {
       <section class="caja mandos" aria-label="Elegir Pokémon">
         <div class="caja-cab">
-          <h2>Elige tu siguiente Pokémon</h2>
+          <h2>{{ switching() ? 'Cambiar de Pokémon' : 'Elige tu siguiente Pokémon' }}</h2>
+          @if (switching()) {
+            <button class="btn-caja volver" (click)="switching.set(false)">
+              Volver <kbd>Esc</kbd>
+            </button>
+          }
         </div>
         <div class="mural huecos huecos--elegir">
           @for (pokemon of playerTeam(); track pokemon.id; let i = $index) {
             <button
               class="hueco hueco--boton"
-              [disabled]="pokemon.fainted"
-              (click)="selectNextPokemon(pokemon)"
+              [class.hueco--activo]="pokemon.id === activePokemon()!.id"
+              [disabled]="pokemon.fainted || pokemon.id === activePokemon()!.id"
+              (click)="switching() ? switchTo(i) : selectNextPokemon(i)"
             >
+              <span class="hueco__nivel">Nv. {{ pokemon.level }}</span>
+              @if (pokemon.status) {
+                <span class="estado estado--{{ pokemon.status }} hueco__estado">{{
+                  statusText(pokemon)
+                }}</span>
+              }
               <img [src]="pokemon.sprite" [alt]="pokemon.name" />
-              <b><kbd>{{ i + 1 }}</kbd> {{ pokemon.name | nombre: pokemon.id }}</b>
+              <b
+                ><kbd>{{ i + 1 }}</kbd> {{ pokemon.name | nombre: pokemon.id }}</b
+              >
               <div class="ps__barra ps__barra--fina">
                 <i
                   [attr.data-nivel]="getHpClass(pokemon)"
                   [style.width.%]="getHpPercent(pokemon)"
                 ></i>
               </div>
-              <span class="ps__num">{{ pokemon.hp }}/{{ pokemon.maxHp }}</span>
+              <span class="ps__num">{{
+                pokemon.fainted ? 'Debilitado' : pokemon.hp + '/' + pokemon.maxHp
+              }}</span>
             </button>
           }
         </div>
@@ -238,9 +210,13 @@
       <section class="caja mandos" aria-label="Movimientos">
         <div class="caja-cab">
           <h2>Movimientos</h2>
-          @if (!isPlayerTurn()) {
-            <span class="turno">Turno del rival…</span>
-          }
+          <button
+            class="btn-caja cambiar"
+            [disabled]="!isPlayerTurn() || !canSwitch()"
+            (click)="toggleSwitch()"
+          >
+            ⇄ Cambiar <kbd>C</kbd>
+          </button>
         </div>
         <div class="movs">
           @if (!hasUsableMoves(activePokemon()!)) {
@@ -254,9 +230,11 @@
               class="mov c-bg-{{ move.type }}"
               [class.mov--agotado]="move.pp === 0"
               [disabled]="!isPlayerTurn() || move.pp === 0"
-              (click)="useMove(move)"
+              (click)="useMove(i)"
             >
-              <span class="mov__nombre"><kbd>{{ i + 1 }}</kbd> {{ move.name }}</span>
+              <span class="mov__nombre"
+                ><kbd>{{ i + 1 }}</kbd> {{ move.name }}</span
+              >
               <span class="mov__datos">
                 <span class="type-badge type-badge--{{ move.type }}">{{ move.type | tipo }}</span>
                 <span class="clase clase--{{ move.damageClass }}">{{
@@ -266,15 +244,83 @@
                       ? 'Especial'
                       : 'Estado'
                 }}</span>
-                <span>Pot. {{ move.power || '—' }}</span>
-                <span>Prec. {{ move.accuracy || '—' }}</span>
-                <span class="mov__pp">PP {{ move.pp }}/{{ move.maxPp }}</span>
+                @if (move.damageClass !== 'status') {
+                  <span class="mov__extra">Pot. {{ move.ohko ? 'KO' : move.power }}</span>
+                }
+                <span class="mov__extra">Prec. {{ move.accuracy ?? '—' }}</span>
+                @if (move.priority > 0) {
+                  <span class="mov__prio">Prioridad +{{ move.priority }}</span>
+                }
+                <span class="mov__pp" [class.mov__pp--bajo]="move.pp <= move.maxPp / 4"
+                  >PP {{ move.pp }}/{{ move.maxPp }}</span
+                >
               </span>
             </button>
           }
         </div>
       </section>
     }
+
+    <!-- Ficha de cada Pokémon en combate -->
+    <ng-template #ficha let-p let-rival="rival">
+      <div class="ficha" [class.ficha--rival]="rival">
+        <div class="ficha__cab">
+          <span class="ficha__nombre">{{ p.name | nombre: p.id }}</span>
+          <span class="ficha__lado">Nv. {{ p.level }}</span>
+        </div>
+        <div class="ficha__cuerpo">
+          <div class="tipos">
+            @for (type of p.types; track $index) {
+              <span class="type-badge type-badge--{{ type }}">{{ type | tipo }}</span>
+            }
+            @if (p.status) {
+              <span class="estado estado--{{ p.status }}">{{ statusText(p) }}</span>
+            }
+            @if (p.confusion > 0) {
+              <span class="estado estado--con">Confuso</span>
+            }
+          </div>
+          <div class="ps">
+            <span class="ps__etq">PS</span>
+            <div class="ps__barra">
+              <i [attr.data-nivel]="getHpClass(p)" [style.width.%]="getHpPercent(p)"></i>
+            </div>
+          </div>
+          <p class="ps__num">{{ p.hp }} / {{ p.maxHp }}</p>
+          @if (stageChips(p).length) {
+            <div class="etapas">
+              @for (c of stageChips(p); track c.label) {
+                <span class="etapa" [class.etapa--baja]="!c.up">{{ c.label }}</span>
+              }
+            </div>
+          }
+          @if (!rival) {
+            <dl class="stats">
+              <div>
+                <dt>Ata</dt>
+                <dd>{{ p.stats.attack }}</dd>
+              </div>
+              <div>
+                <dt>Def</dt>
+                <dd>{{ p.stats.defense }}</dd>
+              </div>
+              <div>
+                <dt>At.Esp</dt>
+                <dd>{{ p.stats.specialAttack }}</dd>
+              </div>
+              <div>
+                <dt>Df.Esp</dt>
+                <dd>{{ p.stats.specialDefense }}</dd>
+              </div>
+              <div>
+                <dt>Vel</dt>
+                <dd>{{ p.stats.speed }}</dd>
+              </div>
+            </dl>
+          }
+        </div>
+      </div>
+    </ng-template>
   } @else if (phase() === 'result') {
     <!-- ===== Resultado ===== -->
     <section class="caja resultado" [class.caja--rival]="!playerWon()">
@@ -324,7 +370,10 @@
         <div class="crecimiento">
           <h2>Tu equipo</h2>
           @for (g of teamGrowth(); track g.id) {
-            <div class="crecimiento__fila" [class.crecimiento__fila--sube]="g.levelAfter > g.levelBefore">
+            <div
+              class="crecimiento__fila"
+              [class.crecimiento__fila--sube]="g.levelAfter > g.levelBefore"
+            >
               <img [src]="pokemonSprite(g.id)" [alt]="g.name" />
               <span class="crecimiento__nombre">{{ g.name | nombre: g.id }}</span>
               <span class="crecimiento__nivel">

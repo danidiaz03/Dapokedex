@@ -138,7 +138,9 @@ export interface PokemonMove {
   flavor_text_entries?: { flavor_text: string; language: { name: string } }[];
   learned_by_pokemon?: { name: string; url: string }[];
   stat_changes?: { change: number; stat: { name: string } }[];
+  target?: { name: string };
   meta?: {
+    category?: { name: string };
     ailment: { name: string };
     ailment_chance: number;
     crit_rate: number;
