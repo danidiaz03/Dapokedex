@@ -12,8 +12,12 @@ export const authGuard: CanActivateFn = async (_route, state) => {
 };
 
 // Evita que un usuario ya autenticado vuelva a ver la pantalla de login.
-export const guestGuard: CanActivateFn = async () => {
+// Si venía con ?returnUrl (p. ej. desde un enlace guardado), le llevamos allí.
+export const guestGuard: CanActivateFn = async (route) => {
   const router = inject(Router);
   const user = await inject(AuthService).waitForUser();
-  return user ? router.createUrlTree(['/']) : true;
+  if (!user) return true;
+  const returnUrl = route.queryParamMap.get('returnUrl');
+  const safe = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//');
+  return router.parseUrl(safe ? returnUrl : '/');
 };
