@@ -8,6 +8,7 @@ import { TypeNamePipe } from '../../../pipes/type-name.pipe';
 import { PokemonNamePipe } from '../../../pipes/pokemon-name.pipe';
 import { ProgressService } from '../../../services/progress.service';
 import { EvolutionService } from '../../../services/evolution.service';
+import { baseStatTotal, pickBalancedEnemies } from '../../../game/matchmaking';
 import { EvolveDialog } from '../../../componentes/evolve-dialog/evolve-dialog';
 import {
   EvolutionOption,
@@ -87,6 +88,8 @@ const STRUGGLE: BattleMove = {
 // Cuántos movimientos del Pokémon consultamos para elegir 4 que hagan daño.
 const MOVE_SAMPLE_SIZE = 16;
 const TURN_DELAY = 3000;
+// Candidatos consultados por cada rival para poder elegir uno equilibrado.
+const CANDIDATES_PER_ENEMY = 5;
 
 @Component({
   selector: 'app-battle',
@@ -236,11 +239,23 @@ export class Battle implements OnInit, OnDestroy {
       const progress = await this.progressService.load().catch(() => null);
       const maxId = maxEnemyId(levelFromXp(progress?.xp ?? 0));
       const ownedShinies = progress?.shinies ?? [];
-      const enemyIds = this.generateEnemyIds(teamIds.length, teamIds, maxId);
-      const [playerData, enemyData] = await Promise.all([
+      // Se consultan varios candidatos y se quedan los de fuerza parecida a la
+      // del equipo; las peticiones a PokeAPI quedan en caché para otras batallas.
+      const candidateIds = this.generateEnemyIds(
+        teamIds.length * CANDIDATES_PER_ENEMY,
+        teamIds,
+        maxId,
+      );
+      const [playerData, candidates] = await Promise.all([
         this.pokemonService.getPokemons(teamIds),
-        this.pokemonService.getPokemons(enemyIds),
+        this.pokemonService.getPokemons(candidateIds),
       ]);
+      const enemyIds = pickBalancedEnemies(
+        candidates.map((c) => ({ id: c.id, bst: baseStatTotal(c.stats) })),
+        playerData.map((p) => baseStatTotal(p.stats)),
+        teamIds.length,
+      );
+      const enemyData = enemyIds.map((id) => candidates.find((c) => c.id === id)!);
 
       const [playerTeam, enemyTeam] = await Promise.all([
         // Los shinies capturados aparecen brillantes en tu equipo.
@@ -260,6 +275,7 @@ export class Battle implements OnInit, OnDestroy {
 
   generateEnemyIds(count: number, exclude: number[] = [], maxId = 151): number[] {
     const ids: number[] = [];
+    count = Math.min(count, maxId - exclude.length);
     while (ids.length < count) {
       const id = Math.floor(Math.random() * maxId) + 1;
       if (!ids.includes(id) && !exclude.includes(id)) ids.push(id);
