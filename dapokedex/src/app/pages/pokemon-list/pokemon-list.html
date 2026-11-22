@@ -2,8 +2,10 @@
   <div class="zona-cab">
     <h1 class="titulo-zona">Tus cajas</h1>
     <p class="texto-zona">
-      Cada generación vive en su propia caja. Muévete con las flechas, pasa de caja con Q y E, y
-      abre una ficha con Intro.
+      Cada generación vive en su propia caja.
+      <span class="solo-teclado"
+        >Muévete con las flechas, pasa de caja con Q y E, y abre una ficha con Intro.</span
+      >
     </p>
   </div>
 
@@ -115,14 +117,16 @@
             type="search"
             name="listing-search"
             data-search
-            placeholder="Buscar en todas las cajas (/)"
+            placeholder="Buscar en todas las cajas"
             aria-label="Buscar Pokémon por nombre o número"
             (input)="onSearch($any($event.target).value)"
           />
           <button class="btn-caja btn-caja--fuerte" (click)="openRandom()">Al azar (R)</button>
         </div>
 
-        <p class="marcas-titulo">Marcar por tipo <span>(T para pasar de tipo)</span></p>
+        <p class="marcas-titulo">
+          Marcar por tipo <span class="solo-teclado">(T para pasar de tipo)</span>
+        </p>
         <div class="marcas" role="group" aria-label="Filtrar por tipo">
           @for (type of types; track type) {
             <button

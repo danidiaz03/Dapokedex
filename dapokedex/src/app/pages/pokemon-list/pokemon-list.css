@@ -111,7 +111,7 @@
   border-radius: 7px;
   background: var(--marco-claro);
   color: var(--tinta);
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .cajas-tabs button.activa {
   background: var(--tinta);
@@ -132,7 +132,7 @@
   display: grid;
   place-items: center;
   flex: none;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .flecha::before {
   content: '';
@@ -223,7 +223,7 @@
   border: none;
   border-radius: 4px;
   background: none;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .marcas button .type-badge {
   font-size: 13px;
@@ -256,7 +256,6 @@
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
-  padding-top: 26px;
 }
 .hueco {
   background: rgba(234, 244, 242, 0.94);
@@ -269,7 +268,7 @@
   align-items: center;
   text-align: center;
   min-width: 0;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .hueco:hover {
   background: var(--blanco);
@@ -323,7 +322,7 @@
   border: none;
   background: none;
   color: #c4d9d5;
-  cursor: pointer;
+  cursor: var(--cursor-mano);
 }
 .corazon svg {
   width: 100%;
@@ -332,20 +331,22 @@
 .corazon.on {
   color: var(--cursor);
 }
+/* La mano señala el hueco seleccionado desde dentro de la propia tarjeta
+   (abajo a la derecha, sobre el sprite), sin invadir la fila de arriba. */
 .mano {
   position: absolute;
-  left: 50%;
-  top: -30px;
+  right: 4px;
+  bottom: 30%;
   width: 30px;
   height: 30px;
-  transform: translateX(-50%);
   animation: bote 0.9s steps(2) infinite;
   z-index: 3;
   pointer-events: none;
+  filter: drop-shadow(2px 2px 0 rgba(15, 37, 36, 0.35));
 }
 @keyframes bote {
   50% {
-    top: -24px;
+    transform: translate(-3px, -3px);
   }
 }
 .caja-pie {
@@ -387,8 +388,34 @@
   .mesa {
     grid-template-columns: minmax(0, 1fr);
   }
+  /* En tablet y móvil la caja va primero: tocar un hueco ya abre la ficha. */
   .columna {
     position: static;
+    order: 2;
+  }
+  /* Resumen compacto: imagen pequeña a la izquierda y datos a la derecha. */
+  .resumen {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+  }
+  .resumen-cab {
+    grid-column: 1 / -1;
+  }
+  .escaparate {
+    aspect-ratio: auto;
+    padding: 10px;
+  }
+  .escaparate img {
+    width: 100%;
+  }
+  .resumen-cuerpo {
+    padding: 12px;
+  }
+  .nombre {
+    font-size: 24px;
+  }
+  .acciones {
+    margin-top: 10px;
   }
 }
 @media (max-width: 520px) {
@@ -404,9 +431,8 @@
     height: 80px;
   }
   .mano {
-    width: 24px;
-    height: 24px;
-    top: -20px;
+    width: 22px;
+    height: 22px;
   }
   .hueco b {
     font-size: 13px;
@@ -426,5 +452,12 @@
   }
   .buscar .btn-caja {
     width: 100%;
+  }
+}
+/* En táctil no hay cursor de teclado: la mano y las pistas de teclas sobran. */
+@media (hover: none) {
+  .mano,
+  .solo-teclado {
+    display: none;
   }
 }
