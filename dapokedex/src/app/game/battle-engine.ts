@@ -970,7 +970,11 @@ function checkBerry(ctx: TurnCtx, side: SideKey) {
   const name = p.itemName;
   p.item = null;
   p.hp = Math.min(p.maxHp, p.hp + amount);
-  emit(ctx, `¡${who(ctx.state, side)} se comió su ${name} y recuperó PS!`, { side, anim: 'heal' });
+  emit(
+    ctx,
+    `¡${who(ctx.state, side)} se comió su ${name} y recuperó PS! (Objeto equipado: no gasta turno)`,
+    { side, anim: 'heal' },
+  );
 }
 
 /** Bayas que curan problemas de estado. */
@@ -985,7 +989,11 @@ function checkStatusBerry(ctx: TurnCtx, side: SideKey) {
   if (cureConfusion) p.confusion = 0;
   const name = p.itemName;
   p.item = null;
-  emit(ctx, `¡${who(ctx.state, side)} se comió su ${name} y se curó!`, { side, anim: 'heal' });
+  emit(
+    ctx,
+    `¡${who(ctx.state, side)} se comió su ${name} y se curó! (Objeto equipado: no gasta turno)`,
+    { side, anim: 'heal' },
+  );
 }
 
 function rollHits(move: BattleMove, rng: Rng): number {
