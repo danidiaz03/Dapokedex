@@ -258,8 +258,10 @@ export class Teams implements OnInit {
     return itemDescription(key);
   }
 
+  /** Ancho de la barra respecto a la característica más alta de este Pokémon. */
   statWidth(value: number): number {
-    return Math.min(100, Math.round((value / 400) * 100));
+    const max = Math.max(1, ...this.statRows().map((r) => r.value));
+    return Math.max(4, Math.round((value / max) * 100));
   }
 
   private flash(text: string) {

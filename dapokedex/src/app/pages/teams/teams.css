@@ -262,6 +262,9 @@
 .editor__naturaleza strong {
   color: var(--tinta);
 }
+.neutra {
+  margin-left: 6px;
+}
 .sube {
   color: #c2410c;
   font-weight: 700;
