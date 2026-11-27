@@ -37,5 +37,7 @@
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
-  Header always set X-Frame-Options "SAMEORIGIN"
+  # Solo se puede mostrar dentro de la propia web y de danieldiaz.es (danielOS)
+  Header always unset X-Frame-Options
+  Header always set Content-Security-Policy "frame-ancestors 'self' https://danieldiaz.es https://*.danieldiaz.es"
 </IfModule>
